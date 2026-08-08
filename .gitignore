@@ -36,6 +36,7 @@ logs/
 # Virtualenvs
 .venv/
 .venv-*/
+.venv_*/
 venv/
 
 # IDE
