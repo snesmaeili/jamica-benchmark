@@ -140,7 +140,10 @@ mkdir -p "$AMICA_COMPARATOR_RESULTS"
 echo "=== task $SLURM_ARRAY_TASK_ID: $KEEP (skipping: $SKIP) ==="
 python -c "import sys; print('python:', sys.executable, sys.version.split()[0])"
 
-for IT in 100 400 700 1000; do
+# Overridable so a single missing point can be refilled without re-running the
+# whole campaign, which at 2200 iterations per implementation is hours.
+ITERS="${AMICA_ITERS:-100 400 700 1000}"
+for IT in $ITERS; do
     echo "--- $KEEP @ max_iter=$IT ---"
     python ../comparator/implementation_perf.py \
         --dataset "${AMICA_MEM_DATASET:-ds004505}" \

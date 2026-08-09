@@ -1,82 +1,90 @@
-"""Cross-implementation cost table: CPU and GPU, matched fixture.
+"""Cross-implementation cost table: CPU and GPU, matched fixture, 1000 iterations.
 
-Restores a comparison that existed in the manuscript source but sat inside an
-\\iffalse block and therefore never rendered. It is the only evidence in this
-work that speaks to how the JAX implementation compares with the other Python
-AMICA implementations on the same data and the same hardware.
+Rebuilt against the iteration-curve campaigns, which changed what this table can
+honestly say. The previous version rested on two runs per implementation (100 and
+600 iterations) and had to apologise for them at length in its own caption. Four
+measured points per row, from one campaign per device, removes the apology:
 
-Two things about it need stating rather than smoothing over:
+  * **The headline is 1000 iterations, not 100.** AMICA needs on the order of a
+    thousand iterations to converge, so a 100-iteration comparison measures
+    start-up and compilation as much as it measures the algorithm -- and it was
+    that regime, not the algorithm, that made the JAX implementation look slowest
+    on GPU in the previous table.
 
-  * On a 100-iteration run the JAX implementation is the SLOWEST on GPU,
-    because just-in-time compilation dominates a short fit. Its 600-iteration
-    run reuses the XLA cache and finishes in less wall time than its own
-    100-iteration run.
-  * Consequently the usual two-point estimator (T600-T100)/500 returns a
-    negative number for it. The per-iteration figure reported for the JAX
-    implementation is therefore T600/600, while the PyTorch implementations use
-    the two-point form. These are different estimators and the table says so.
+  * **One estimator for every row.** Per-iteration cost is the slope of a
+    least-squares fit through all four points. The old two-point form
+    $(T_{600}-T_{100})/500$ inherits the full error of both endpoints, and when a
+    600-iteration run finished faster than its own 100-iteration run it returned
+    a *negative* cost, which forced a second estimator ($T_{600}/600$) for the
+    rows where it broke. Two estimators in one column is not a column.
+
+  * **Agreement is measured on converged fits.** The correlation columns compare
+    the 1000-iteration decompositions, not the 100-iteration ones.
 
 Run from figures/src/:  python make_tab_cross_implementation.py
 """
 from __future__ import annotations
 
-import csv
 import json
+import re
 from pathlib import Path
+
+import numpy as np
 
 from _paths import DATA_ROOT as _WS, out
 
 _HERE = Path(__file__).resolve().parent
 DEST = out("tab_cross_implementation.tex")
 
-MEM_CSV = _WS / "results/mem_compare/mem_comparison_table.csv"
-CPU_JSON_DIR = _WS / "results/mem_compare/cpu/ds004505_sub-01_mem"
-CPU600 = _WS / "results/rt_cpu_600"
-GPU100 = _WS / "results/rt_gpu_100"
-GPU600 = _WS / "results/rt_gpu_600"
+# One directory per device, each holding iter<N>/ subdirectories.
+CPU_ROOT = _WS / "results/comparator/cluster/cpu/itercurve_cpu"
+GPU_ROOT = _WS / "results/comparator/cluster/gpu/itercurve_gpu"
 
-
-def per_iteration_ms(t100: float, t600: float) -> tuple[float, str]:
-    """Steady-state per-iteration cost, and which estimator produced it.
-
-    The two-point form (T600-T100)/500 cancels fixed start-up cost -- import,
-    allocation, first-touch, compilation -- and is what a long fit actually
-    pays per iteration. It is undefined when a 600-iteration run finishes in
-    less wall time than its own 100-iteration run, which happens whenever a
-    compilation cache is reused; T600/600 is reported then instead.
-
-    Chosen from the measurements rather than by implementation name: the
-    condition is a property of the run, and hard-coding which backend is
-    expected to compile is how the table would keep reporting a cached estimator
-    for a backend that had stopped caching, or miss one that started.
-    """
-    if t600 > t100:
-        return (t600 - t100) / 500 * 1000, r"$^{\ddagger}$"
-    return t600 / 600 * 1000, r"$^{\dagger}$"
-# Numerical agreement on the same fixture. This used to be a separate table
-# (tab_fixed_workload) whose every fit time was already reported here; only the
-# two agreement columns were unique to it, so they are folded in and the
-# duplicate table retired.
-AUDIT = _HERE / "main_figure_stats.json"
+HEADLINE_ITER = 1000
 
 DISPLAY = {
     "amica_python_jax": r"\texttt{amica} (JAX, full batch)",
-    "amica_python_jax_chunked": r"\texttt{amica} (JAX, chunked)",
+    "amica_python_jax_chunked": r"\texttt{amica} (JAX, blocked)",
     "scott_huberty_torch": r"AMICA-Python (PyTorch)",
     "pyamica_torch": r"\texttt{pyamica} (PyTorch)",
     "pamica_torch": r"\texttt{pAMICA} (PyTorch)",
     "fortran_amica17": r"Fortran AMICA~1.7",
 }
-CPU_ORDER = ["amica_python_jax", "amica_python_jax_chunked",
-             "scott_huberty_torch", "pyamica_torch", "pamica_torch",
-             "fortran_amica17"]
-GPU_ORDER = ["amica_python_jax_chunked", "pyamica_torch", "scott_huberty_torch",
-             "pamica_torch"]
+REFERENCE = "amica_python_jax"  # agreement is quoted against the full-batch CPU run
 
 
-def load_gpu(d: Path) -> dict[str, dict]:
-    return {p.name.split("_sub-01")[0]: json.loads(p.read_text())
-            for p in d.glob("*_result.json")}
+def load_campaign(root: Path) -> dict[str, dict[int, dict]]:
+    """{implementation: {iterations actually run: result record}}.
+
+    Keyed by iterations *run* rather than requested: a fit that converged early
+    belongs at the count it reached, and filing it under the requested cap would
+    corrupt the slope for whichever implementation converges best.
+    """
+    campaign: dict[str, dict[int, dict]] = {}
+    for path in sorted(root.glob("iter*/*_result.json")):
+        if "warmup" in path.parent.name:
+            continue
+        rec = json.loads(path.read_text(encoding="utf-8"))
+        if "error" in rec or "fit_time_s" not in rec:
+            continue
+        n_iter = int(rec.get("n_iter") or rec.get("max_iter"))
+        campaign.setdefault(rec["implementation"], {})[n_iter] = rec
+    return campaign
+
+
+def per_iteration_ms(points: dict[int, dict]) -> tuple[float, int]:
+    """Steady-state cost per iteration, from a least-squares fit over all points.
+
+    The intercept absorbs the fixed start-up cost -- import, allocation,
+    first-touch, compilation -- which is exactly what should not be charged to a
+    per-iteration figure. Returns the slope and how many points produced it, so
+    a thin row can be marked rather than quietly presented as equal evidence.
+    """
+    if len(points) < 2:
+        return float("nan"), len(points)
+    x = np.array(sorted(points), dtype=float)
+    y = np.array([points[int(i)]["fit_time_s"] for i in x], dtype=float)
+    return float(np.polyfit(x, y, 1)[0] * 1000), len(points)
 
 
 def _matched_unmixing_summary(reference, candidate) -> tuple[float, float]:
@@ -86,7 +94,6 @@ def _matched_unmixing_summary(reference, candidate) -> tuple[float, float]:
     identical on purpose so the two cannot report different numbers for the
     same quantity.
     """
-    import numpy as np
     from scipy.optimize import linear_sum_assignment
 
     reference = np.asarray(reference, dtype=float)
@@ -99,37 +106,28 @@ def _matched_unmixing_summary(reference, candidate) -> tuple[float, float]:
     return float(np.median(matched)), float(np.min(matched))
 
 
-def load_agreement() -> dict[tuple[str, str], dict]:
-    """Agreement against the amica JAX-CPU run, keyed by (implementation, device).
+def agreement_at(campaign: dict[str, dict[int, dict]], n_iter: int) -> dict[str, dict]:
+    """Agreement against the reference implementation's fit at the same budget.
 
-    Computed here from the archived per-run JSONs rather than read out of
-    main_figure_stats.json. That file is the frozen artifact the manuscript was
-    written from, so it cannot contain a record for an implementation added
-    afterwards -- pamica would have shown a blank agreement column while its
-    unmixing sat in the same directory as everybody else's. Reading the runs
-    directly also keeps every cell in this table sourced from one campaign.
-
-    Rows whose run is absent are simply missing from the mapping; callers
-    tolerate a miss.
+    Compared at the converged budget rather than at 100 iterations: two
+    implementations that will agree once converged can differ appreciably early,
+    so an agreement number from a short fit describes the transient, not the
+    decomposition.
     """
-    ref_path = CPU_JSON_DIR / "amica_python_jax_sub-01_seed0_result.json"
-    if not ref_path.exists():
+    ref = campaign.get(REFERENCE, {}).get(n_iter)
+    if ref is None or "W" not in ref:
         return {}
-    ref = json.loads(ref_path.read_text(encoding="utf-8"))
-
-    out: dict[tuple[str, str], dict] = {}
-    for device, d in (("cpu", CPU_JSON_DIR), ("gpu", GPU100)):
-        for p in sorted(d.glob("*_result.json")):
-            rec = json.loads(p.read_text(encoding="utf-8"))
-            if "error" in rec or "W" not in rec:
-                continue
-            _, minimum_r = _matched_unmixing_summary(ref["W"], rec["W"])
-            out[(rec["implementation"], device)] = {
-                "abs_ll_difference_vs_amica_jax_cpu":
-                    abs(float(rec["ll_final"]) - float(ref["ll_final"])),
-                "minimum_matched_row_correlation_vs_amica_jax_cpu": minimum_r,
-            }
-    return out
+    result: dict[str, dict] = {}
+    for impl, points in campaign.items():
+        rec = points.get(n_iter)
+        if rec is None or "W" not in rec:
+            continue
+        _, worst = _matched_unmixing_summary(ref["W"], rec["W"])
+        result[impl] = {
+            "abs_ll_difference": abs(float(rec["ll_final"]) - float(ref["ll_final"])),
+            "worst_matched_row_correlation": worst,
+        }
+    return result
 
 
 def sci(value: float, digits: int = 1) -> str:
@@ -139,160 +137,171 @@ def sci(value: float, digits: int = 1) -> str:
     return rf"${mantissa}{{\times}}10^{{{int(exponent)}}}$"
 
 
-def agree_cells(rec: dict | None) -> str:
-    if rec is None:
-        return "-- & --"
-    return (f"{sci(rec['abs_ll_difference_vs_amica_jax_cpu'])} & "
-            f"${rec['minimum_matched_row_correlation_vs_amica_jax_cpu']:.4f}$")
+def fixture_of(campaign: dict[str, dict[int, dict]]) -> tuple[int, int]:
+    for points in campaign.values():
+        for rec in points.values():
+            return int(rec["n_components"]), int(rec["n_samples"])
+    return 0, 0
+
+
+def build_rows(campaign, agree, vram: bool, skipped: list[str]) -> list[str]:
+    """Rows ordered by per-iteration cost, this package bolded wherever it lands."""
+    built = []
+    for impl, points in campaign.items():
+        if impl not in DISPLAY:
+            continue
+        head = points.get(HEADLINE_ITER)
+        per, n_points = per_iteration_ms(points)
+        if head is None:
+            skipped.append(f"{impl}@{HEADLINE_ITER}")
+            time_cell, sort_key = "--", float("inf")
+        else:
+            time_cell, sort_key = f"${head['fit_time_s']:.1f}$", per
+        if np.isnan(per):
+            per_cell, sort_key = "--", float("inf")
+        else:
+            per_cell = f"${per:.0f}$" + (r"$^{*}$" if n_points < 4 else "")
+
+        record = head or points[max(points)]
+        rss = f"${float(record['peak_rss_gb']):.2f}$"
+        if vram:
+            v = record.get("peak_vram_gb")
+            vram_cell = f"${float(v):.2f}$" if v else "--"
+        else:
+            vram_cell = "--"
+
+        # The label only. Bolding a row's numbers would put a thumb on the
+        # comparison the table exists to make.
+        label = DISPLAY[impl]
+        if impl.startswith("amica_python_"):
+            label = rf"\textbf{{{label}}}"
+
+        a = agree.get(impl)
+        agree_cells = ("-- & --" if a is None else
+                       f"{sci(a['abs_ll_difference'])} & "
+                       f"${a['worst_matched_row_correlation']:.4f}$")
+        built.append((sort_key,
+                      f"{label} & {time_cell} & {per_cell} & {rss} & {vram_cell} & "
+                      f"{agree_cells} \\\\"))
+    built.sort(key=lambda b: b[0])
+    return [line for _, line in built]
 
 
 def main() -> None:
-    cpu = {}
-    for r in csv.DictReader(MEM_CSV.open(encoding="utf-8")):
-        if r["device"] == "cpu":
-            cpu[r["implementation"]] = r
-    g100, g600 = load_gpu(GPU100), load_gpu(GPU600)
-    agree = load_agreement()
+    cpu = load_campaign(CPU_ROOT)
+    gpu = load_campaign(GPU_ROOT)
+    if not cpu:
+        raise SystemExit(f"no CPU campaign under {CPU_ROOT}")
+    cpu_c, cpu_t = fixture_of(cpu)
+    agree_cpu = agreement_at(cpu, HEADLINE_ITER)
+    agree_gpu = agreement_at(gpu, HEADLINE_ITER) if gpu else {}
+    # GPU rows are compared against the CPU reference, as before, so the two
+    # blocks are commensurable.
+    ref_cpu = cpu.get(REFERENCE, {}).get(HEADLINE_ITER)
+    if ref_cpu is not None and gpu:
+        agree_gpu = {}
+        for impl, points in gpu.items():
+            rec = points.get(HEADLINE_ITER)
+            if rec is None or "W" not in rec:
+                continue
+            _, worst = _matched_unmixing_summary(ref_cpu["W"], rec["W"])
+            agree_gpu[impl] = {
+                "abs_ll_difference": abs(float(rec["ll_final"]) - float(ref_cpu["ll_final"])),
+                "worst_matched_row_correlation": worst,
+            }
 
-    out: list[str] = []
-    add = out.append
+    skipped: list[str] = []
+    o: list[str] = []
+    add = o.append
     add(r"% Generated by figures/src/make_tab_cross_implementation.py -- do not hand-edit.")
     add(r"\begin{table}[htbp]")
     add(r"\centering")
     add(r"\caption{")
-    add(r"\textbf{Cross-implementation cost and agreement on a matched fixture.}")
-    add(r"One archived")
-    add(r"run per implementation on the PCA-projected Table tennis sub-01 array")
-    add(r"($64\times785{,}328$) at 100 iterations. CPU rows ran on eight cores of")
-    add(r"a dual-socket AMD EPYC~9655 node (96 cores per socket) with thread")
-    add(r"counts bound to the allocation; GPU rows on one H100. All rows of a")
-    add(r"given device come from a single campaign on one machine.")
-    add(r"Within each device, rows are ordered by steady-state per-iteration")
-    add(r"cost, and \texttt{amica} is set in bold wherever that ordering places")
-    add(r"it. Rows whose 600-iteration companion run is unavailable have no")
-    add(r"per-iteration figure and are listed last.")
+    add(r"\textbf{Cross-implementation cost and agreement at a converged iteration")
+    add(r"budget.}")
+    add(rf"Every implementation fitted the same PCA-projected Table tennis sub-01")
+    add(rf"array (${cpu_c}\times{cpu_t:,}$".replace(",", "{,}") + r") to 100, 400, 700 and")
+    add(r"1000 iterations. Fit time is quoted at 1000 iterations because AMICA")
+    add(r"requires on the order of a thousand iterations to converge, so a")
+    add(r"shorter budget measures start-up and compilation as much as it")
+    add(r"measures the algorithm. Per-iteration cost is the slope of a")
+    add(r"least-squares fit through all four points, the same estimator in every")
+    add(r"row, with the intercept absorbing fixed start-up cost.")
+    add(r"CPU rows ran on eight cores of a dual-socket AMD EPYC~9655 node with")
+    add(r"thread counts bound to the allocation; GPU rows on one H100. All rows")
+    add(r"of a given device come from a single campaign on one machine, and")
+    add(r"component count, sample count, iteration budget and hardware are")
+    add(r"identical within a block, so no row is advantaged by problem size.")
+    add(r"Within each device, rows are ordered by per-iteration cost and")
+    add(r"\texttt{amica} is set in bold wherever that ordering places it.")
     add(r"The two right-hand columns compare each decomposition with the")
-    add(r"\texttt{amica} JAX-CPU run, Hungarian-matched and sign-aligned.")
-    add(r"\textbf{These are single runs, not repeated measurements}, and")
-    add(r"the timing boundaries are not identical: the Python rows time the")
+    add(r"\texttt{amica} JAX-CPU fit at the same budget, Hungarian-matched and")
+    add(r"sign-aligned.")
+    add(r"\textbf{These are single runs, not repeated measurements}, and the")
+    add(r"timing boundaries are not identical: the Python rows time the")
     add(r"model-fit call including first-use compilation, whereas the Fortran row")
     add(r"times the external executable including initialisation and output")
-    add(r"writing but excluding input serialisation.")
-    add(r"\textbf{Per-iteration cost is not the same estimator in every")
-    add(r"row}: the JAX implementation's 600-iteration run reuses the XLA")
-    add(r"compilation cache and finishes in less wall time than its own")
-    add(r"100-iteration run, so the two-point form $(T_{600}-T_{100})/500$ is")
-    add(r"undefined for it and $T_{600}/600$ is reported instead; the PyTorch")
-    add(r"implementations use the two-point form. The two runs entering that")
-    add(r"form were separate jobs and, on CPU, were scheduled onto different")
-    add(r"nodes of the same model; for the one implementation whose wall time")
-    add(r"varied appreciably between such nodes this shifts its per-iteration")
-    add(r"figure by around $10\%$. On the 100-iteration run the")
-    add(r"JAX implementation is slower on GPU than the two PyTorch")
-    add(r"implementations it is closest to, because compilation dominates a short")
-    add(r"fit; that ordering reverses once the iteration budget is large enough")
-    add(r"for compilation to amortise, which is the regime AMICA fits actually")
-    add(r"occupy. \texttt{pAMICA} is run with its own algorithm constants and the")
-    add(r"shared protocol (iteration budget, mixture count, learning rate, Newton")
+    add(r"writing but excluding input serialisation. Fixed start-up cost falls in")
+    add(r"the intercept rather than the per-iteration column, so it affects the")
+    add(r"fit-time column only.")
+    add(r"\texttt{pAMICA} is run with its own algorithm constants and the shared")
+    add(r"protocol (iteration budget, mixture count, learning rate, Newton")
     add(r"enabled); its cost is not sensitive to its block size, which was swept")
     add(r"from $1{,}533$ to $11$ blocks per iteration for a fit-time change under")
-    add(r"$7\%$. Third-party revisions were not")
-    add(r"archived and these measurements predate the Anderson-accelerated")
-    add(r"variant of AMICA-Python, so this is a descriptive comparison of one")
-    add(r"configuration rather than a durable ranking of implementations.")
+    add(r"$7\%$. Third-party revisions were not archived and these measurements")
+    add(r"predate the Anderson-accelerated variant of AMICA-Python, so this is a")
+    add(r"descriptive comparison of one configuration rather than a durable")
+    add(r"ranking of implementations.")
     add(r"}")
     add(r"\label{tab:cross-implementation}")
     add(r"\footnotesize")
     add(r"\setlength{\tabcolsep}{3.5pt}")
     add(r"\begin{tabular}{lcccccc}")
     add(r"\toprule")
-    add(r"Implementation & \shortstack{Fit time\\(s)} & "
+    add(r"Implementation & \shortstack{Fit time\\(s, 1000 it.)} & "
         r"\shortstack{Per iteration\\(ms)} & \shortstack{Peak host\\RSS (GiB)} & "
         r"\shortstack{Peak\\VRAM (GiB)} & "
         r"\shortstack{$|\Delta$ final $\ell|$\\vs JAX-CPU} & "
         r"\shortstack{Worst matched\\row $|r|$} \\")
-
     add(r"\midrule")
-    add(r"\multicolumn{7}{l}{\emph{CPU, 100 iterations}}\\")
+    add(r"\multicolumn{7}{l}{\emph{CPU, eight cores}}\\")
     add(r"\addlinespace[1pt]")
-    # Implementations added after the archived campaigns (pamica) are absent from
-    # older result trees. Skip a row whose measurement does not exist rather than
-    # dying, so this producer still regenerates the published table from the
-    # archive it was written against, and picks the new row up once its run
-    # lands. What is skipped is reported at the end, never silently dropped.
-    skipped: list[str] = []
-    c600 = load_gpu(CPU600)  # same shape: one *_result.json per implementation
-
-    def build_rows(order, at100, at600, device, vram_cell):
-        """(sort key, label, cells) per implementation, ordered by per-iteration cost.
-
-        Sorting by the steady-state figure rather than by a fixed list makes the
-        column readable, and puts this package wherever the measurement puts it
-        instead of first by construction. Rows whose 600-iteration companion is
-        missing have no per-iteration figure and sort last: they cannot be
-        placed, and guessing a position for them would be the one thing a sorted
-        table must not do.
-        """
-        built = []
-        for k in order:
-            r = at100.get(k)
-            if r is None:
-                skipped.append(f"{device}100:{k}")
-                continue
-            t1 = float(r["fit_time_s"])
-            if k in at600:
-                per, mark = per_iteration_ms(t1, float(at600[k]["fit_time_s"]))
-                per_cell, key = f"${per:.1f}${mark}", per
-            else:
-                skipped.append(f"{device}600:{k}")
-                per_cell, key = "--", float("inf")
-            # This package is bolded so it stays findable once the order is the
-            # measurement's rather than the author's. The label only: bolding a
-            # row's numbers would put a thumb on the comparison the table exists
-            # to make.
-            label = DISPLAY[k]
-            if k.startswith("amica_python_"):
-                label = rf"\textbf{{{label}}}"
-            built.append((key, k, f"{label} & ${t1:.1f}$ & {per_cell} & "
-                                  f"${float(r['peak_rss_gb']):.2f}$ & {vram_cell(k)} & "
-                                  f"{agree_cells(agree.get((k, device)))} \\\\"))
-        built.sort(key=lambda b: b[0])
-        return built
-
-    for _, _, line in build_rows(CPU_ORDER, cpu, c600, "cpu", lambda k: "--"):
+    for line in build_rows(cpu, agree_cpu, vram=False, skipped=skipped):
         add(line)
 
-    add(r"\midrule")
-    add(r"\multicolumn{7}{l}{\emph{GPU (one H100), 100-iteration run}}\\")
-    add(r"\addlinespace[1pt]")
-    for _, _, line in build_rows(
-            GPU_ORDER, g100, g600, "gpu",
-            lambda k: f"${g100[k]['peak_vram_gb']:.2f}$"):
-        add(line)
+    if gpu:
+        add(r"\midrule")
+        add(r"\multicolumn{7}{l}{\emph{GPU, one H100}}\\")
+        add(r"\addlinespace[1pt]")
+        for line in build_rows(gpu, agree_gpu, vram=True, skipped=skipped):
+            add(line)
 
     add(r"\bottomrule")
     add(r"\end{tabular}")
-    add(r"")
-    add(r"\vspace{2pt}")
-    add(r"{\footnotesize $^{\dagger}$ $T_{600}/600$ (compilation cache reused). "
-        r"$^{\ddagger}$ $(T_{600}-T_{100})/500$.}")
+    thin = any("$^{*}$" in line for line in o)
+    if thin:
+        add(r"")
+        add(r"\vspace{2pt}")
+        add(r"{\footnotesize $^{*}$ fitted from fewer than four iteration budgets.}")
     add(r"\end{table}")
 
-    DEST.write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
+    DEST.write_text("\n".join(o) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {DEST}")
-    for k in GPU_ORDER:
-        if k not in g100:
+    for label, campaign in (("CPU", cpu), ("GPU", gpu)):
+        if not campaign:
             continue
-        t1 = g100[k]["fit_time_s"]
-        if k in g600:
-            per, _ = per_iteration_ms(t1, float(g600[k]["fit_time_s"]))
-            per_s = f"{per:6.2f}ms"
-        else:
-            per_s = "     n/a"
-        print(f"  {DISPLAY[k]:34} T100={t1:6.2f}s  per-iter={per_s}  "
-              f"VRAM={g100[k]['peak_vram_gb']:.2f}GiB")
+        print(f"  --- {label}")
+        for impl, points in sorted(campaign.items(),
+                                   key=lambda kv: per_iteration_ms(kv[1])[0]):
+            per, n = per_iteration_ms(points)
+            head = points.get(HEADLINE_ITER)
+            print(f"  {DISPLAY.get(impl, impl):34} "
+                  f"T{HEADLINE_ITER}={head['fit_time_s']:8.1f}s  " if head else
+                  f"  {DISPLAY.get(impl, impl):34} T{HEADLINE_ITER}=      --  ",
+                  end="")
+            print(f"per-iter={per:8.1f}ms ({n} pts)")
     if skipped:
-        print("  measurements absent, rows/cells omitted: " + ", ".join(skipped))
+        print("  measurements absent, cells omitted: " + ", ".join(skipped))
 
 
 if __name__ == "__main__":
