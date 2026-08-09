@@ -119,6 +119,14 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     ap.add_argument("--canary", default=None, help="canary jsonl to annotate drift")
     ap.add_argument("--dpi", type=int, default=300)
+    ap.add_argument("--ncols", type=int, default=0,
+                    help="panels per row (0 = one row); 2 gives a page-shaped grid")
+    ap.add_argument("--loglog", action="store_true",
+                    help=("log both axes. Cost is linear in iterations, so on "
+                          "log-log every implementation is a straight line of "
+                          "slope 1 and the vertical gaps are the speed ratios -- "
+                          "which keeps a 100x spread readable instead of "
+                          "flattening the fast implementations onto the axis"))
     args = ap.parse_args()
 
     import matplotlib
@@ -130,13 +138,31 @@ def main() -> int:
         label, _, root = spec.partition("=")
         panels.append((label.strip(), root.strip(), load_panel(root.strip())))
 
-    fig, axes = plt.subplots(1, len(panels), figsize=(5.6 * len(panels), 4.4),
+    ncols = args.ncols if args.ncols > 0 else len(panels)
+    nrows = -(-len(panels) // ncols)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5.6 * ncols, 4.4 * nrows),
                              squeeze=False)
-    for ax, (label, root, data) in zip(axes[0], panels):
+    flat = [a for row in axes for a in row]
+    for a in flat[len(panels):]:
+        a.axis("off")
+    for ax, (label, root, data) in zip(flat, panels):
         if not data:
-            ax.text(0.5, 0.5, f"no results under\n{root}", ha="center", va="center",
-                    transform=ax.transAxes, color=GREY)
+            # A reserved-but-empty panel, drawn deliberately. An absent panel
+            # reads as "we did not test that"; a marked one reads as "not
+            # measured yet", which is the true state, and it keeps the slot
+            # visible while the rest of the figure is reviewed.
+            ax.text(0.5, 0.55, "pending", ha="center", va="center",
+                    transform=ax.transAxes, color=GREY, fontsize=13)
+            ax.text(0.5, 0.44, "measurement not yet run", ha="center", va="center",
+                    transform=ax.transAxes, color=GREY, fontsize=7)
             ax.set_title(label, color=INK)
+            ax.set_xlabel("iterations")
+            ax.set_ylabel("fit time (s)")
+            ax.set_xticks([])
+            ax.set_yticks([])
+            for sp in ax.spines.values():
+                sp.set_linestyle((0, (4, 4)))
+                sp.set_color(GREY)
             continue
         order = sorted(data, key=lambda k: -slope_s_per_iter(data[k]))
         for impl in order:
@@ -152,9 +178,14 @@ def main() -> int:
         ax.set_title(label, color=INK)
         ax.grid(True, alpha=0.25, linewidth=0.6)
         ax.spines[["top", "right"]].set_visible(False)
-        ax.legend(frameon=False, fontsize=8, loc="upper left")
-        ax.set_xlim(left=0)
-        ax.set_ylim(bottom=0)
+        ax.legend(frameon=False, fontsize=8,
+                  loc="lower right" if args.loglog else "upper left")
+        if args.loglog:
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+        else:
+            ax.set_xlim(left=0)
+            ax.set_ylim(bottom=0)
 
     drift = canary_drift(args.canary) if args.canary else None
     if drift:
