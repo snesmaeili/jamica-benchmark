@@ -28,6 +28,54 @@ python3.12 -m venv ~/amica-venvs/comp
 `benchmark/cc_benchmark/setup_competitors.sh` and `setup_pamica.sh` do this on
 a cluster, inside an allocation rather than on a login node.
 
+## Datasets
+
+Start with **mne_sample**. It needs no manual download, no BIDS tooling and no
+allocation — MNE fetches it on first use (~1.5 GB) — and it is the fixture the
+local panels in the manuscript use. Everything below works on it, so a first
+run needs nothing from this section beyond the first block.
+
+```bash
+# mne_sample: fetched automatically, but fetch it once up front so a benchmark
+# run is not timing a download
+python -c "import mne; print(mne.datasets.sample.data_path())"
+export MNE_DATASETS_SAMPLE_PATH=/path/to/mne_data   # where you want it
+```
+
+Set `MNE_DATASETS_SAMPLE_PATH` explicitly rather than relying on MNE's stored
+config. That config goes stale the moment the data moves — including moving
+between drives — and then fails in a way that reads as a benchmark bug rather
+than a path problem.
+
+The three OpenNeuro EEG datasets are larger (~10 GB each) and need
+`datalad` or `git-annex`, which fetch only the files actually required rather
+than the whole repository:
+
+| accession | what it is | used for |
+|---|---|---|
+| `ds004505` | table tennis, 25 subjects, 120 channels | the cluster panels and the memory campaign |
+| `ds004504` | eyes-closed rest, clinical | cross-recording replication |
+| `ds004621` | eyes-open rest, 128 channels | cross-recording replication |
+
+```bash
+cd benchmark/cc_benchmark
+cp env.template env.local          # set BIDS_ROOT_DS4505 etc. to where data should land
+module load git-annex              # on Alliance clusters; otherwise install datalad
+
+bash download_ds004505.sh          # ~10 GB, expect 25 .set files
+bash download_ds004504.sh
+bash download_ds004621.sh
+```
+
+Each script prints how many recordings it materialised, so a partial fetch is
+visible immediately rather than surfacing later as a missing-subject error. Run
+them on a machine with internet — on a cluster that means a login node, which is
+fine because downloading is I/O, not compute.
+
+If neither `datalad` nor `git-annex` is available, the scripts fall back to
+`openneuro-py`, which produces a different directory layout; in that case set
+`AMICA_INPUT_LEVEL=merged` instead of the default `bids`.
+
 ## Local runs
 
 ```bash
@@ -35,8 +83,18 @@ cd benchmark/local_bench
 export AMICA_PYTHON_VENV=/path/to/amica/.venv-dev/bin/python
 export COMPETITORS_VENV=/path/to/amica-venvs/comp/bin/python
 
+export MNE_DATASETS_SAMPLE_PATH=/path/to/mne_data
+
 bash run_seed_comparison.sh      # 5 seeds x 100 iterations   (~45 min)
 bash run_iter_curve.sh           # 4 iteration caps, 1 seed   (~3.5 h)
+```
+
+Both default to `mne_sample` at 30 components (166,800 samples), which is what
+makes them runnable on a laptop without downloading anything. Override with
+`DATASET` and `N_COMPONENTS`:
+
+```bash
+DATASET=ds004505 N_COMPONENTS=64 bash run_seed_comparison.sh my_tag
 ```
 
 `run_seed_comparison.sh` answers "which is fastest here, and is the gap bigger
