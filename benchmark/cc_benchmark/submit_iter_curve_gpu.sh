@@ -49,6 +49,17 @@ export AMICA_SRC="${AMICA_SRC:-/scratch/$USER/amica-blocked}"
 export PYTHONPATH="$AMICA_SRC:${PYTHONPATH:-}"
 export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/amica-python/.venv_fir/bin/python}"
 
+# The orchestrator defaults the competitors venv to <benchmark repo>/.venv_competitors,
+# which does not exist on fir -- it lives under the amica-python tree. Left
+# unset, every competitor run dies instantly with "venv python missing" and the
+# task still exits 0, so the array looks like it succeeded while producing
+# nothing. The pAMICA venv, by contrast, IS where the default expects it.
+export COMPETITORS_VENV="${COMPETITORS_VENV:-/scratch/$USER/amica-python/.venv_competitors/bin/python}"
+export PAMICA_VENV="${PAMICA_VENV:-/scratch/$USER/amica-benchmark/.venv_pamica/bin/python}"
+for _v in "$AMICA_PYTHON_VENV" "$COMPETITORS_VENV" "$PAMICA_VENV"; do
+    [ -x "$_v" ] || { echo "FATAL: no interpreter at $_v" >&2; exit 1; }
+done
+
 # Fail fast rather than benchmark the wrong code. The old checkout imports and
 # runs perfectly well; it would just quietly produce a curve for a different
 # implementation, which is the one failure mode this whole campaign cannot

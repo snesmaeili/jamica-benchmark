@@ -49,6 +49,17 @@ export AMICA_SRC="${AMICA_SRC:-/scratch/$USER/amica-blocked}"
 export PYTHONPATH="$AMICA_SRC:${PYTHONPATH:-}"
 export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/amica-python/.venv_fir/bin/python}"
 
+# The orchestrator defaults the competitors venv to <benchmark repo>/.venv_competitors,
+# which does not exist on fir -- it lives under the amica-python tree. Left
+# unset, every competitor run dies instantly with "venv python missing" and the
+# task still exits 0, so the array looks like it succeeded while producing
+# nothing. The pAMICA venv, by contrast, IS where the default expects it.
+export COMPETITORS_VENV="${COMPETITORS_VENV:-/scratch/$USER/amica-python/.venv_competitors/bin/python}"
+export PAMICA_VENV="${PAMICA_VENV:-/scratch/$USER/amica-benchmark/.venv_pamica/bin/python}"
+for _v in "$AMICA_PYTHON_VENV" "$COMPETITORS_VENV" "$PAMICA_VENV"; do
+    [ -x "$_v" ] || { echo "FATAL: no interpreter at $_v" >&2; exit 1; }
+done
+
 # Fail fast rather than benchmark the wrong code. The old checkout imports and
 # runs perfectly well; it would just quietly produce a curve for a different
 # implementation, which is the one failure mode this whole campaign cannot
@@ -90,13 +101,27 @@ done
 
 FORTRAN_OPT=""
 if [ "$KEEP" = "fortran_amica17" ]; then
-    if [ -n "${AMICA17_BIN:-}" ] && [ -x "${AMICA17_BIN}" ]; then
+    # Default to the archived reference build, not whatever amica17 is nearest.
+    # /scratch/$USER/fortran_parity/amica17_build/amica17 is an ablation build;
+    # using it once produced a worst matched |r| of 0.2765 against an archived
+    # 0.9391, which reads as a parity failure rather than the wrong binary.
+    # Hence the checksum: this row is only meaningful for the reference build.
+    export AMICA17_BIN="${AMICA17_BIN:-/project/rrg-kjerbi/sesma/amica_fortran_reference/amica17}"
+    AMICA17_SHA_EXPECTED="${AMICA17_SHA_EXPECTED:-c02f22c3}"
+    if [ -x "${AMICA17_BIN}" ]; then
+        _sha=$(sha256sum "$AMICA17_BIN" | cut -c1-8)
+        if [ "$_sha" != "$AMICA17_SHA_EXPECTED" ]; then
+            echo "FATAL: $AMICA17_BIN has sha $_sha, expected $AMICA17_SHA_EXPECTED" >&2
+            echo "  (the ablation build is 87bd0941; the reference is c02f22c3)" >&2
+            exit 1
+        fi
+        echo "Fortran reference binary verified: $AMICA17_BIN (sha $_sha)"
         module load openmpi/4.1.5 flexiblas 2>/dev/null || true
         export GNU_TIME_BIN="${GNU_TIME_BIN:-/usr/bin/time}"
         FORTRAN_OPT="--include-fortran"
     else
-        echo "AMICA17_BIN unset or not executable -- nothing to do for this task."
-        exit 0
+        echo "FATAL: no Fortran binary at $AMICA17_BIN" >&2
+        exit 1
     fi
 fi
 
