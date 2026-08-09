@@ -68,7 +68,7 @@ configuration its authors specify.
 
 ---
 
-## 3. `results_final.tex` — memory. **Needs a re-run before editing.**
+## 3. `results_final.tex` — memory. **Re-measured; ready to apply.**
 
 **Current (lines ~142-147):**
 
@@ -77,20 +77,39 @@ configuration its authors specify.
 > chunking remained between 6.6 and 7.2~GiB. The median within-recording
 > reduction in total process peak was 54\% (range 42--63\%).
 
-These numbers predate the E-step blocking change and understate it badly. On the
-single sub-01 fixture, the same comparison is now 11.39~GiB full batch against
-**2.43~GiB** blocked — a 79% reduction, where the paragraph claims a median of
-54%.
+**Re-measured, all six recordings, same protocol (64 components, 60 iterations):**
 
-**Recommendation: do not hand-patch this paragraph.** It describes a six-recording
-campaign (`submit_mem_compare.sh` over ds004505 sub-01..06), and only one of those
-six has been re-measured. Editing the range from one point would be inventing
-five. The honest options are to re-run that campaign, or to scope the paragraph
-explicitly to the archived pre-blocking release. A re-run is cheap relative to
-the iteration curves — memory is iteration-independent, so ~100 iterations per
-recording suffices.
+| recording | samples | full batch | blocked | reduction |
+|---|---|---|---|---|
+| sub-01 | 785,328 | 11.38 GiB | 2.43 GiB | 79% |
+| sub-02 | 1,364,633 | 19.41 GiB | 4.05 GiB | 79% |
+| sub-03 | 1,099,796 | 15.74 GiB | 3.28 GiB | 79% |
+| sub-04 | 1,057,036 | 15.16 GiB | 3.18 GiB | 79% |
+| sub-05 | 1,038,926 | 14.91 GiB | 3.12 GiB | 79% |
+| sub-06 | 1,042,909 | 14.95 GiB | 3.15 GiB | 79% |
 
----
+The full-batch column reproduces the archived 11.4-19.4 GiB, which is what
+licenses treating this campaign as a replacement for that one rather than as a
+separate measurement.
+
+**Proposed:**
+
+> Across the six paired recordings, full-batch peak process RSS increased from
+> 11.4 to 19.4~GiB over the observed sample-count range, whereas the blocked
+> expectation step remained between 2.4 and 4.1~GiB
+> (Figure~ef{fig:runtime-memory}C). The within-recording reduction in total
+> process peak was 79\% at every recording. These measurements support memory
+> control over the tested recordings; they are descriptive engineering
+> observations rather than a formal complexity estimate.
+
+**Why the reduction is now constant where it used to vary.** The previous
+chunking sized its block from a memory budget, so how much it saved depended on
+how much memory happened to be free; the reduction ranged 42-63%. Blocking sizes
+the block from the measured cost of the E-step's temporaries instead, so those
+are bounded the same way on every recording and what remains scales only with the
+recording itself. That is why blocked memory now grows with sample count
+(2.43 to 4.05 GiB) where the old chunked figure was flat (6.6 to 7.2 GiB) --
+the flat part was the budget, not the data.
 
 ## 4. `tab_cross_implementation.tex` — regenerated
 
