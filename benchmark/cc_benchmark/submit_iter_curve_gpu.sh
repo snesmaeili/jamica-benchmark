@@ -93,8 +93,35 @@ export AMICA_COMPARATOR_RESULTS="${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
 echo "=== GPU iteration curve: max_iter=$IT ==="
-nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true
-python -c "import jax; print('jax devices:', jax.devices())"
+nvidia-smi --query-gpu=name,memory.used,memory.total,compute_mode --format=csv,noheader || true
+
+# Check the interpreters that actually run the fits, not the one fir_env.sh
+# happens to activate. That venv carries a CPU-only jaxlib, so probing it prints
+# "[CpuDevice(id=0)]" on a perfectly good GPU node -- which is exactly what made
+# a working allocation look broken once already. A GPU panel built from runners
+# that silently fell back to CPU would be worse than no panel, so this is fatal.
+gpu_check() {
+    "$1" - "$2" <<'PYCHK'
+import importlib.util as u, sys
+label = sys.argv[1]
+ok = True
+if u.find_spec("jax") is not None:
+    import jax
+    devs = jax.devices()
+    ok = any(getattr(d, "platform", "") in ("gpu", "cuda", "rocm") for d in devs)
+    print(f"  {label} jax devices: {devs}")
+if u.find_spec("torch") is not None:
+    import torch
+    ok = torch.cuda.is_available()
+    print(f"  {label} torch {torch.__version__} cuda: {ok}")
+    if ok:
+        torch.zeros(1024, 1024, device="cuda"); torch.cuda.synchronize()
+sys.exit(0 if ok else 1)
+PYCHK
+}
+gpu_check "$AMICA_PYTHON_VENV" amica       || { echo "FATAL: amica venv cannot see the GPU" >&2; exit 1; }
+gpu_check "$COMPETITORS_VENV"  competitors || { echo "FATAL: competitors venv cannot see the GPU" >&2; exit 1; }
+gpu_check "$PAMICA_VENV"       pamica      || { echo "FATAL: pamica venv cannot see the GPU" >&2; exit 1; }
 
 # Warm-up: one short fit whose timing is thrown away, so compilation and
 # autotuning do not land inside the measured run.
