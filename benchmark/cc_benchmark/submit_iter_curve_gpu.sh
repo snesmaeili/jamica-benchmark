@@ -35,6 +35,38 @@ set -o pipefail
 cd "$SLURM_SUBMIT_DIR"          # benchmark/cc_benchmark/
 source fir_env.sh               # modules (incl. cuda/cudnn) + .venv_fir + env.local
 
+# --- point the amica runner at the current package -------------------------
+# The cluster's checkout predates both the package rename (amica_python ->
+# amica) and the E-step blocking this job exists to measure: /scratch/$USER/
+# amica-python is the old repo on an old branch, and its venv has amica_python
+# installed editable from a third checkout entirely. Reinstalling would mean
+# pip on a login node, or rebuilding a working venv to run one benchmark.
+# implementation_perf.run_subprocess copies os.environ into every runner, so a
+# fresh clone on PYTHONPATH reaches them without touching the venv.
+#
+#   git clone -b perf/cpu-profiling git@github.com:snesmaeili/amica.git /scratch/$USER/amica-blocked
+export AMICA_SRC="${AMICA_SRC:-/scratch/$USER/amica-blocked}"
+export PYTHONPATH="$AMICA_SRC:${PYTHONPATH:-}"
+export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/amica-python/.venv_fir/bin/python}"
+
+# Fail fast rather than benchmark the wrong code. The old checkout imports and
+# runs perfectly well; it would just quietly produce a curve for a different
+# implementation, which is the one failure mode this whole campaign cannot
+# survive. (Runs on the compute node -- importing jax is compute.)
+AMICA_SRC="$AMICA_SRC" "$AMICA_PYTHON_VENV" - <<'PYCHECK' || exit 1
+import os, sys
+import amica
+from amica import AmicaConfig
+src = os.path.realpath(amica.__file__)
+want = os.path.realpath(os.environ["AMICA_SRC"])
+if not src.startswith(want):
+    sys.exit(f"FATAL: imported amica from {src}, expected under {want}")
+if AmicaConfig().chunk_size != "auto":
+    sys.exit("FATAL: this build predates E-step blocking (chunk_size default is not 'auto')")
+print(f"amica OK: {src} | default chunk_size={AmicaConfig().chunk_size!r}")
+PYCHECK
+# ---------------------------------------------------------------------------
+
 ITERS=(100 400 700 1000)
 IT="${ITERS[$SLURM_ARRAY_TASK_ID]}"
 
