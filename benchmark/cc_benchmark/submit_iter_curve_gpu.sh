@@ -79,6 +79,11 @@ if AmicaConfig().chunk_size != "auto":
     sys.exit("FATAL: this build predates E-step blocking (chunk_size default is not 'auto')")
 print(f"amica OK: {src} | default chunk_size={AmicaConfig().chunk_size!r}")
 PYCHECK
+# Record which commit produced these numbers. The package is reached through a
+# source checkout, so a `git pull` in that directory silently changes what a
+# later job measures; a SHA in the log makes that auditable after the fact
+# instead of reconstructable only from memory.
+echo "amica-blocked commit: $(git -C "$AMICA_SRC" rev-parse --short HEAD 2>/dev/null) $(git -C "$AMICA_SRC" log -1 --format=%s 2>/dev/null)"
 # ---------------------------------------------------------------------------
 
 ITERS=(100 400 700 1000)
