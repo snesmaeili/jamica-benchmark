@@ -128,7 +128,13 @@ if [ "$KEEP" = "fortran_amica17" ]; then
     fi
 fi
 
-export AMICA_COMPARATOR_RESULTS="${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/itercurve/cpu"
+# A distinct tag per component count, so a 30-component campaign cannot land on
+# top of a 64-component one. The two are not interchangeable: per-iteration cost
+# is not linear in the component count (measured 3.92/6.83/17.45/19.87 ms/iter at
+# C=16/32/48/64 at fixed sample count, where a linear fit misses by up to 46%), so
+# mixing them in one directory would silently blend two scalings into one curve.
+export AMICA_ITER_TAG="${AMICA_ITER_TAG:-itercurve_cpu}"
+export AMICA_COMPARATOR_RESULTS="${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/itercurve/${AMICA_ITER_TAG}"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
 echo "=== task $SLURM_ARRAY_TASK_ID: $KEEP (skipping: $SKIP) ==="
@@ -145,8 +151,8 @@ for IT in 100 400 700 1000; do
         --amica-device cpu --competitor-device cpu \
         --amica-chunk-size "${AMICA_MEM_CHUNK:-auto}" \
         $FORTRAN_OPT \
-        --out-tag "itercurve_cpu/iter${IT}" \
+        --out-tag "${AMICA_ITER_TAG}/iter${IT}" \
         --skip $SKIP
 done
 
-echo "=== DONE ($KEEP). Results under $AMICA_COMPARATOR_RESULTS/itercurve_cpu/ ==="
+echo "=== DONE ($KEEP, C=${AMICA_MEM_NCOMP:-64}). Results under $AMICA_COMPARATOR_RESULTS/ ==="
