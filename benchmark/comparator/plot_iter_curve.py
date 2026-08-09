@@ -121,6 +121,13 @@ def main() -> int:
     ap.add_argument("--dpi", type=int, default=300)
     ap.add_argument("--ncols", type=int, default=0,
                     help="panels per row (0 = one row); 2 gives a page-shaped grid")
+    ap.add_argument("--ybreak", action="append", default=[],
+                    help=("SUBSTRING=VALUE[,RATIO]: split that panel's y axis at "
+                          "VALUE, giving the lower range RATIO of the height "
+                          "(default 3). Use when one implementation is so much "
+                          "slower that a shared linear axis flattens the rest "
+                          "onto zero -- the alternative is dropping it from the "
+                          "panel, which hides a real measurement"))
     ap.add_argument("--loglog", action="store_true",
                     help=("log both axes. Cost is linear in iterations, so on "
                           "log-log every implementation is a straight line of "
@@ -137,6 +144,12 @@ def main() -> int:
     for spec in args.panel:
         label, _, root = spec.partition("=")
         panels.append((label.strip(), root.strip(), load_panel(root.strip())))
+
+    breaks = []
+    for spec in args.ybreak:
+        key, _, rest = spec.partition("=")
+        cut, _, ratio = rest.partition(",")
+        breaks.append((key.strip(), float(cut), float(ratio) if ratio else 3.0))
 
     ncols = args.ncols if args.ncols > 0 else len(panels)
     nrows = -(-len(panels) // ncols)
@@ -165,14 +178,52 @@ def main() -> int:
                 sp.set_color(GREY)
             continue
         order = sorted(data, key=lambda k: -slope_s_per_iter(data[k]))
-        for impl in order:
-            pts = data[impl]
-            name, colour, marker, lw = STYLE.get(impl, (impl, GREY, ".", 1.2))
-            x = [p[0] for p in pts]
-            y = [p[1] for p in pts]
-            s = slope_s_per_iter(pts)
-            ax.plot(x, y, marker=marker, color=colour, linewidth=lw,
-                    markersize=5, label=f"{name}  ({s * 1000:.0f} ms/iter)")
+
+        def draw(target, with_labels=True):
+            for impl in order:
+                pts = data[impl]
+                name, colour, marker, lw = STYLE.get(impl, (impl, GREY, ".", 1.2))
+                sl = slope_s_per_iter(pts)
+                target.plot([p[0] for p in pts], [p[1] for p in pts],
+                            marker=marker, color=colour, linewidth=lw, markersize=5,
+                            label=(f"{name}  ({sl * 1000:.0f} ms/iter)"
+                                   if with_labels else None))
+
+        brk = next((b for b in breaks if b[0] in label), None)
+        if brk and not args.loglog:
+            # Two stacked axes sharing x, with the break drawn between them. The
+            # slow implementation stays on the figure instead of being dropped
+            # or compressing everything else onto the axis.
+            _, cut, ratio = brk
+            gs = ax.get_subplotspec().subgridspec(2, 1, height_ratios=[1, ratio],
+                                                  hspace=0.06)
+            ax.remove()
+            hi = fig.add_subplot(gs[0])
+            lo = fig.add_subplot(gs[1], sharex=hi)
+            draw(hi, with_labels=False)
+            draw(lo, with_labels=True)
+            ymax = max(p[1] for pts in data.values() for p in pts)
+            hi.set_ylim(cut, ymax * 1.08)
+            lo.set_ylim(0, cut)
+            hi.spines[["top", "right", "bottom"]].set_visible(False)
+            lo.spines[["top", "right"]].set_visible(False)
+            hi.tick_params(labelbottom=False, bottom=False)
+            for a in (hi, lo):
+                a.grid(True, alpha=0.25, linewidth=0.6)
+                a.set_xlim(left=0)
+            # The break marks: two short parallel slashes on each axis edge.
+            kw = dict(marker=[(-1, -0.6), (1, 0.6)], markersize=9, linestyle="none",
+                      color=GREY, mec=GREY, mew=1.1, clip_on=False)
+            hi.plot([0, 1], [0, 0], transform=hi.transAxes, **kw)
+            lo.plot([0, 1], [1, 1], transform=lo.transAxes, **kw)
+            lo.set_xlabel("iterations")
+            lo.set_ylabel("fit time (s)")
+            lo.yaxis.set_label_coords(-0.11, 0.5 + (1 / (1 + ratio)) / 2)
+            hi.set_title(label, color=INK)
+            lo.legend(frameon=False, fontsize=8, loc="upper left")
+            continue
+
+        draw(ax)
         ax.set_xlabel("iterations")
         ax.set_ylabel("fit time (s)")
         ax.set_title(label, color=INK)
