@@ -390,6 +390,24 @@ def main() -> None:
         _torch_env["AMICA_NVML_CROSSCHECK"] = "1"
     # Full-batch AMICA gets the device env as-is; chunked AMICA adds AMICA_CHUNK_SIZE
     #    (VRAM-aware on GPU = the paper config; the frugal end of the dial on CPU).
+    # AMICA_SRC puts a source checkout of `amica` on the path for OUR runner
+    # only, so a cluster whose venv holds an older copy can still be pointed at
+    # the current package without a reinstall.
+    #
+    # It must NOT go on the global environment. scott-huberty's package is also
+    # imported as `amica`, so a PYTHONPATH exported to every runner shadows it
+    # with ours -- which on this cluster produced "cannot import name 'AMICA'
+    # from amica" and cost a whole array task. The shadowing is only visible
+    # because that runner imports a name our package does not define; had the
+    # two shared an entry point it would have measured the wrong implementation
+    # and reported it as the competitor's.
+    _amica_src = os.environ.get("AMICA_SRC")
+    if _amica_src:
+        _existing = os.environ.get("PYTHONPATH", "")
+        _amica_env["PYTHONPATH"] = (
+            f"{_amica_src}{os.pathsep}{_existing}" if _existing else _amica_src
+        )
+
     _amica_fb_env = dict(_amica_env) or None
     _amica_chunked_env = dict(_amica_env)
     _amica_chunked_env["AMICA_CHUNK_SIZE"] = str(args.amica_chunk_size)

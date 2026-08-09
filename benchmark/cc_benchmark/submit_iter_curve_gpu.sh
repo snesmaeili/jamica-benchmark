@@ -45,8 +45,11 @@ source fir_env.sh               # modules (incl. cuda/cudnn) + .venv_fir + env.l
 # fresh clone on PYTHONPATH reaches them without touching the venv.
 #
 #   git clone -b perf/cpu-profiling git@github.com:snesmaeili/amica.git /scratch/$USER/amica-blocked
+# AMICA_SRC is read by implementation_perf.py and applied to OUR runner only.
+# It must not go on PYTHONPATH globally: scott-huberty's package is imported as
+# `amica` too, so a global PYTHONPATH shadows it with ours and its runner dies
+# with "cannot import name 'AMICA' from amica".
 export AMICA_SRC="${AMICA_SRC:-/scratch/$USER/amica-blocked}"
-export PYTHONPATH="$AMICA_SRC:${PYTHONPATH:-}"
 export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/amica-python/.venv_fir/bin/python}"
 
 # The orchestrator defaults the competitors venv to <benchmark repo>/.venv_competitors,
@@ -64,7 +67,7 @@ done
 # runs perfectly well; it would just quietly produce a curve for a different
 # implementation, which is the one failure mode this whole campaign cannot
 # survive. (Runs on the compute node -- importing jax is compute.)
-AMICA_SRC="$AMICA_SRC" "$AMICA_PYTHON_VENV" - <<'PYCHECK' || exit 1
+AMICA_SRC="$AMICA_SRC" PYTHONPATH="$AMICA_SRC" "$AMICA_PYTHON_VENV" - <<'PYCHECK' || exit 1
 import os, sys
 import amica
 from amica import AmicaConfig
