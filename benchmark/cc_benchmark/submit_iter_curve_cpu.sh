@@ -138,6 +138,12 @@ fi
 # is not linear in the component count (measured 3.92/6.83/17.45/19.87 ms/iter at
 # C=16/32/48/64 at fixed sample count, where a linear fit misses by up to 46%), so
 # mixing them in one directory would silently blend two scalings into one curve.
+# Running the laptop fixture (mne_sample) here makes the cluster and local
+# panels differ in hardware alone, instead of in dataset, rank and recording
+# length at once. MNE_DATASETS_SAMPLE_PATH is set explicitly rather than read
+# from MNE's stored config, which goes stale whenever data moves and then
+# fails in a way that reads as a benchmark bug rather than a path problem.
+export MNE_DATASETS_SAMPLE_PATH="${MNE_DATASETS_SAMPLE_PATH:-$HOME/mne_data}"
 export AMICA_ITER_TAG="${AMICA_ITER_TAG:-itercurve_cpu}"
 export AMICA_COMPARATOR_RESULTS="${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/itercurve/${AMICA_ITER_TAG}"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
