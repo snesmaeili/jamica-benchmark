@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -30,7 +32,9 @@ from .schema import (
     BENCHMARK_RESULTS_COLUMNS,
     COMPONENT_METRICS_COLUMNS,
     ITERATION_TRACE_COLUMNS,
+    SCHEMA_VERSION,
     RunPayload,
+    schema_major,
 )
 
 
@@ -54,10 +58,19 @@ def discover_runs(results_dir: Path):
         except Exception as exc:
             print(f"WARN: skipping {json_path.name}: {exc}")
             continue
-        if doc.get("_schema_version") != "3.0":
-            print(f"WARN: skipping {json_path.name}: not v3 schema")
+        # Compare on MAJOR version so a compatible minor bump (3.1) is not
+        # silently warn-and-dropped like an incompatible schema. Only a differing
+        # major (or an absent version) is a hard skip.
+        doc_version = doc.get("_schema_version")
+        if schema_major(doc_version) != schema_major(SCHEMA_VERSION):
+            print(f"WARN: skipping {json_path.name}: schema {doc_version!r} "
+                  f"incompatible with v{SCHEMA_VERSION}")
             continue
+        if doc_version != SCHEMA_VERSION:
+            print(f"NOTE: {json_path.name}: schema {doc_version!r} "
+                  f"(minor differs from v{SCHEMA_VERSION}; accepted)")
         data_block = doc.get("_data", {})
+        run_block = doc.get("_run", {}) if isinstance(doc.get("_run"), dict) else {}
         # The first non-underscore dict is the method payload.
         payload = None
         method_key = None
@@ -70,17 +83,25 @@ def discover_runs(results_dir: Path):
         if payload is None:
             print(f"WARN: skipping {json_path.name}: no method payload")
             continue
-        # Derive backend/device tag from filename (e.g., 'jax_gpu', 'picard_cpu').
+        # Derive the method tag from PAYLOAD fields (backend+device), not by
+        # splitting the filename on the "hp1.0hz_" literal. The literal collapsed
+        # every backend and any non-1.0 Hz high-pass into a single label; the
+        # payload carries the true backend/device that produced the row.
+        backend = payload.get("backend")
+        device = payload.get("device")
+        if backend and device:
+            tag = f"{backend}_{device}"
+        elif backend:
+            tag = str(backend)
+        else:
+            tag = method_key
         stem = json_path.stem
-        tag = stem.split("hp1.0hz_", 1)[-1] if "hp1.0hz_" in stem else method_key
         ica_fif = json_path.with_name(stem + "_ica.fif")
         ica_fif_path = ica_fif if ica_fif.exists() else None
 
         run_id = f"{data_block.get('subject', '?')}__{tag}"
         method_label = METHOD_DISPLAY.get(tag, payload.get("method") or tag)
-        backend = payload.get("backend")
-        device = payload.get("device")
-        hardware = payload.get("hostname")
+        hardware = payload.get("hostname") or run_block.get("hostname")
         yield RunPayload(
             dataset=data_block.get("dataset", "?"),
             subject=data_block.get("subject", "?"),
@@ -93,6 +114,8 @@ def discover_runs(results_dir: Path):
             ica_fif_path=ica_fif_path,
             payload=payload,
             data_block=data_block,
+            run_block=run_block,
+            schema_version=doc_version,
         )
 
 
@@ -105,9 +128,69 @@ def _safe_get(d, *keys, default=None):
     return cur
 
 
-def benchmark_row(run: RunPayload) -> dict:
+def _git_commit(cwd: Path) -> str | None:
+    try:
+        out = subprocess.run(["git", "-C", str(cwd), "rev-parse", "HEAD"],
+                             capture_output=True, text=True)
+        return out.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def aggregator_meta() -> dict:
+    """When/where THIS CSV was aggregated — stamped identically onto every row."""
+    return {
+        "aggregated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "aggregator_commit": _git_commit(Path(__file__).resolve().parent),
+    }
+
+
+def _recorded_seed(p: dict, d: dict):
+    """The seed actually recorded for this run, or None (never a constant).
+
+    The runner records `random_state` in the method payload for exactly this
+    purpose (seed-robustness sweeps); older/comparator payloads may carry `seed`
+    or a nested `fit_params.random_state`. A hard-coded constant here collapsed
+    every seed of a sweep into fake duplicates.
+    """
+    for value in (p.get("random_state"), p.get("seed"),
+                  _safe_get(p, "fit_params", "random_state"), d.get("random_seed")):
+        if value is not None:
+            return value
+    return None
+
+
+def _impl_identity(run: RunPayload):
+    """(version, commit) of the implementation that produced this row, or (None, None).
+
+    Prefers PR-1's `_run.provenance` block (native amica: its `packages` map holds
+    the measured build's version + VCS commit). Falls back to the comparator
+    payload's `library_versions` (mne/sklearn/picard) — versions but no commit.
+    """
+    prov = run.run_block.get("provenance") if isinstance(run.run_block, dict) else None
+    if isinstance(prov, dict):
+        for entry in (prov.get("packages") or {}).values():
+            if isinstance(entry, dict) and entry.get("version"):
+                return entry.get("version"), entry.get("commit")
+    libs = run.payload.get("library_versions")
+    if isinstance(libs, dict) and libs:
+        method = str(run.payload.get("method") or "").lower()
+        for key in (method, "picard", "sklearn", "mne"):
+            if key and libs.get(key):
+                return libs[key], None
+    return None, None
+
+
+def benchmark_row(run: RunPayload, agg_meta: dict | None = None) -> dict:
     p = run.payload
     d = run.data_block
+    if agg_meta is None:
+        agg_meta = aggregator_meta()
+    seed = _recorded_seed(p, d)
+    if seed is None:
+        print(f"WARN: {run.run_id}: no recorded seed in payload; random_seed=None")
+    impl_version, impl_commit = _impl_identity(run)
+    rb = run.run_block if isinstance(run.run_block, dict) else {}
     duration_s = d.get("duration_s")
     duration_min = float(duration_s) / 60.0 if duration_s is not None else None
     # Best-effort iclabel percentages (skip if onnxruntime errored).
@@ -141,7 +224,7 @@ def benchmark_row(run: RunPayload) -> dict:
         "lowpass": p.get("lowpass_hz"),
         "notch": p.get("notch_hz"),
         "reference": p.get("reference"),
-        "random_seed": 42,
+        "random_seed": seed,
         "n_iter_requested": p.get("max_iter") or p.get("n_iter"),
         "n_iter_actual": p.get("actual_n_iter") or p.get("n_iter"),
         "max_iter": p.get("max_iter"),
@@ -149,6 +232,9 @@ def benchmark_row(run: RunPayload) -> dict:
         "converged_before_cap": p.get("converged_before_cap"),
         "fit_runtime_s": p.get("runtime_s"),
         "total_runtime_s": p.get("runtime_s"),
+        "jit_compile_s": p.get("jit_compile_s"),
+        "steady_iter_s": p.get("steady_iter_s"),
+        "dtype": p.get("dtype"),
         "peak_memory_gb": p.get("peak_memory_gb"),
         "peak_cpu_ram_gb": p.get("peak_cpu_ram_gb"),
         "peak_vram_gb": p.get("peak_vram_gb"),
@@ -163,7 +249,16 @@ def benchmark_row(run: RunPayload) -> dict:
         "iclabel_eye_percent": _pct(iclabel.get("eye") if has_icl else None),
         "iclabel_muscle_percent": _pct(iclabel.get("muscle") if has_icl else None),
         "reconstruction_error": p.get("reconstruction_error"),
-        "result_path": str(run.json_path),
+        "schema_version": run.schema_version,
+        "run_timestamp": rb.get("timestamp"),
+        "harness_commit": rb.get("harness_commit") or _safe_get(rb, "provenance", "harness_commit"),
+        "implementation_version": impl_version,
+        "implementation_commit": impl_commit,
+        "aggregated_at": agg_meta.get("aggregated_at"),
+        "aggregator_commit": agg_meta.get("aggregator_commit"),
+        # POSIX forward-slashes so a row aggregated on Windows still points
+        # somewhere resolvable (the committed paper CSVs had broken Windows paths).
+        "result_path": run.json_path.as_posix(),
         "figure_status": "ok",
         "claims_allowed": _claims_for_one_row(d, p),
         "notes": "",
@@ -430,11 +525,14 @@ def main():
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    # Stamp one aggregation timestamp + aggregator commit onto every row so a
+    # later reader can tell which aggregator vintage produced this CSV.
+    agg_meta = aggregator_meta()
     bench_rows = []
     comp_rows = []
     iter_rows = []
     for run in discover_runs(args.results_dir):
-        bench_rows.append(benchmark_row(run))
+        bench_rows.append(benchmark_row(run, agg_meta))
         comp_rows.extend(component_rows(run))
         iter_rows.extend(iteration_trace_rows(run))
 
