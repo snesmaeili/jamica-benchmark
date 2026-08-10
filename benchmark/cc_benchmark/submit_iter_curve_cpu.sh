@@ -63,6 +63,13 @@ for _v in "$AMICA_PYTHON_VENV" "$COMPETITORS_VENV" "$PAMICA_VENV"; do
     [ -x "$_v" ] || { echo "FATAL: no interpreter at $_v" >&2; exit 1; }
 done
 
+# installed == intended: assert each competitor venv holds the pinned commit
+# from pins.toml before the first fit. Catches silent upstream HEAD drift and a
+# clobbered install (e.g. the pyamica/pyAMICA name collision). Cheap; the amica
+# build itself is asserted by the AMICA_SRC check just below.
+"$COMPETITORS_VENV" "$SLURM_SUBMIT_DIR/check_env.py" verify --venv competitors || exit 1
+"$PAMICA_VENV"      "$SLURM_SUBMIT_DIR/check_env.py" verify --venv pamica      || exit 1
+
 # Fail fast rather than benchmark the wrong code. The old checkout imports and
 # runs perfectly well; it would just quietly produce a curve for a different
 # implementation, which is the one failure mode this whole campaign cannot

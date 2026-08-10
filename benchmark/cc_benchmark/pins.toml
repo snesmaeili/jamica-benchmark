@@ -1,0 +1,70 @@
+# Single source of truth for the SOURCE pins of every AMICA implementation the
+# benchmark compares. Read by check_env.py (install specs + installed==intended
+# verification) and by the setup_*.sh scripts.
+#
+# Only GIT COMMITS are pinned here — they are exactly recoverable and are what
+# identifies "which implementation" ran. The transitive numerical stack
+# (torch / jax / jaxlib / numpy / scipy / mne) is deliberately NOT pinned here:
+# those versions are resolved by the Alliance wheelhouse per site, and inventing
+# them would risk pinning wheels the wheelhouse does not carry. Instead each
+# setup_*.sh captures the resolved stack AS-BUILT into
+# benchmark/cc_benchmark/locks/<venv>.lock.json; check_env.py hard-asserts the
+# commits below and reports stack drift against that recorded lock.
+#
+# Provenance caveat: for the two competitors that were previously unpinned
+# (pyamica, amica-python) the commits below are the upstream HEADs resolved on
+# 2026-08-10, NOT verified identical to the commits the published numbers used —
+# that evidence lived only in the cluster venvs' direct_url.json and was never
+# recorded in any result (see reviews/versioning-audit). If the original commit
+# is recovered from a surviving venv, swap it in here and re-record.
+#
+# To adopt a newer upstream: change the commit here, rebuild via setup_*.sh
+# (which re-writes the lock), re-run the parity check, and re-record — numbers
+# are not portable across versions.
+
+schema_version = "1"
+
+# .venv_competitors (Python 3.11) — the two actively-compared reimplementations.
+# NOTE: the March-2025 sccn/pAMICA snapshot (dist name "pyAMICA") is deliberately
+# NOT here: its distribution name canonicalizes to "pyamica" (PEP 503), so
+# installing it into this venv uninstalls DerAndereJohannes/pyamica. It lives in
+# its own venv below (see setup_neuromechanist.sh).
+[[venv]]
+name = "competitors"
+python = "3.11"
+packages = [
+  { name = "pyamica",      module = "pyamica", url = "https://github.com/DerAndereJohannes/pyamica.git", commit = "a8a4d7e0ad14a88cf2cabeff5094cd0c8a262536" },
+  { name = "amica-python", module = "amica",   url = "https://github.com/scott-huberty/amica-python.git", commit = "e15e15888a5f6d366c6b16b1884bd373c319c085" },
+]
+
+# .venv_neuromechanist (Python 3.11) — the sccn/pAMICA March-2025 pure-NumPy
+# snapshot (formerly neuromechanist/pyAMICA), only used by the optional
+# --include-neuromechanist-snapshot comparison. Isolated so it cannot clobber
+# the pyamica distribution above.
+[[venv]]
+name = "neuromechanist"
+python = "3.11"
+packages = [
+  { name = "pyAMICA", module = "pyAMICA", url = "https://github.com/sccn/pAMICA.git", commit = "526aa3231623490ea21ef9c45acbb50730929622" },
+]
+
+# .venv_pamica (Python 3.12) — current sccn/pAMICA release.
+[[venv]]
+name = "pamica"
+python = "3.12"
+tag = "v0.3.1"
+packages = [
+  { name = "pamica", module = "pamica", url = "https://github.com/sccn/pAMICA.git", commit = "0e6b7f517271bc9a583ced35b3435cc689c7999c" },
+]
+
+# .venv_fir (Python 3.11) — the reference `amica` (the package under test).
+# This is a BASELINE install so a fresh env has the package and the probe can
+# assert `import amica`. At run time AMICA_SRC (a source checkout on PYTHONPATH,
+# the E-step-blocked branch) overrides it for OUR runner only, and PR-1's
+# provenance block records the commit actually measured.
+[[venv]]
+name = "fir"
+python = "3.11"
+packages = [
+  { name = "amica", module = "amica", url = "https://github.com/snesmaeili/amica.git", commit = "92003b459a376622ddb7c4a69351de6b40ac8759", branch = "perf/cpu-profiling" },
+]
