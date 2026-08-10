@@ -32,9 +32,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -45,6 +47,36 @@ ROOT = Path(__file__).resolve().parents[2]  # amica-python repo root
 # so this works whether the comparator sits in scripts/comparator/ or benchmark/comparator/).
 RESULTS_DIR = Path(os.environ.get("AMICA_COMPARATOR_RESULTS", str(ROOT / "results" / "comparator")))
 RUNNERS_DIR = Path(__file__).resolve().parent / "runners"
+
+
+def _harness_commit() -> str | None:
+    """Full SHA of the benchmark harness checkout that produced this summary."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+            capture_output=True, text=True,
+        )
+        return out.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def _orchestrator_run_block() -> dict:
+    """Wall-clock + build identity of the orchestrator run itself.
+
+    Per-implementation provenance rides on each runner's own result (see
+    _common.stack_provenance); this block identifies the summary: when it ran,
+    on which host, and against which harness commit — so two campaign summaries
+    from different months are no longer distinguishable only by file mtime.
+    """
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "hostname": platform.node(),
+        "harness_commit": _harness_commit(),
+        "python_version": platform.python_version(),
+        "executable": sys.executable,
+    }
+
 
 # Venv pythons. Override either via env vars for portability between machines:
 #   AMICA_PYTHON_VENV   — path to amica-python's venv python
@@ -438,6 +470,7 @@ def main() -> None:
 
     # 3. Run each (impl × seed)
     summary: dict = {
+        "_run": _orchestrator_run_block(),
         "meta": meta,
         "config": base_cfg,
         "seeds": seeds,

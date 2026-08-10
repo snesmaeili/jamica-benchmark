@@ -390,6 +390,66 @@ def _json_safe_array(value):
     return arr.tolist()
 
 
+def _amica_provenance() -> dict:
+    """Build/env identity of the measured `amica` package, for the `_run` block.
+
+    The native runner imports the *installed* `amica` (not the vendored
+    `amica_python/` copy), and `AMICA_SRC` can redirect it to an arbitrary source
+    checkout via PYTHONPATH — so record which build actually produced the row:
+      * `amica` version + commit — from `AMICA_SRC`'s `git rev-parse HEAD` when
+        that env var is set (that is what PYTHONPATH resolves to), else the
+        installed distribution's PEP 610 `direct_url.json` commit.
+      * jax/jaxlib/numpy/mne versions (importlib.metadata, no import needed).
+    Mirrors benchmark/comparator/runners/_common.py:stack_provenance().
+    """
+    from importlib import metadata as _im
+
+    stack: dict = {}
+    for name in ("jax", "jaxlib", "numpy", "scipy", "mne"):
+        try:
+            stack[name] = _im.version(name)
+        except Exception:
+            pass
+    amica: dict = {}
+    try:
+        amica["version"] = _im.version("amica")
+    except Exception:
+        pass
+    commit = None
+    src = os.environ.get("AMICA_SRC")
+    if src:
+        try:
+            import subprocess
+            out = subprocess.run(
+                ["git", "-C", src, "rev-parse", "HEAD"],
+                capture_output=True, text=True,
+            )
+            commit = out.stdout.strip() or None
+            if commit:
+                amica["src"] = src
+        except Exception:
+            commit = None
+    try:
+        raw = _im.distribution("amica").read_text("direct_url.json")
+        if raw:
+            info = json.loads(raw)
+            url = info.get("url")
+            if url:
+                amica["url"] = url[4:] if url.startswith("git+") else url
+            if not commit:
+                commit = (info.get("vcs_info") or {}).get("commit_id")
+    except Exception:
+        pass
+    if commit:
+        amica["commit"] = commit
+    return {
+        "python": platform.python_version(),
+        "executable": sys.executable,
+        "packages": {"amica": amica} if amica else {},
+        "stack": stack,
+    }
+
+
 def build_v3_document(
     *,
     raw,
@@ -469,6 +529,7 @@ def build_v3_document(
             "slurm_array_task_id": os.environ.get("SLURM_ARRAY_TASK_ID"),
             "pipeline_script": Path(__file__).name,
             "python_version": platform.python_version(),
+            "provenance": _amica_provenance(),
         },
         "_data": data,
         "amica": method_result,
