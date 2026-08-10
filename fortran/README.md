@@ -14,6 +14,21 @@ in 1.5 sources. Two upstream bugs are fixed:
 Upstream source: <https://github.com/sccn/amica>. Upstream license:
 BSD 2-Clause (see `LICENSE.upstream`).
 
+### Upstream provenance
+
+`sccn/amica` publishes no `v1.7` tag, so "AMICA 1.7" is otherwise unverifiable.
+For the record, resolved 2026-08-10:
+
+- upstream repo HEAD: `2b364cd4a995c057a06409de55f0b8ada8a0f1d8`
+- last commit to touch `amica17.f90` (the reference source we patch):
+  `4976ab53ed7e65781513202b1fb6d0c9a1ee040b` (2024-01-07)
+
+The two patches above were applied on top of that `amica17.f90` state. The exact
+fork-point commit was not recorded at the time; `4976ab53` is the upstream
+reference the vendored source corresponds to. `run_fortran.py` additionally
+records the absolute `fortran_bin` path and its `sha256` in every result, so a
+given row is tied to the exact compiled binary regardless of this note.
+
 ---
 
 ## Running on a Windows laptop (no Compute Canada needed)

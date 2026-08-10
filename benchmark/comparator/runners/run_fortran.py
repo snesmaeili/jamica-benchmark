@@ -21,8 +21,10 @@ mpirun + the binary's BLAS/OpenMP modules must be loaded by the sbatch wrapper.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -44,15 +46,63 @@ def _parse_maxrss_kb(stderr_text: str) -> float | None:
     return float(m.group(1)) if m else None
 
 
+def _resolve_bin(amica_bin: str) -> str:
+    """Absolute path of the amica17 binary (resolve a bare name via PATH)."""
+    if os.path.sep in amica_bin or os.path.isabs(amica_bin):
+        return os.path.abspath(amica_bin)
+    found = shutil.which(amica_bin)
+    return found or amica_bin
+
+
+def _sha256(path: str) -> str | None:
+    """SHA-256 of the resolved binary, so a row is tied to the exact build.
+
+    Two different amica17 builds produced a matched |r| of 0.94 vs 0.28 on the
+    same input — the digest is the only thing that tells those rows apart.
+    """
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except Exception:
+        return None
+
+
 def main() -> None:
     args, cfg = parse_runner_args()
     X = load_data(args.input)  # (n_components, n_samples)
     n_comp, n_samples = X.shape
     n_mix = cfg.get("n_mix", 3)
 
-    amica_bin = os.environ.get("AMICA17_BIN", _DEFAULT_BIN)
+    amica_bin = _resolve_bin(os.environ.get("AMICA17_BIN", _DEFAULT_BIN))
     mpirun = os.environ.get("MPIRUN_BIN", "mpirun")
     gnu_time = os.environ.get("GNU_TIME_BIN", "/usr/bin/time")
+
+    # Effective config actually passed to amica17 (frozen literals below +
+    # cfg-overridable knobs). Serialized in every row so a version-default change
+    # is visible. amica17 forces fix_init and ignores cfg["seed"] (see below).
+    effective_config = {
+        "num_mix_comps": n_mix, "max_iter": cfg["max_iter"],
+        "do_newton": int(bool(cfg.get("do_newton", True))),
+        "newt_start": 50, "newt_ramp": 10,
+        "lrate": cfg.get("lrate", 0.1), "rholrate": 0.05,
+        "rho0": 1.5, "minrho": 1.0, "maxrho": 2.0, "pdftype": 0, "num_models": 1,
+        "do_sphere": 1, "do_mean": 1, "doPCA": 1, "pcakeep": n_comp,
+        "use_min_dll": 0, "use_grad_norm": 0, "fix_init": 1,
+    }
+    # amica17 forces fix_init=1 and takes no seed argument: cfg["seed"] does NOT
+    # change its initialization. Record that so seed-sweep tables don't read its
+    # zero spread as robustness.
+    identity = {
+        "fortran_bin": amica_bin,
+        "fortran_sha256": _sha256(amica_bin),
+        "seed_respected": False,
+        "init": "fix_init",
+        "requested_seed": cfg.get("seed", 0),
+        "effective_config": effective_config,
+    }
 
     workdir = Path(tempfile.mkdtemp(prefix="fortran_amica_"))
     data_dir = workdir / "data"
@@ -88,28 +138,50 @@ def main() -> None:
     cp = subprocess.run(cmd, capture_output=True, text=True, env=run_env)
     elapsed = time.perf_counter() - t0
 
-    maxrss_kb = _parse_maxrss_kb(cp.stderr)
-    if maxrss_kb is None:
-        write_result(args.output, {
+    def _error(reason: str):
+        # A failed run must NOT be written as a normal row: the old code emitted
+        # W=null / ll=NaN with no error, corrupting perf aggregates. Gate on it.
+        row = {
             "implementation": "fortran_amica17",
-            "error": "no_maxrss (GNU /usr/bin/time -v unavailable or run failed)",
+            "error": reason,
             "returncode": cp.returncode,
             "cmd": " ".join(cmd),
+            "fit_time_s": float(elapsed),
             "stderr": (cp.stderr or "")[-2000:],
             "stdout": (cp.stdout or "")[-1000:],
-        })
+        }
+        row.update(identity)
+        write_result(args.output, row)
+
+    # Gate 1: the process must have exited cleanly. GNU time prints max RSS even
+    # when its child exits nonzero, so a returncode check is what actually
+    # distinguishes a completed fit from a crashed one.
+    if cp.returncode != 0:
+        _error(f"nonzero_exit (returncode={cp.returncode})")
+        return
+
+    maxrss_kb = _parse_maxrss_kb(cp.stderr)
+    if maxrss_kb is None:
+        _error("no_maxrss (GNU /usr/bin/time -v unavailable or run failed)")
         return
     peak_gb = maxrss_kb / 1024 ** 2  # KiB -> GiB
 
-    # Final W (+ LL trace) for the Hungarian-parity sanity. Best-effort.
-    W = None
-    ll: list = []
+    # Gate 2: the expected outputs must exist and have the expected shape before
+    # this counts as a success. A parse failure or a truncated W is an error row.
     try:
         res = fio.read_fortran_results(out_dir, n_components=n_comp, n_mixtures=n_mix)
-        W = res["W"]
+        W = np.asarray(res["W"], dtype=float)
         ll = list(np.asarray(res.get("LL_clean", []), dtype=float).flatten())
-    except Exception:
-        pass
+    except Exception as exc:
+        _error(f"output_read_failed ({type(exc).__name__}: {exc})")
+        return
+    if W is None or W.shape != (n_comp, n_comp):
+        _error(f"bad_W_shape (got {None if W is None else W.shape}, "
+               f"expected {(n_comp, n_comp)})")
+        return
+    if not ll or not np.isfinite(ll[-1]):
+        _error("no_finite_ll (fit produced no usable log-likelihood)")
+        return
 
     out = {
         "implementation": "fortran_amica17",
@@ -130,6 +202,7 @@ def main() -> None:
         "dtype": "float64",   # AMICA 1.7 computes in double precision (float32 .fdt input)
         "n_iter": int(len(ll)),
     }
+    out.update(identity)  # fortran_bin, sha256, seed_respected/init, effective_config
     write_result(args.output, out)
 
 
