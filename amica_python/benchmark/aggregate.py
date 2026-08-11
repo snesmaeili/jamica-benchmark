@@ -20,6 +20,7 @@ Python:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -46,6 +47,31 @@ METHOD_DISPLAY = {
     "fastica_cpu": "FastICA",
     "infomax_cpu": "Infomax",
 }
+
+
+def _content_run_id(subject, tag, payload, data_block) -> str:
+    """Content-derived run identity: `subject__tag` + a short hash of the fields
+    that distinguish variants (seed / iteration cap / components / dtype / chunk /
+    input), so two seeds or two iteration caps do NOT collapse onto one run_id and
+    silently mix in the component and iteration CSVs.
+    """
+    ident = {
+        "dataset": data_block.get("dataset"),
+        "subject": subject,
+        "backend": payload.get("backend"),
+        "device": payload.get("device"),
+        "seed": _recorded_seed(payload, data_block),
+        "max_iter": payload.get("max_iter"),
+        "n_iter": payload.get("actual_n_iter") or payload.get("n_iter"),
+        "n_components": payload.get("n_components"),
+        "dtype": payload.get("dtype"),
+        "chunk_size": payload.get("chunk_size"),
+        "input_file": data_block.get("input_file"),
+    }
+    digest = hashlib.sha1(
+        json.dumps(ident, sort_keys=True, default=str).encode()
+    ).hexdigest()[:10]
+    return f"{subject}__{tag}__{digest}"
 
 
 def discover_runs(results_dir: Path):
@@ -99,7 +125,7 @@ def discover_runs(results_dir: Path):
         ica_fif = json_path.with_name(stem + "_ica.fif")
         ica_fif_path = ica_fif if ica_fif.exists() else None
 
-        run_id = f"{data_block.get('subject', '?')}__{tag}"
+        run_id = _content_run_id(data_block.get("subject", "?"), tag, payload, data_block)
         method_label = METHOD_DISPLAY.get(tag, payload.get("method") or tag)
         hardware = payload.get("hostname") or run_block.get("hostname")
         yield RunPayload(
@@ -160,24 +186,34 @@ def _recorded_seed(p: dict, d: dict):
     return None
 
 
+# Which library IS each MNE comparator, so a Picard row is not labelled with a
+# stray sklearn/picard version that merely happens to be installed.
+_METHOD_LIBRARY = {"picard": "picard", "fastica": "sklearn", "infomax": "mne"}
+
+
 def _impl_identity(run: RunPayload):
     """(version, commit) of the implementation that produced this row, or (None, None).
 
-    Prefers PR-1's `_run.provenance` block (native amica: its `packages` map holds
-    the measured build's version + VCS commit). Falls back to the comparator
-    payload's `library_versions` (mne/sklearn/picard) — versions but no commit.
+    Comparator rows are checked FIRST: they carry `library_versions`, and their
+    identity is that library — not the `amica` package. (build_v3_document is
+    reused by comparators, so a stray amica provenance block could otherwise
+    mislabel a Picard/FastICA/Infomax row as the amica build.) Only genuine amica
+    rows fall through to the `_run.provenance` package version + VCS commit.
     """
+    libs = run.payload.get("library_versions")
+    if isinstance(libs, dict) and libs:
+        backend = str(run.backend or run.payload.get("method") or "").lower()
+        lib_key = _METHOD_LIBRARY.get(backend)
+        if lib_key and libs.get(lib_key):
+            return libs[lib_key], None
+        for key in ("picard", "sklearn", "mne"):  # deterministic best-effort
+            if libs.get(key):
+                return libs[key], None
     prov = run.run_block.get("provenance") if isinstance(run.run_block, dict) else None
     if isinstance(prov, dict):
         for entry in (prov.get("packages") or {}).values():
             if isinstance(entry, dict) and entry.get("version"):
                 return entry.get("version"), entry.get("commit")
-    libs = run.payload.get("library_versions")
-    if isinstance(libs, dict) and libs:
-        method = str(run.payload.get("method") or "").lower()
-        for key in (method, "picard", "sklearn", "mne"):
-            if key and libs.get(key):
-                return libs[key], None
     return None, None
 
 
@@ -531,7 +567,17 @@ def main():
     bench_rows = []
     comp_rows = []
     iter_rows = []
+    seen_run_ids: dict = {}
     for run in discover_runs(args.results_dir):
+        # A content-derived run_id should be unique per artifact. A collision means
+        # two files describe the same identity (dataset/subject/seed/iters/…) — a
+        # genuine duplicate that would silently mix in the CSVs. Surface it loudly.
+        prior = seen_run_ids.get(run.run_id)
+        if prior is not None:
+            print(f"WARN: duplicate run_id {run.run_id}: {run.json_path.name} "
+                  f"collides with {prior} — both kept; de-duplicate the inputs.")
+        else:
+            seen_run_ids[run.run_id] = run.json_path.name
         bench_rows.append(benchmark_row(run, agg_meta))
         comp_rows.extend(component_rows(run))
         iter_rows.extend(iteration_trace_rows(run))

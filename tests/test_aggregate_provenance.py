@@ -123,21 +123,48 @@ def test_method_tag_from_payload_not_filename(agg, tmp_path):
     write(tmp_path, "benchmark_sub-01_hp2.5hz_b.json",
           make_doc(backend="jax", device="gpu"))
     runs = list(agg.discover_runs(tmp_path))
-    tags = sorted(r.run_id for r in runs)
-    assert tags == ["sub-01__jax_gpu", "sub-01__numpy_cpu"]
+    # run_id now carries a content hash suffix, but the human prefix is the tag
+    prefixes = sorted(r.run_id.rsplit("__", 1)[0] for r in runs)
+    assert prefixes == ["sub-01__jax_gpu", "sub-01__numpy_cpu"]
     methods = {r.method for r in runs}
     assert len(methods) == 2  # distinct labels, not merged
 
 
-def test_seed_sweep_two_rows_distinct(agg, tmp_path):
+def test_seed_sweep_gets_distinct_run_ids(agg, tmp_path):
     write(tmp_path, "benchmark_sub-01_hp1.0hz_seed0.json", make_doc(seed=0))
     # different filename, same backend/device, different seed
-    d1 = make_doc(seed=1)
-    (tmp_path / "benchmark_sub-01_hp1.0hz_seed1.json").write_text(json.dumps(d1))
+    (tmp_path / "benchmark_sub-01_hp1.0hz_seed1.json").write_text(json.dumps(make_doc(seed=1)))
+    runs = list(agg.discover_runs(tmp_path))
     rows = [agg.benchmark_row(r, agg_meta={"aggregated_at": "T", "aggregator_commit": "c"})
-            for r in agg.discover_runs(tmp_path)]
-    seeds = sorted(r["random_seed"] for r in rows)
-    assert seeds == [0, 1]  # not [42, 42]
+            for r in runs]
+    assert sorted(r["random_seed"] for r in rows) == [0, 1]  # not [42, 42]
+    # the two seeds must NOT collapse onto one run_id (they used to)
+    assert len({r.run_id for r in runs}) == 2
+
+
+def test_comparator_row_not_labelled_as_amica(agg, tmp_path):
+    """A Picard doc with library_versions must report Picard's version — even if a
+    stray amica provenance block is present — not the amica package."""
+    doc = make_doc(backend="picard", device="cpu")
+    doc["amica"]["library_versions"] = {"mne": "1.7.0", "sklearn": "1.4.0", "picard": "0.7"}
+    # simulate the poison: an amica provenance block on a comparator doc
+    doc["_run"]["provenance"] = {"packages": {"amica": {"version": "9.9.9", "commit": "z" * 40}}}
+    write(tmp_path, "benchmark_sub-01_hp1.0hz_picard_cpu.json", doc)
+    run = next(iter(agg.discover_runs(tmp_path)))
+    row = agg.benchmark_row(run, agg_meta={"aggregated_at": "T", "aggregator_commit": "c"})
+    assert row["implementation_version"] == "0.7"      # python-picard, not 9.9.9
+    assert row["implementation_commit"] is None
+
+
+def test_fastica_not_mislabelled_as_picard(agg, tmp_path):
+    """FastICA is sklearn; a picard version merely installed in the env must not win."""
+    doc = make_doc(backend="fastica", device="cpu")
+    doc["amica"]["library_versions"] = {"mne": "1.7.0", "sklearn": "1.4.0", "picard": "0.7"}
+    doc["_run"].pop("provenance", None)
+    write(tmp_path, "benchmark_sub-01_hp1.0hz_fastica_cpu.json", doc)
+    run = next(iter(agg.discover_runs(tmp_path)))
+    row = agg.benchmark_row(run, agg_meta={"aggregated_at": "T", "aggregator_commit": "c"})
+    assert row["implementation_version"] == "1.4.0"  # sklearn, not picard 0.7
 
 
 def test_mixed_schema_dir_accepts_minor_skips_major(agg, tmp_path, capsys):
