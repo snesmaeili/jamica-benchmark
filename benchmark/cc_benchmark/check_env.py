@@ -53,11 +53,16 @@ def load_venv(pins_path: Path, venv_name: str) -> dict:
 
 
 def canon_url(url: str) -> str:
-    """Normalize a git URL for comparison: drop pip's git+ prefix, .git, trailing /."""
+    """Normalize a git URL for comparison: drop pip's git+ prefix, @rev, .git, trailing /."""
     u = (url or "").strip()
     if u.startswith("git+"):
         u = u[4:]
-    u = u.split("@", 1)[0]  # drop any @rev
+    # Strip a trailing @rev only when the '@' is in the last path segment (after
+    # the final '/'), so a `user@host` authority — e.g. ssh://git@github.com/o/r
+    # or git@github.com:o/r — is left intact while `…/repo.git@abc123` is trimmed.
+    at = u.rfind("@")
+    if at > u.rfind("/"):
+        u = u[:at]
     u = u.rstrip("/")
     if u.endswith(".git"):
         u = u[:-4]

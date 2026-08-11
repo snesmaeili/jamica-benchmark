@@ -153,12 +153,25 @@ if [ "$REINSTALL" = true ]; then
         python -c "import jax; print('jax', jax.__version__, '| devices', jax.devices())"
     fi
 
-    # Assert the baseline amica SHA == pins.toml and record the as-built lock.
-    python "$SCRIPT_DIR/check_env.py" verify --venv fir
+    # Record the as-built lock right after a fresh install.
     python "$SCRIPT_DIR/check_env.py" lock --venv fir
 else
     echo "Activating existing virtual environment at $VENV_PATH"
     source "$VENV_PATH/bin/activate"
+fi
+
+# Assert the baseline amica build == pins.toml on EVERY job — fresh OR reused
+# venv — so any fir-sourcing paper run (v3 / comparators / heldout / scaling /
+# reval) fails fast instead of silently measuring an off-pin amica. This checks
+# the INSTALLED baseline; AMICA_SRC's per-runner override is asserted separately
+# by the submit scripts that use it. Opt out with AMICA_SKIP_PIN_CHECK=1 for
+# ad-hoc/dev use.
+if [ "${AMICA_SKIP_PIN_CHECK:-0}" != "1" ]; then
+    if ! python "$SCRIPT_DIR/check_env.py" verify --venv fir; then
+        echo "fir_env: FATAL — installed amica != pins.toml (set AMICA_SKIP_PIN_CHECK=1 to bypass)." >&2
+        [ "$_amica_had_u" = 1 ] && set -u
+        return 1 2>/dev/null || exit 1
+    fi
 fi
 
 # Restore the caller's `set -u` (see the top of this file).

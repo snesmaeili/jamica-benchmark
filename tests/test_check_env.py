@@ -49,6 +49,14 @@ def test_canon_url_normalizes():
     assert a == b == "https://github.com/owner/repo"
 
 
+def test_canon_url_preserves_ssh_user_at_host():
+    ce = load_check_env()
+    # the user@host '@' must survive; only a trailing @rev is stripped
+    assert ce.canon_url("ssh://git@github.com/owner/repo.git@deadbeef") == \
+        "ssh://git@github.com/owner/repo"
+    assert ce.canon_url("git@github.com:owner/repo.git") == "git@github.com:owner/repo"
+
+
 def test_specs_prints_pinned_git_urls(capsys):
     ce = load_check_env()
     venv = ce.load_venv(PINS, "competitors")

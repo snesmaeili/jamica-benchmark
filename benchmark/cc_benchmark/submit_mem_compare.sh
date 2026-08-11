@@ -27,6 +27,19 @@ cd "$SLURM_SUBMIT_DIR"          # benchmark/cc_benchmark/
 source fir_env.sh              # modules + .venv_fir + env.local (BIDS_ROOT, AMICA_RESULTS_DIR, ...)
 REPO_ROOT="$(cd "$SLURM_SUBMIT_DIR/../.." && pwd)"
 
+# installed == intended: assert the pinned competitor + pamica commits before the
+# orchestrator's first fit (these venvs are what implementation_perf.py launches).
+# Skip a venv that is absent (matches this job's amica-only fallback posture);
+# fail fast only when it exists but drifts from pins.toml.
+for _pair in "competitors:${COMPETITORS_VENV:-$REPO_ROOT/.venv_competitors/bin/python}" \
+             "pamica:${PAMICA_VENV:-$REPO_ROOT/.venv_pamica/bin/python}"; do
+    _venv="${_pair%%:*}"; _py="${_pair#*:}"
+    if [ -x "$_py" ]; then
+        "$_py" "$SLURM_SUBMIT_DIR/check_env.py" verify --venv "$_venv" \
+            || { echo "FATAL: $_venv venv drifted from pins.toml" >&2; exit 1; }
+    fi
+done
+
 [ -x "$REPO_ROOT/.venv_competitors/bin/python" ] || \
   echo "WARN: $REPO_ROOT/.venv_competitors missing — run setup_competitors.sh; the competitor impls will be skipped/error."
 
