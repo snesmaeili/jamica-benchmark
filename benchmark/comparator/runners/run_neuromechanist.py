@@ -75,7 +75,10 @@ def main() -> None:
             "num_models": 1, "num_mix": cfg.get("n_mix", 3), "num_comps": n_comp,
             "max_iter": cfg["max_iter"], "lrate": cfg.get("lrate", 0.1),
             "do_newton": cfg.get("do_newton", True), "newt_start": 50,
-            "do_sphere": False, "do_mean": False, "seed": cfg.get("seed", 0),
+            "do_sphere": False, "do_mean": False,
+            # perf-relevant switches this runner also freezes (were omitted):
+            "do_opt_block": False, "do_history": False, "do_reject": False,
+            "share_comps": False, "seed": cfg.get("seed", 0),
         },
     }
     write_result(args.output, out)

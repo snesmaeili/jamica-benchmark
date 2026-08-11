@@ -287,6 +287,14 @@ def fit_all_on_raw(
         method = method.lower()
         if method not in DEFAULT_FIT_PARAMS:
             raise ValueError(f"Unknown comparator method: {method!r}")
+        json_path = out_dir / comparator_output_filename(
+            int(subject), method, float(hp_freq),
+            seed=random_state, n_components=n_components, max_iter=int(max_iter))
+        # Resumable: skip an already-written method BEFORE spending the fit, so a
+        # requeued run fills in only the missing methods. --force / force re-runs.
+        if json_path.exists() and not force:
+            print(f"SKIP: {json_path} already exists (pass force=True to re-run).")
+            continue
         t0 = time.perf_counter()
         kwargs = {"max_iter": int(max_iter)}
         if method in ("picard", "fastica"):
@@ -318,12 +326,7 @@ def fit_all_on_raw(
         payload = doc.pop("amica")
         doc[method] = payload
 
-        json_path = out_dir / comparator_output_filename(
-            int(subject), method, float(hp_freq),
-            seed=random_state, n_components=n_components, max_iter=int(max_iter))
-        if json_path.exists() and not force:
-            raise FileExistsError(
-                f"{json_path} exists; refusing to overwrite (pass force=True).")
+        # json_path was computed and existence-checked at the top of the loop.
         json_path.write_text(json.dumps(doc, indent=4), encoding="utf-8")
         ica.save(json_path.with_name(json_path.stem + "_ica.fif"),
                  overwrite=True, verbose="WARNING")
@@ -481,10 +484,12 @@ def main() -> None:
             args.subject, method, DEFAULT_HP_FREQ,
             seed=args.random_state, n_components=n_components, max_iter=args.max_iter,
         )
+        # Resumable: a `--method all` array task that already wrote this method
+        # (e.g. died after picard) SKIPS it and moves on, instead of aborting the
+        # whole task or (with --force) clobbering the good fit. --force re-runs.
         if out_path.exists() and not args.force:
-            raise SystemExit(
-                f"ERROR: {out_path} already exists; refusing to overwrite. "
-                f"Pass --force to replace it.")
+            print(f"SKIP: {out_path} already exists (pass --force to re-run).", flush=True)
+            continue
         print(f"\n=== Fitting {method} (n_components={n_components}) ===", flush=True)
         ica, elapsed, used_fit_params = fit_mne_ica(
             raw, method, n_components, args.random_state, max_iter=args.max_iter

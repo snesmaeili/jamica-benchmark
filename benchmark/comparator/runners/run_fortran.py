@@ -105,38 +105,6 @@ def main() -> None:
     }
 
     workdir = Path(tempfile.mkdtemp(prefix="fortran_amica_"))
-    data_dir = workdir / "data"
-    out_dir = workdir / "out"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    fio.write_fdt(X, data_dir / "data.fdt")
-    fio.write_param(
-        workdir / "amica.param",
-        files=str(data_dir / "data.fdt"),
-        outdir=str(out_dir) + "/",
-        n_channels=n_comp, n_samples=n_samples,
-        block_size=min(int(n_samples), 100000),
-        # Run amica17's standard sphere/mean/PCA path (the validated parity config). On the
-        # already-projected, unit-variance input, PCA(pcakeep=n_comp) is just a rotation. NOTE:
-        # do_sphere=0/doPCA=0 makes amica17 exit at init with 0 iterations.
-        do_sphere=1, do_mean=1, doPCA=1, pcakeep=n_comp,
-        # same hyperparameters as the Python runners (base_cfg):
-        num_mix_comps=n_mix,
-        max_iter=cfg["max_iter"],
-        do_newton=int(bool(cfg.get("do_newton", True))),
-        newt_start=50, newt_ramp=10,
-        lrate=cfg.get("lrate", 0.1), rholrate=0.05,
-        rho0=1.5, minrho=1.0, maxrho=2.0, pdftype=0, num_models=1,
-        max_threads=1, writestep=1, write_LLt=0, fix_init=1,
-        use_min_dll=0, use_grad_norm=0,   # run full max_iter (no early stop)
-    )
-
-    cmd = [gnu_time, "-v", mpirun, "-np", "1", amica_bin, str(workdir / "amica.param")]
-    run_env = dict(os.environ, OMP_NUM_THREADS="1")  # match parity recipe (param max_threads=1)
-    t0 = time.perf_counter()
-    cp = subprocess.run(cmd, capture_output=True, text=True, env=run_env)
-    elapsed = time.perf_counter() - t0
 
     def _cleanup():
         # amica17 writes large working arrays (data.fdt + outputs); leaving one
@@ -144,6 +112,45 @@ def main() -> None:
         # for diagnosis via AMICA_KEEP_WORKDIR=1.
         if os.environ.get("AMICA_KEEP_WORKDIR") != "1":
             shutil.rmtree(workdir, ignore_errors=True)
+
+    # Any exception during setup or launch (e.g. a missing mpirun/gnu_time raising
+    # in subprocess.run, or an fio write failure) must not leak the workdir.
+    try:
+        data_dir = workdir / "data"
+        out_dir = workdir / "out"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        fio.write_fdt(X, data_dir / "data.fdt")
+        fio.write_param(
+            workdir / "amica.param",
+            files=str(data_dir / "data.fdt"),
+            outdir=str(out_dir) + "/",
+            n_channels=n_comp, n_samples=n_samples,
+            block_size=min(int(n_samples), 100000),
+            # Run amica17's standard sphere/mean/PCA path (the validated parity config). On the
+            # already-projected, unit-variance input, PCA(pcakeep=n_comp) is just a rotation. NOTE:
+            # do_sphere=0/doPCA=0 makes amica17 exit at init with 0 iterations.
+            do_sphere=1, do_mean=1, doPCA=1, pcakeep=n_comp,
+            # same hyperparameters as the Python runners (base_cfg):
+            num_mix_comps=n_mix,
+            max_iter=cfg["max_iter"],
+            do_newton=int(bool(cfg.get("do_newton", True))),
+            newt_start=50, newt_ramp=10,
+            lrate=cfg.get("lrate", 0.1), rholrate=0.05,
+            rho0=1.5, minrho=1.0, maxrho=2.0, pdftype=0, num_models=1,
+            max_threads=1, writestep=1, write_LLt=0, fix_init=1,
+            use_min_dll=0, use_grad_norm=0,   # run full max_iter (no early stop)
+        )
+
+        cmd = [gnu_time, "-v", mpirun, "-np", "1", amica_bin, str(workdir / "amica.param")]
+        run_env = dict(os.environ, OMP_NUM_THREADS="1")  # match parity recipe (param max_threads=1)
+        t0 = time.perf_counter()
+        cp = subprocess.run(cmd, capture_output=True, text=True, env=run_env)
+        elapsed = time.perf_counter() - t0
+    except BaseException:
+        _cleanup()
+        raise
 
     def _error(reason: str):
         # A failed run must NOT be written as a normal row: the old code emitted

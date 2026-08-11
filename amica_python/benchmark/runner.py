@@ -1270,10 +1270,13 @@ def main():
     )
     output_path = Path(output_dir) / result_filename
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    # Refuse to silently destroy a prior artifact for the same run identity.
+    # Idempotent: a result for this exact run identity already exists, so a
+    # re-queued array task SKIPS it (exit 0) rather than aborting or clobbering.
+    # `--force` re-runs and overwrites. This keeps a partially-failed sweep
+    # resumable without destroying good artifacts.
     if output_path.exists() and not args.force:
-        sys.exit(f"ERROR: {output_path} already exists; refusing to overwrite. "
-                 f"Pass --force to replace it.")
+        print(f"SKIP: {output_path} already exists (pass --force to re-run).")
+        return
 
     print(f"Processing {args.dataset} Subject {args.subject} | "
           f"Backend: {args.backend} | Device: {args.device}...")
