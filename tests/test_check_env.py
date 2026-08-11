@@ -130,6 +130,28 @@ def test_verify_commit_pin_fails_on_missing(monkeypatch, capsys):
     assert "MISSING" in capsys.readouterr().out
 
 
+def test_pin_prints_single_field(capsys):
+    ce = load_check_env()
+    fir = ce.load_venv(PINS, "fir")
+    assert ce.cmd_pin(fir, "amica", "commit") == 0
+    assert capsys.readouterr().out.strip() == "92003b459a376622ddb7c4a69351de6b40ac8759"
+    comp = ce.load_venv(PINS, "competitors")
+    assert ce.cmd_pin(comp, "pyamica", "version") == 0
+    assert capsys.readouterr().out.strip() == "0.3.0"
+
+
+def test_pin_unknown_package_fails(capsys):
+    ce = load_check_env()
+    assert ce.cmd_pin(ce.load_venv(PINS, "fir"), "nope", "commit") == 1
+
+
+def test_fortran_sha_from_pins(capsys):
+    ce = load_check_env()
+    assert ce.cmd_fortran_sha(PINS) == 0
+    assert capsys.readouterr().out.strip() == \
+        "c02f22c37cb259364e921d1e1b42f7181ce9fb7baae6a716c2ade261b49771fe"
+
+
 def test_every_pins_venv_pkg_has_a_pin():
     ce = load_check_env()
     doc = ce._load_toml(PINS)

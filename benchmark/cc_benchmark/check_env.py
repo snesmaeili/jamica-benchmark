@@ -210,14 +210,49 @@ def cmd_lock(venv: dict) -> int:
     return 0
 
 
+def cmd_pin(venv: dict, name: str, field: str) -> int:
+    """Print a single pinned field (default: commit) for scripts — the ONE source
+    of truth, so a submit script never hard-codes a SHA that can drift from pins.toml."""
+    for pkg in venv.get("packages", []):
+        if pkg["name"] == name:
+            value = pkg.get(field)
+            if value is None:
+                print(f"check_env: {name} has no '{field}' pin", file=sys.stderr)
+                return 1
+            print(value)
+            return 0
+    print(f"check_env: no package {name!r} in venv {venv.get('name')!r}", file=sys.stderr)
+    return 1
+
+
+def cmd_fortran_sha(pins_path: Path) -> int:
+    """Print the pinned Fortran amica17 binary sha256 (the single source of truth)."""
+    doc = _load_toml(pins_path)
+    sha = (doc.get("fortran") or {}).get("sha256")
+    if not sha:
+        print("check_env: no [fortran].sha256 in pins.toml", file=sys.stderr)
+        return 1
+    print(sha)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("specs", "verify", "lock"))
-    parser.add_argument("--venv", required=True,
-                        help="venv name in pins.toml (competitors/neuromechanist/pamica/fir)")
+    parser.add_argument("command", choices=("specs", "verify", "lock", "pin", "fortran-sha"))
+    parser.add_argument("--venv", help="venv name in pins.toml (required except for fortran-sha)")
+    parser.add_argument("--name", help="package name (for `pin`)")
+    parser.add_argument("--field", default="commit", help="pin field to print (for `pin`): commit|version")
     parser.add_argument("--pins", type=Path, default=PINS_DEFAULT)
     args = parser.parse_args(argv)
+    if args.command == "fortran-sha":
+        return cmd_fortran_sha(args.pins)
+    if not args.venv:
+        parser.error(f"--venv is required for '{args.command}'")
     venv = load_venv(args.pins, args.venv)
+    if args.command == "pin":
+        if not args.name:
+            parser.error("--name is required for 'pin'")
+        return cmd_pin(venv, args.name, args.field)
     return {"specs": cmd_specs, "verify": cmd_verify, "lock": cmd_lock}[args.command](venv)
 
 

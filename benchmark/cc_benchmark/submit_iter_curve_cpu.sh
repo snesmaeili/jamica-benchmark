@@ -86,6 +86,22 @@ if AmicaConfig().chunk_size != "auto":
     sys.exit("FATAL: this build predates E-step blocking (chunk_size default is not 'auto')")
 print(f"amica OK: {src} | default chunk_size={AmicaConfig().chunk_size!r}")
 PYCHECK
+
+# installed == intended for the MEASURED amica: assert AMICA_SRC's HEAD is the
+# commit pinned in pins.toml, not merely "some E-step-blocked build" — a git pull
+# in that checkout otherwise silently changes what this campaign measures. Opt out
+# for dev iteration with AMICA_ALLOW_SRC_DRIFT=1.
+if [ "${AMICA_ALLOW_SRC_DRIFT:-0}" != "1" ]; then
+    _want_amica=$("$AMICA_PYTHON_VENV" "$SLURM_SUBMIT_DIR/check_env.py" pin --venv fir --name amica)
+    _got_amica=$(git -C "$AMICA_SRC" rev-parse HEAD 2>/dev/null)
+    if [ "$_got_amica" != "$_want_amica" ]; then
+        echo "FATAL: AMICA_SRC HEAD ${_got_amica:-<none>} != pinned amica ${_want_amica}" >&2
+        echo "       (set AMICA_ALLOW_SRC_DRIFT=1 to run a non-pinned checkout on purpose)" >&2
+        exit 1
+    fi
+    echo "amica pin OK: AMICA_SRC HEAD == ${_want_amica}"
+fi
+
 # Record which commit produced these numbers. The package is reached through a
 # source checkout, so a `git pull` in that directory silently changes what a
 # later job measures; a SHA in the log makes that auditable after the fact
@@ -121,16 +137,18 @@ if [ "$KEEP" = "fortran_amica17" ]; then
     # using it once produced a worst matched |r| of 0.2765 against an archived
     # 0.9391, which reads as a parity failure rather than the wrong binary.
     # Hence the checksum: this row is only meaningful for the reference build.
-    export AMICA17_BIN="${AMICA17_BIN:-/project/rrg-kjerbi/sesma/amica_fortran_reference/amica17}"
-    AMICA17_SHA_EXPECTED="${AMICA17_SHA_EXPECTED:-c02f22c3}"
+    # Default to the group-readable staged copy; the expected sha is the SINGLE
+    # source of truth from pins.toml (no hard-coded second copy that can drift).
+    export AMICA17_BIN="${AMICA17_BIN:-/project/rrg-kjerbi/sesma-shared/amica-repro/amica17}"
+    AMICA17_SHA_EXPECTED="${AMICA17_SHA_EXPECTED:-$("$AMICA_PYTHON_VENV" "$SLURM_SUBMIT_DIR/check_env.py" fortran-sha)}"
+    export AMICA17_SHA_EXPECTED          # run_fortran.py also asserts it per fit
     if [ -x "${AMICA17_BIN}" ]; then
-        _sha=$(sha256sum "$AMICA17_BIN" | cut -c1-8)
+        _sha=$(sha256sum "$AMICA17_BIN" | awk '{print $1}')
         if [ "$_sha" != "$AMICA17_SHA_EXPECTED" ]; then
-            echo "FATAL: $AMICA17_BIN has sha $_sha, expected $AMICA17_SHA_EXPECTED" >&2
-            echo "  (the ablation build is 87bd0941; the reference is c02f22c3)" >&2
+            echo "FATAL: $AMICA17_BIN has sha $_sha, expected $AMICA17_SHA_EXPECTED (pins.toml)" >&2
             exit 1
         fi
-        echo "Fortran reference binary verified: $AMICA17_BIN (sha $_sha)"
+        echo "Fortran reference binary verified: $AMICA17_BIN (sha ${_sha:0:12}…)"
         module load openmpi/4.1.5 flexiblas 2>/dev/null || true
         export GNU_TIME_BIN="${GNU_TIME_BIN:-/usr/bin/time}"
         FORTRAN_OPT="--include-fortran"

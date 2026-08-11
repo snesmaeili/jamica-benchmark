@@ -82,6 +82,22 @@ if AmicaConfig().chunk_size != "auto":
     sys.exit("FATAL: this build predates E-step blocking (chunk_size default is not 'auto')")
 print(f"amica OK: {src} | default chunk_size={AmicaConfig().chunk_size!r}")
 PYCHECK
+
+# installed == intended for the MEASURED amica: assert AMICA_SRC's HEAD is the
+# commit pinned in pins.toml, not merely "some E-step-blocked build" — a git pull
+# in that checkout otherwise silently changes what this campaign measures. Opt out
+# for dev iteration with AMICA_ALLOW_SRC_DRIFT=1.
+if [ "${AMICA_ALLOW_SRC_DRIFT:-0}" != "1" ]; then
+    _want_amica=$("$AMICA_PYTHON_VENV" "$SLURM_SUBMIT_DIR/check_env.py" pin --venv fir --name amica)
+    _got_amica=$(git -C "$AMICA_SRC" rev-parse HEAD 2>/dev/null)
+    if [ "$_got_amica" != "$_want_amica" ]; then
+        echo "FATAL: AMICA_SRC HEAD ${_got_amica:-<none>} != pinned amica ${_want_amica}" >&2
+        echo "       (set AMICA_ALLOW_SRC_DRIFT=1 to run a non-pinned checkout on purpose)" >&2
+        exit 1
+    fi
+    echo "amica pin OK: AMICA_SRC HEAD == ${_want_amica}"
+fi
+
 # Record which commit produced these numbers. The package is reached through a
 # source checkout, so a `git pull` in that directory silently changes what a
 # later job measures; a SHA in the log makes that auditable after the fact
