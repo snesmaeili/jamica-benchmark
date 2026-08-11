@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 import re
 import sys
@@ -90,6 +91,35 @@ def _dist_vcs(name: str) -> dict:
         return {}
 
 
+def _apply_amica_src(packages: dict) -> None:
+    """If AMICA_SRC is set, the measured `amica` is that source checkout on
+    PYTHONPATH — NOT the installed wheel importlib.metadata reports. Override the
+    amica entry's commit with the checkout's git HEAD (returncode-gated), mirroring
+    amica_python/benchmark/runner.py:_amica_provenance, so a comparator
+    amica_python_* result records the build it actually ran. No-op for every other
+    runner (no `amica` distribution entry).
+    """
+    src = os.environ.get("AMICA_SRC")
+    if not src:
+        return
+    key = next((k for k in packages if _canonical_dist_key(k) == "amica"), None)
+    if key is None:
+        return
+    entry = packages[key]
+    entry["src"] = src  # record AMICA_SRC was in effect even if git fails
+    try:
+        import subprocess
+        out = subprocess.run(["git", "-C", src, "rev-parse", "HEAD"],
+                             capture_output=True, text=True)
+        if out.returncode == 0 and out.stdout.strip():
+            entry["commit"] = out.stdout.strip()
+            entry["commit_source"] = "amica_src"
+        else:
+            entry["src_git_error"] = (out.stderr or "").strip()[:200] or f"rc={out.returncode}"
+    except Exception as exc:
+        entry["src_git_error"] = str(exc)[:200]
+
+
 def stack_provenance(*dist_names: str) -> dict:
     """Self-describing build/env block for a result JSON.
 
@@ -123,18 +153,26 @@ def stack_provenance(*dist_names: str) -> dict:
             packages[canonical] = entry
         except Exception:
             continue  # not installed, or unreadable metadata
+    _apply_amica_src(packages)  # measured amica == AMICA_SRC checkout, not the wheel
     stack: dict = {}
     for name in _PROVENANCE_STACK:
         try:
             stack[name] = importlib_metadata.version(name)
         except Exception:
             pass  # not importable in this venv
-    return {
+    block: dict = {
         "python": platform.python_version(),
         "executable": sys.executable,
         "packages": packages,
         "stack": stack,
     }
+    # Record when a pin-enforcement opt-out was in effect, so a non-pinned run is
+    # distinguishable from a pinned one in the artifact itself (not just the log).
+    flags = {k: os.environ[k] for k in ("AMICA_ALLOW_SRC_DRIFT", "AMICA_SKIP_PIN_CHECK")
+             if os.environ.get(k)}
+    if flags:
+        block["env_flags"] = flags
+    return block
 
 
 def parse_runner_args() -> tuple[argparse.Namespace, dict]:

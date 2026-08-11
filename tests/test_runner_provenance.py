@@ -136,6 +136,37 @@ def test_pep503_canonical_key_collapses_separators():
     assert k("scikit_learn") == k("scikit-learn") == k("scikit__learn") == "scikit-learn"
 
 
+def test_amica_src_overrides_amica_commit(monkeypatch):
+    """Under AMICA_SRC the measured amica is the checkout, not the installed wheel:
+    the amica entry's commit must be the checkout's git HEAD + commit_source."""
+    common = load_common()
+    _install_fake_metadata(monkeypatch, common, {
+        "amica": _FakeDist("amica", "0.3.0", None),  # installed wheel, no vcs commit
+    })
+    monkeypatch.setenv("AMICA_SRC", "/scratch/x/amica-blocked")
+    import subprocess
+
+    class _R:
+        returncode = 0
+        stdout = "b" * 40 + "\n"
+        stderr = ""
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: _R())
+    prov = common.stack_provenance("amica")
+    amica = prov["packages"]["amica"]
+    assert amica["commit"] == "b" * 40
+    assert amica["commit_source"] == "amica_src"
+    assert amica["src"] == "/scratch/x/amica-blocked"
+
+
+def test_pin_optout_flags_recorded(monkeypatch):
+    common = load_common()
+    _install_fake_metadata(monkeypatch, common, {})
+    monkeypatch.setenv("AMICA_SKIP_PIN_CHECK", "1")
+    prov = common.stack_provenance()
+    assert prov["env_flags"]["AMICA_SKIP_PIN_CHECK"] == "1"
+
+
 def test_write_result_injects_provenance(monkeypatch, tmp_path):
     common = load_common()
     _install_fake_metadata(monkeypatch, common, {})  # no impls installed
