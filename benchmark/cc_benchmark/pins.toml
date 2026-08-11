@@ -95,6 +95,12 @@ packages = [
 [[venv]]
 name = "fir"
 python = "3.11"
+# numpy/scipy/mne are NOT pip-installed into .venv_fir; they resolve from the
+# Alliance `scipy-stack/2026a` module tree (the venv is built --no-download).
+# fir_env.sh pins `module load scipy-stack/2026a` so those versions stay fixed;
+# 2026a's tree ships numpy 2.4.2 / scipy 1.17.0 (recorded below). jax/jaxlib and
+# mne-bids ARE pip-pinned into the venv.
+modules = { scipy-stack = "2026a" }
 stack = { jax = "0.10.2", jaxlib = "0.10.2", numpy = "2.4.2", scipy = "1.17.0", mne = "1.12.1", mne-bids = "0.19.0" }
 packages = [
   { name = "amica", module = "amica", url = "https://github.com/snesmaeili/amica.git", commit = "92003b459a376622ddb7c4a69351de6b40ac8759", branch = "perf/cpu-profiling" },

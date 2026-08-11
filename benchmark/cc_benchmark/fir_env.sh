@@ -32,7 +32,16 @@ _ENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 module purge
 module load StdEnv/2023 || true
 module load python/3.11
-module load scipy-stack
+# Pin the scipy-stack version, not the floating default. The .venv_fir is built
+# `--no-download`, so numpy/scipy come from this module's tree rather than pip
+# dist-info in the venv (verify: `ls .venv_fir/.../numpy-*.dist-info` finds
+# nothing; numpy.__file__ points into the scipy-stack CVMFS path). 2026a is the
+# version whose tree ships numpy 2.4.2 / scipy 1.17.0 -- the exact versions the
+# committed reference lock (locks/published/fir.lock.json) pins and that
+# `check_env verify --strict` enforces. Leaving this floating means the day
+# Alliance flips the default (e.g. to 2027a with a newer numpy), the venv
+# silently drifts and strict verify goes FATAL for no reason we authored.
+module load scipy-stack/2026a
 
 # Load CUDA and cuDNN for JAX GPU support
 module load cuda/12.6
