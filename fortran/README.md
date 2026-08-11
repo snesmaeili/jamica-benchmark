@@ -26,24 +26,26 @@ For the record, resolved 2026-08-10:
 The two patches above were applied on top of that `amica17.f90` state. `4976ab53`
 is the upstream reference the vendored source corresponds to.
 
-### The published reference binary
+### The reference binary — build it yourself
 
-The exact `amica17` binary behind the published parity numbers was built on
-Compute Canada **fir** (2026-06-09) and recovered 2026-08-11:
+The benchmark reproduces the Fortran reference **from this vendored source**
+(`build.sh` above), so it depends on no staged binary. Built on Compute Canada
+**fir** (gcc/12.3 + openmpi/4.1.5 + flexiblas):
 
-- **sha256** `c02f22c37cb259364e921d1e1b42f7181ce9fb7baae6a716c2ade261b49771fe` (verified)
+- our build's **sha256** `180301398ff72fe5f5effc6885567136a4be0a07794a1dc424c4d84cb441459a`
+  — pinned in `benchmark/cc_benchmark/pins.toml` (`[fortran]`); `run_fortran.py`
+  asserts it per fit, and the submit scripts default `AMICA17_BIN` to the
+  repo-built `fortran/amica17`.
 - Dynamically linked against fir's CVMFS gentoo/2023 libraries — **runs on fir
   compute nodes only**, not a laptop.
-- Durable read-only copy + `BUILD_PROVENANCE.md` (the three required fixes vs
-  upstream, build flags, and the fix_init parity result: final-LL abs diff 7e-8,
-  matched \|r\| 0.99999999992) + sources + `SHA256SUMS`:
-  `/project/rrg-kjerbi/sesma-shared/amica-repro/` and
-  `/project/rrg-kjerbi/sesma/amica_fortran_reference/`.
+- **Binaries are not bit-reproducible across toolchains**, so this sha is
+  site/toolchain-specific: rebuild with `build.sh` and pin *your* build's sha.
+  After a fresh build, reconfirm parity with `submit_parity.sbatch` (final-LL abs
+  diff ~7e-8, matched \|r\| 0.9999999999 against amica-python).
 
-`run_fortran.py` records the absolute `fortran_bin` path and its `sha256` in every
-result, so a row is tied to the exact binary; this repo pins the expected value in
-`benchmark/cc_benchmark/pins.toml` (`[fortran]`). Rebuild from `src/` with the flags
-in `BUILD_PROVENANCE.md` if you can't read the `/project` copy.
+For reference, the earlier historical build was sha256 `c02f22c3…` (staged with
+`BUILD_PROVENANCE.md` at `/project/rrg-kjerbi/sesma-shared/amica-repro/`), but the
+from-source build above is the self-contained path.
 
 ---
 
