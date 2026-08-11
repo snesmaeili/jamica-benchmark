@@ -104,6 +104,20 @@ def main() -> None:
         "effective_config": effective_config,
     }
 
+    # Gate 0: if the expected binary sha is provided (AMICA17_SHA_EXPECTED, which
+    # the submit scripts set from pins.toml [fortran]), refuse to measure the wrong
+    # build — a different amica17 gave a matched |r| of 0.28 vs 0.94. Accept a full
+    # sha or a prefix. Fails fast (before the fit) with an error row.
+    _expected_sha = os.environ.get("AMICA17_SHA_EXPECTED", "").strip().lower()
+    _got_sha = (identity["fortran_sha256"] or "").lower()
+    if _expected_sha and (not _got_sha or not _got_sha.startswith(_expected_sha)):
+        write_result(args.output, {
+            "implementation": "fortran_amica17",
+            "error": f"binary_sha_mismatch (got {_got_sha or None}, expected {_expected_sha})",
+            **identity,
+        })
+        return
+
     workdir = Path(tempfile.mkdtemp(prefix="fortran_amica_"))
 
     def _cleanup():

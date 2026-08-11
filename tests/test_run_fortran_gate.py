@@ -75,6 +75,27 @@ def test_nonzero_exit_writes_error_row_not_success(monkeypatch, tmp_path):
     assert "W" not in doc
 
 
+def test_wrong_binary_sha_is_rejected_before_any_fit(monkeypatch, tmp_path):
+    """AMICA17_SHA_EXPECTED (from pins.toml) that doesn't match the binary => error
+    row, before the subprocess even runs (measuring the wrong build is fatal)."""
+    rf = load_run_fortran()
+    X = np.random.default_rng(0).standard_normal((3, 200))
+    npz = tmp_path / "in.npz"
+    np.savez(npz, X=X)
+    out = tmp_path / "result.json"
+    monkeypatch.setenv("AMICA17_BIN", "/bin/true")     # resolvable, hashable
+    monkeypatch.setenv("AMICA17_SHA_EXPECTED", "deadbeefdeadbeef")  # will not match
+    monkeypatch.setattr(sys, "argv", [
+        "run_fortran.py", "--input", str(npz), "--output", str(out),
+        "--config", json.dumps({"max_iter": 3, "n_mix": 3, "seed": 5}),
+    ])
+    rf.main()
+    doc = json.loads(out.read_text())
+    assert "error" in doc and "binary_sha_mismatch" in doc["error"]
+    assert "ll_final" not in doc
+    assert doc["fortran_bin"] == "/bin/true"
+
+
 def test_clean_exit_with_nonfinite_W_is_error(monkeypatch, tmp_path):
     """returncode 0 + maxrss present, but an all-NaN W must NOT be a success row."""
     rf = load_run_fortran()
