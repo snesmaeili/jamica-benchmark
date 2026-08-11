@@ -144,7 +144,7 @@ if [ "$KEEP" = "fortran_amica17" ]; then
     # Hence the checksum: this row is only meaningful for the reference build.
     # Default to the group-readable staged copy; the expected sha is the SINGLE
     # source of truth from pins.toml (no hard-coded second copy that can drift).
-    export AMICA17_BIN="${AMICA17_BIN:-/project/rrg-kjerbi/sesma-shared/amica-repro/amica17}"
+    export AMICA17_BIN="${AMICA17_BIN:-$SLURM_SUBMIT_DIR/../../fortran/amica17}"
     AMICA17_SHA_EXPECTED="${AMICA17_SHA_EXPECTED:-$("$AMICA_PYTHON_VENV" "$SLURM_SUBMIT_DIR/check_env.py" fortran-sha)}"
     export AMICA17_SHA_EXPECTED          # run_fortran.py also asserts it per fit
     if [ -x "${AMICA17_BIN}" ]; then

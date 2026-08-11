@@ -52,7 +52,7 @@ mkdir -p "$AMICA_COMPARATOR_RESULTS"
 # AMICA17_BIN. Default to the group-readable staged copy; the expected sha is the
 # single source of truth from pins.toml, asserted here AND per-fit by run_fortran.
 FORTRAN_OPT=""
-export AMICA17_BIN="${AMICA17_BIN:-/project/rrg-kjerbi/sesma-shared/amica-repro/amica17}"
+export AMICA17_BIN="${AMICA17_BIN:-$SLURM_SUBMIT_DIR/../../fortran/amica17}"
 if [ -x "${AMICA17_BIN}" ]; then
     AMICA17_SHA_EXPECTED="${AMICA17_SHA_EXPECTED:-$(python "$SLURM_SUBMIT_DIR/check_env.py" fortran-sha)}"
     export AMICA17_SHA_EXPECTED
