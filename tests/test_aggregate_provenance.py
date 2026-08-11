@@ -61,7 +61,8 @@ def make_doc(*, subject="sub-01", backend="jax", device="gpu", seed=0,
     if with_provenance:
         run["provenance"] = {
             "python": "3.11.7",
-            "packages": {"amica": {"version": "0.3.0", "commit": "a" * 40}},
+            "packages": {"amica": {"version": "0.3.0", "commit": "a" * 40,
+                                   "commit_source": "amica_src"}},
             "stack": {"jax": "0.9.1", "numpy": "2.0.0"},
         }
     return {
@@ -140,6 +141,34 @@ def test_seed_sweep_gets_distinct_run_ids(agg, tmp_path):
     assert sorted(r["random_seed"] for r in rows) == [0, 1]  # not [42, 42]
     # the two seeds must NOT collapse onto one run_id (they used to)
     assert len({r.run_id for r in runs}) == 2
+
+
+def test_chunk_variants_get_distinct_run_ids(agg, tmp_path):
+    """Full-batch (None) and chunked/auto runs of otherwise-equal config must not
+    collapse onto one run_id (they used to, because chunk_size was dead in the hash)."""
+    write(tmp_path, "benchmark_sub-01_hp1.0hz_jax_gpu_full.json",
+          make_doc(extra_payload={"chunk_size": None}))
+    write(tmp_path, "benchmark_sub-01_hp1.0hz_jax_gpu_chunked.json",
+          make_doc(extra_payload={"chunk_size": "auto"}))
+    runs = list(agg.discover_runs(tmp_path))
+    assert len({r.run_id for r in runs}) == 2
+
+
+def test_commit_source_reaches_the_csv(agg, tmp_path):
+    row = _one_row(agg, tmp_path)
+    assert row["implementation_commit_source"] == "amica_src"
+
+
+def test_legacy_poisoned_comparator_doc_not_labelled_amica(agg, tmp_path):
+    """A legacy Picard doc — comparator backend, NO library_versions, but a stray
+    amica provenance block — must not be attributed to the amica package."""
+    doc = make_doc(backend="picard", device="cpu")  # provenance has amica
+    doc["amica"].pop("library_versions", None)       # legacy: none recorded
+    write(tmp_path, "benchmark_sub-01_hp1.0hz_picard_cpu.json", doc)
+    run = next(iter(agg.discover_runs(tmp_path)))
+    row = agg.benchmark_row(run, agg_meta={"aggregated_at": "T", "aggregator_commit": "c"})
+    assert row["implementation_version"] is None      # NOT amica's 0.3.0
+    assert row["implementation_commit"] is None
 
 
 def test_comparator_row_not_labelled_as_amica(agg, tmp_path):

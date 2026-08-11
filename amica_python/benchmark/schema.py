@@ -78,6 +78,7 @@ BENCHMARK_RESULTS_COLUMNS = [
     "harness_commit",          # _run.provenance harness/pipeline commit, when recorded
     "implementation_version",  # measured implementation's package version
     "implementation_commit",   # measured implementation's VCS commit
+    "implementation_commit_source",  # 'amica_src'|'direct_url'|None — version/commit may differ under AMICA_SRC
     "aggregated_at",           # when THIS CSV was aggregated (UTC)
     "aggregator_commit",       # the aggregator/harness commit that wrote this CSV
     "result_path",

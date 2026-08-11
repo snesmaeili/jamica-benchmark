@@ -192,29 +192,31 @@ _METHOD_LIBRARY = {"picard": "picard", "fastica": "sklearn", "infomax": "mne"}
 
 
 def _impl_identity(run: RunPayload):
-    """(version, commit) of the implementation that produced this row, or (None, None).
+    """(version, commit, commit_source) of the implementation that produced this row.
 
     Comparator rows are checked FIRST: they carry `library_versions`, and their
-    identity is that library — not the `amica` package. (build_v3_document is
-    reused by comparators, so a stray amica provenance block could otherwise
-    mislabel a Picard/FastICA/Infomax row as the amica build.) Only genuine amica
-    rows fall through to the `_run.provenance` package version + VCS commit.
+    identity is that library — not the `amica` package. Only a row whose backend
+    is NOT a known comparator method may adopt the `_run.provenance` package
+    identity, so a legacy Picard doc (comparator backend, missing
+    library_versions, carrying a stray amica provenance block from the old
+    build_v3_document) is never mislabelled as the amica build.
     """
+    backend = str(run.backend or run.payload.get("method") or "").lower()
     libs = run.payload.get("library_versions")
     if isinstance(libs, dict) and libs:
-        backend = str(run.backend or run.payload.get("method") or "").lower()
         lib_key = _METHOD_LIBRARY.get(backend)
         if lib_key and libs.get(lib_key):
-            return libs[lib_key], None
+            return libs[lib_key], None, None
         for key in ("picard", "sklearn", "mne"):  # deterministic best-effort
             if libs.get(key):
-                return libs[key], None
-    prov = run.run_block.get("provenance") if isinstance(run.run_block, dict) else None
-    if isinstance(prov, dict):
-        for entry in (prov.get("packages") or {}).values():
-            if isinstance(entry, dict) and entry.get("version"):
-                return entry.get("version"), entry.get("commit")
-    return None, None
+                return libs[key], None, None
+    if backend not in _METHOD_LIBRARY:  # never adopt amica provenance for a comparator row
+        prov = run.run_block.get("provenance") if isinstance(run.run_block, dict) else None
+        if isinstance(prov, dict):
+            for entry in (prov.get("packages") or {}).values():
+                if isinstance(entry, dict) and entry.get("version"):
+                    return entry.get("version"), entry.get("commit"), entry.get("commit_source")
+    return None, None, None
 
 
 def benchmark_row(run: RunPayload, agg_meta: dict | None = None) -> dict:
@@ -225,7 +227,7 @@ def benchmark_row(run: RunPayload, agg_meta: dict | None = None) -> dict:
     seed = _recorded_seed(p, d)
     if seed is None:
         print(f"WARN: {run.run_id}: no recorded seed in payload; random_seed=None")
-    impl_version, impl_commit = _impl_identity(run)
+    impl_version, impl_commit, impl_commit_source = _impl_identity(run)
     rb = run.run_block if isinstance(run.run_block, dict) else {}
     duration_s = d.get("duration_s")
     duration_min = float(duration_s) / 60.0 if duration_s is not None else None
@@ -290,6 +292,9 @@ def benchmark_row(run: RunPayload, agg_meta: dict | None = None) -> dict:
         "harness_commit": rb.get("harness_commit") or _safe_get(rb, "provenance", "harness_commit"),
         "implementation_version": impl_version,
         "implementation_commit": impl_commit,
+        # Flags when version (installed dist) and commit (AMICA_SRC checkout) can
+        # describe different builds: 'amica_src' | 'direct_url' | None.
+        "implementation_commit_source": impl_commit_source,
         "aggregated_at": agg_meta.get("aggregated_at"),
         "aggregator_commit": agg_meta.get("aggregator_commit"),
         # POSIX forward-slashes so a row aggregated on Windows still points
