@@ -138,6 +138,13 @@ def main() -> None:
     cp = subprocess.run(cmd, capture_output=True, text=True, env=run_env)
     elapsed = time.perf_counter() - t0
 
+    def _cleanup():
+        # amica17 writes large working arrays (data.fdt + outputs); leaving one
+        # mkdtemp per run behind fills the node's tmpfs over a sweep. Keep it only
+        # for diagnosis via AMICA_KEEP_WORKDIR=1.
+        if os.environ.get("AMICA_KEEP_WORKDIR") != "1":
+            shutil.rmtree(workdir, ignore_errors=True)
+
     def _error(reason: str):
         # A failed run must NOT be written as a normal row: the old code emitted
         # W=null / ll=NaN with no error, corrupting perf aggregates. Gate on it.
@@ -152,6 +159,7 @@ def main() -> None:
         }
         row.update(identity)
         write_result(args.output, row)
+        _cleanup()
 
     # Gate 1: the process must have exited cleanly. GNU time prints max RSS even
     # when its child exits nonzero, so a returncode check is what actually
@@ -179,8 +187,13 @@ def main() -> None:
         _error(f"bad_W_shape (got {None if W is None else W.shape}, "
                f"expected {(n_comp, n_comp)})")
         return
-    if not ll or not np.isfinite(ll[-1]):
-        _error("no_finite_ll (fit produced no usable log-likelihood)")
+    if not np.isfinite(W).all():
+        # A square-but-all-NaN W with one finite LL would otherwise pass as a
+        # normal row and corrupt the W-parity aggregate.
+        _error("nonfinite_W (unmixing matrix has NaN/Inf entries)")
+        return
+    if not ll or not np.all(np.isfinite(ll)):
+        _error("no_finite_ll (log-likelihood trace missing or non-finite)")
         return
 
     out = {
@@ -204,6 +217,7 @@ def main() -> None:
     }
     out.update(identity)  # fortran_bin, sha256, seed_respected/init, effective_config
     write_result(args.output, out)
+    _cleanup()
 
 
 if __name__ == "__main__":

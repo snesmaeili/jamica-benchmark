@@ -75,6 +75,30 @@ def test_nonzero_exit_writes_error_row_not_success(monkeypatch, tmp_path):
     assert "W" not in doc
 
 
+def test_clean_exit_with_nonfinite_W_is_error(monkeypatch, tmp_path):
+    """returncode 0 + maxrss present, but an all-NaN W must NOT be a success row."""
+    rf = load_run_fortran()
+    X = np.random.default_rng(0).standard_normal((3, 200))
+    npz = tmp_path / "in.npz"
+    np.savez(npz, X=X)
+    out = tmp_path / "result.json"
+    gnu = _fake_gnu_time(tmp_path, 0)  # exit 0, maxrss printed
+    monkeypatch.setenv("GNU_TIME_BIN", str(gnu))
+    monkeypatch.setenv("MPIRUN_BIN", "true")
+    monkeypatch.setenv("AMICA17_BIN", "/bin/true")
+    # Fortran "succeeded" but the recovered W is all-NaN (one finite LL).
+    monkeypatch.setattr(rf.fio, "read_fortran_results",
+                        lambda *a, **k: {"W": np.full((3, 3), np.nan), "LL_clean": [-1.0]})
+    monkeypatch.setattr(sys, "argv", [
+        "run_fortran.py", "--input", str(npz), "--output", str(out),
+        "--config", json.dumps({"max_iter": 3, "n_mix": 3, "seed": 5}),
+    ])
+    rf.main()
+    doc = json.loads(out.read_text())
+    assert "error" in doc and "nonfinite_W" in doc["error"]
+    assert "W" not in doc
+
+
 def test_error_row_still_records_binary_identity_and_seed_honesty(monkeypatch, tmp_path):
     doc = _run(monkeypatch, tmp_path, returncode=2)
     # binary identity is recorded on BOTH paths
