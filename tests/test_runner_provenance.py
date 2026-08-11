@@ -98,6 +98,44 @@ def test_wheel_install_has_version_but_no_commit(monkeypatch):
     assert prov["packages"]["amica"] == {"version": "1.2.3"}
 
 
+class _ExplodingMeta:
+    def __getitem__(self, key):
+        raise RuntimeError("malformed METADATA")
+
+
+class _BadDist:
+    version = "0.0.0"
+    metadata = _ExplodingMeta()
+
+    def read_text(self, filename):
+        return None
+
+
+def test_malformed_metadata_does_not_crash(monkeypatch):
+    """A dist with unreadable metadata is skipped, never crashes a result write."""
+    common = load_common()
+
+    def fake_distribution(name):
+        if common._canonical_dist_key(name) == "pyamica":
+            return _BadDist()
+        raise common.importlib_metadata.PackageNotFoundError(name)
+
+    monkeypatch.setattr(common.importlib_metadata, "distribution", fake_distribution)
+    monkeypatch.setattr(common.importlib_metadata, "version",
+                        lambda n: (_ for _ in ()).throw(common.importlib_metadata.PackageNotFoundError(n)))
+    prov = common.stack_provenance("pyamica")  # must not raise
+    assert prov["packages"] == {}
+
+
+def test_pep503_canonical_key_collapses_separators():
+    common = load_common()
+    k = common._canonical_dist_key
+    # case-only differences collapse (the real pyamica vs pyAMICA collision)
+    assert k("pyamica") == k("pyAMICA") == "pyamica"
+    # runs of [-_.] collapse to a single '-' (PEP 503), so these are one name
+    assert k("scikit_learn") == k("scikit-learn") == k("scikit__learn") == "scikit-learn"
+
+
 def test_write_result_injects_provenance(monkeypatch, tmp_path):
     common = load_common()
     _install_fake_metadata(monkeypatch, common, {})  # no impls installed

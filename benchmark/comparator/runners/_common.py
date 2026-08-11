@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import re
 import sys
 import time
 from importlib import metadata as importlib_metadata
@@ -50,6 +51,15 @@ _PROVENANCE_DISTS = ("pamica", "pyamica", "amica", "amica_python", "pyAMICA")
 # without importing the (heavy) package, so probing jax from the torch venv is
 # cheap and simply absent.
 _PROVENANCE_STACK = ("torch", "jax", "jaxlib", "numpy", "scipy", "mne")
+
+
+def _canonical_dist_key(name: str) -> str:
+    """PEP 503 normalized name: lowercase, runs of [-_.] collapsed to one '-'.
+
+    So "pyamica", "pyAMICA", "py_amica" and "py.amica" all map to "pyamica" —
+    the same rule pip uses to decide two dists are the same project.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
 
 
 def _dist_vcs(name: str) -> dict:
@@ -98,18 +108,21 @@ def stack_provenance(*dist_names: str) -> dict:
     packages: dict = {}
     seen: set = set()
     for name in names:
+        # The whole per-name body is guarded: provenance must never be able to
+        # crash a result write that would otherwise have succeeded, even on a
+        # distribution with malformed/missing metadata.
         try:
             dist = importlib_metadata.distribution(name)
+            canonical = (dist.metadata["Name"] or name)
+            norm = _canonical_dist_key(canonical)
+            if norm in seen:
+                continue  # same dist reached via a differently-cased probe name
+            seen.add(norm)
+            entry: dict = {"version": dist.version}
+            entry.update(_dist_vcs(name))  # url + commit, when git-installed
+            packages[canonical] = entry
         except Exception:
-            continue  # not installed in this venv
-        canonical = (dist.metadata["Name"] or name)
-        norm = canonical.lower().replace("_", "-").replace(".", "-")
-        if norm in seen:
-            continue  # same dist reached via a differently-cased probe name
-        seen.add(norm)
-        entry: dict = {"version": dist.version}
-        entry.update(_dist_vcs(name))  # url + commit, when git-installed
-        packages[canonical] = entry
+            continue  # not installed, or unreadable metadata
     stack: dict = {}
     for name in _PROVENANCE_STACK:
         try:
