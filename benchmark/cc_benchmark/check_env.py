@@ -99,6 +99,16 @@ def _base_version(v: str) -> str:
     return (v or "").split("+", 1)[0]
 
 
+def _installed_vcs_commit(name: str) -> str | None:
+    """The VCS commit of an installed dist if it was a git install, else None
+    (a plain PyPI wheel has no direct_url vcs_info)."""
+    try:
+        info = _direct_url(im.distribution(name))
+        return (info.get("vcs_info") or {}).get("commit_id")
+    except Exception:
+        return None
+
+
 def cmd_specs(venv: dict) -> int:
     for pkg in venv.get("packages", []):
         if pkg.get("version"):  # PyPI version pin
@@ -126,7 +136,19 @@ def cmd_verify(venv: dict) -> int:
                 ok = False
                 print(f"MISMATCH {pkg['name']}: installed {got_v} != pinned =={pkg['version']}")
             else:
-                print(f"OK       {pkg['name']}: =={pkg['version']} ({got_v})")
+                # A version pin means the PUBLISHED wheel. If instead the dist was
+                # installed from git, its metadata version can lie (an unreleased
+                # commit past the tag still declares the release version — the exact
+                # e15e1588-declares-0.1.1 trap). Require the git commit to equal the
+                # release commit we recorded; a bare wheel (no direct_url) is fine.
+                inst_commit = _installed_vcs_commit(pkg["name"])
+                want_commit = pkg.get("commit")
+                if inst_commit and want_commit and inst_commit != want_commit:
+                    ok = False
+                    print(f"MISMATCH {pkg['name']}: version {got_v} OK but installed from "
+                          f"git {inst_commit} != release commit {want_commit}")
+                else:
+                    print(f"OK       {pkg['name']}: =={pkg['version']} ({got_v})")
             continue
         # Commit-pinned (git): match by direct_url source URL + commit.
         want_url = canon_url(pkg["url"])

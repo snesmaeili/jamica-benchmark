@@ -87,6 +87,11 @@ def _patch_versions(monkeypatch, ce, versions):
         raise ce.im.PackageNotFoundError(name)
     monkeypatch.setattr(ce.im, "version", fake_version)
     monkeypatch.setattr(ce.im, "distributions", lambda: iter([]))  # version path ignores these
+    # Default: no dist has a direct_url (plain wheels). R1 tests override this
+    # with _patch_distribution to inject a git install.
+    def _no_dist(name):
+        raise ce.im.PackageNotFoundError(name)
+    monkeypatch.setattr(ce.im, "distribution", _no_dist)
 
 
 def test_verify_version_pin_ok_including_local_suffix(monkeypatch):
@@ -111,6 +116,44 @@ def test_verify_version_pin_missing(monkeypatch, capsys):
     _patch_versions(monkeypatch, ce, {"pyamica": "0.3.0"})  # amica-python absent
     assert ce.cmd_verify(venv) == 1
     assert "MISSING" in capsys.readouterr().out
+
+
+def _patch_distribution(monkeypatch, ce, mapping):
+    def fake_distribution(name):
+        if name in mapping:
+            return mapping[name]
+        raise ce.im.PackageNotFoundError(name)
+    monkeypatch.setattr(ce.im, "distribution", fake_distribution)
+
+
+def test_version_pin_rejects_wrong_commit_git_install(monkeypatch, capsys):
+    """A version matches, but the dist was installed from git at the WRONG commit
+    (the exact e15e1588-declares-0.1.1 trap) — must be rejected, not blessed."""
+    ce = load_check_env()
+    venv = ce.load_venv(PINS, "competitors")
+    _patch_versions(monkeypatch, ce, {"pyamica": "0.3.0", "amica-python": "0.1.1"})
+    _patch_distribution(monkeypatch, ce, {
+        # amica-python 0.1.1 but installed from git at a commit PAST the release
+        "amica-python": _FakeDist("amica-python", "0.1.1",
+                                  "git+https://github.com/scott-huberty/amica-python.git",
+                                  "e15e15888a5f6d366c6b16b1884bd373c319c085"),
+        # pyamica: plain PyPI wheel (no direct_url) -> fine
+    })
+    assert ce.cmd_verify(venv) == 1
+    assert "MISMATCH" in capsys.readouterr().out
+
+
+def test_version_pin_accepts_matching_release_commit(monkeypatch):
+    ce = load_check_env()
+    venv = ce.load_venv(PINS, "competitors")
+    _patch_versions(monkeypatch, ce, {"pyamica": "0.3.0", "amica-python": "0.1.1"})
+    _patch_distribution(monkeypatch, ce, {
+        # installed from git at exactly the recorded release commit -> OK
+        "amica-python": _FakeDist("amica-python", "0.1.1",
+                                  "git+https://github.com/scott-huberty/amica-python.git",
+                                  "cad98a6cc98782ffb6f1bff22c99b31431ee5832"),
+    })
+    assert ce.cmd_verify(venv) == 0
 
 
 def test_verify_commit_pin_ok(monkeypatch):

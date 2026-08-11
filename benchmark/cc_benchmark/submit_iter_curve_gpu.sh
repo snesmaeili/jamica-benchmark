@@ -99,7 +99,12 @@ if [ "${AMICA_ALLOW_SRC_DRIFT:-0}" != "1" ]; then
         echo "       (set AMICA_ALLOW_SRC_DRIFT=1 to run a non-pinned checkout on purpose)" >&2
         exit 1
     fi
-    echo "amica pin OK: AMICA_SRC HEAD == ${_want_amica}"
+    if ! git -C "$AMICA_SRC" diff --quiet HEAD 2>/dev/null; then
+        echo "FATAL: AMICA_SRC has uncommitted changes (dirty worktree at pinned HEAD)" >&2
+        echo "       (set AMICA_ALLOW_SRC_DRIFT=1 to measure a dirty checkout on purpose)" >&2
+        exit 1
+    fi
+    echo "amica pin OK: AMICA_SRC HEAD == ${_want_amica} (clean)"
 fi
 
 # Record which commit produced these numbers. The package is reached through a

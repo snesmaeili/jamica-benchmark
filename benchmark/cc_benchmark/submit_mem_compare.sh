@@ -48,13 +48,23 @@ done
 export AMICA_COMPARATOR_RESULTS="${AMICA_COMPARATOR_RESULTS:-${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/comparator/cpu}"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
-# Fortran AMICA 1.7 is OPTIONAL — included only if you built amica17 and exported AMICA17_BIN.
+# Fortran AMICA 1.7 is OPTIONAL — included only if you built amica17 and exported
+# AMICA17_BIN. Default to the group-readable staged copy; the expected sha is the
+# single source of truth from pins.toml, asserted here AND per-fit by run_fortran.
 FORTRAN_OPT=""
-if [ -n "${AMICA17_BIN:-}" ] && [ -x "${AMICA17_BIN}" ]; then
+export AMICA17_BIN="${AMICA17_BIN:-/project/rrg-kjerbi/sesma-shared/amica-repro/amica17}"
+if [ -x "${AMICA17_BIN}" ]; then
+    AMICA17_SHA_EXPECTED="${AMICA17_SHA_EXPECTED:-$(python "$SLURM_SUBMIT_DIR/check_env.py" fortran-sha)}"
+    export AMICA17_SHA_EXPECTED
+    _sha=$(sha256sum "$AMICA17_BIN" | awk '{print $1}')
+    if [ "$_sha" != "$AMICA17_SHA_EXPECTED" ]; then
+        echo "FATAL: $AMICA17_BIN has sha $_sha, expected $AMICA17_SHA_EXPECTED (pins.toml)" >&2
+        exit 1
+    fi
     module load openmpi/4.1.5 flexiblas 2>/dev/null || true
     export GNU_TIME_BIN="${GNU_TIME_BIN:-/usr/bin/time}"
     FORTRAN_OPT="--include-fortran"
-    echo "Fortran amica17 found ($AMICA17_BIN) -> including it."
+    echo "Fortran amica17 verified ($AMICA17_BIN, sha ${_sha:0:12}…) -> including it."
 else
     echo "Fortran amica17 not built / AMICA17_BIN unset -> skipping it (optional)."
 fi
