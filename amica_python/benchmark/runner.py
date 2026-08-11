@@ -447,7 +447,11 @@ def _amica_provenance() -> dict:
             url = info.get("url")
             if url:
                 amica["url"] = url[4:] if url.startswith("git+") else url
-            if not commit:
+            # Only adopt the installed dist's commit when AMICA_SRC is NOT in
+            # effect. Under AMICA_SRC the measured code is the checkout; if its
+            # git lookup failed, leave commit null (src_git_error explains why)
+            # rather than stamping the installed wheel's commit as if measured.
+            if not commit and not src:
                 c = (info.get("vcs_info") or {}).get("commit_id")
                 if c:
                     commit, commit_source = c, "direct_url"
@@ -1213,9 +1217,15 @@ def run_benchmark(raw, backend="jax", device="cpu", n_iter=500, *,
         "actual_n_iter": n_iter_actual,
         "max_iter": int(n_iter),
         "tol": None,
+        # chunk_size distinguishes full-batch (None) from chunked/auto runs of
+        # otherwise-identical config; the aggregator's content run_id reads it, so
+        # it MUST be in the payload or full-batch and chunked collide on one run_id.
+        "chunk_size": chunk_size,
         "fit_params": {
             "backend": backend,
             "device": device,
+            "chunk_size": chunk_size,
+            "dtype": dtype,
         },
         # AMICA stops when the iteration budget runs out, not on a tolerance.
         # `converged_before_cap` is True only if the underlying AmicaResult
