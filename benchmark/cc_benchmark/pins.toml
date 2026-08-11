@@ -55,6 +55,7 @@ packages = [
 [[venv]]
 name = "neuromechanist"
 python = "3.11"
+stack = { numpy = "2.4.2", scipy = "1.17.0" }
 packages = [
   { name = "pyAMICA", module = "pyAMICA", url = "https://github.com/sccn/pAMICA.git", commit = "526aa3231623490ea21ef9c45acbb50730929622" },
 ]
@@ -68,11 +69,16 @@ name = "amica17"
 sha256 = "c02f22c37cb259364e921d1e1b42f7181ce9fb7baae6a716c2ade261b49771fe"
 project_copy = "/project/rrg-kjerbi/sesma-shared/amica-repro/amica17"
 
-# .venv_pamica (Python 3.12) — current sccn/pAMICA release.
+# .venv_pamica (Python 3.12) — current sccn/pAMICA release. NB: this venv is
+# py3.12 and carries torch 2.13.0, while the competitors venv is py3.11 / torch
+# 2.12.0 (pamica requires py>=3.12, which forces the split). Cross-implementation
+# torch/timing/memory deltas between pamica and pyamica/scott are therefore partly
+# interpreter/torch-build deltas — footnote it in any cross-impl table.
 [[venv]]
 name = "pamica"
 python = "3.12"
 tag = "v0.3.1"
+stack = { torch = "2.13.0", numpy = "2.4.2", scipy = "1.17.0" }
 packages = [
   { name = "pamica", module = "pamica", url = "https://github.com/sccn/pAMICA.git", commit = "0e6b7f517271bc9a583ced35b3435cc689c7999c" },
 ]
@@ -85,6 +91,7 @@ packages = [
 [[venv]]
 name = "fir"
 python = "3.11"
+stack = { jax = "0.10.2", jaxlib = "0.10.2", numpy = "2.4.2", scipy = "1.17.0", mne = "1.12.1", mne-bids = "0.19.0" }
 packages = [
   { name = "amica", module = "amica", url = "https://github.com/snesmaeili/amica.git", commit = "92003b459a376622ddb7c4a69351de6b40ac8759", branch = "perf/cpu-profiling" },
 ]

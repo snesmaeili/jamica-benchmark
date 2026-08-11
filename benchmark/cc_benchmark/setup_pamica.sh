@@ -55,13 +55,14 @@ case "$PYV" in
 esac
 echo "python $PYV OK"
 
-# torch: the Alliance wheelhouse wheel (--no-index) is CUDA-enabled and serves
-# BOTH the CPU and GPU comparisons; fall back to PyPI off-Alliance. pamica needs
-# >= 2.12.1; Alliance carries 2.12.1 and 2.13.0 for cp312. The exact resolved
-# torch build is captured in the as-built lock (check_env.py lock, below) so a
-# pamica-vs-pyamica delta can be separated from a torch-version delta.
-echo "Installing torch ..."
-pip install --no-index "torch>=2.12.1" 2>/dev/null || pip install "torch>=2.12.1"
+# Scientific stack, PINNED from pins.toml (torch==2.13.0 etc.) so a fresh build is
+# reproducible. The Alliance --no-index wheel is CUDA-enabled and serves BOTH the
+# CPU and GPU comparisons; fall back to PyPI off-Alliance. verify --strict enforces
+# these against the committed reference lock.
+echo "Installing the pinned scientific stack ..."
+while read -r s; do
+    [ -n "$s" ] && (pip install --no-index "$s" 2>/dev/null || pip install "$s")
+done < <(python "$HERE/check_env.py" stack-specs --venv pamica)
 
 echo "Installing pamica $PAMICA_TAG (pinned in pins.toml) ..."
 while read -r spec; do

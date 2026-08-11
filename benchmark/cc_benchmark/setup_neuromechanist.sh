@@ -39,8 +39,11 @@ pip install --upgrade pip
 
 # numpy (the implementation is pure NumPy) + psutil (the runner protocol reads
 # the process high-water RSS through it; see _common.py).
-echo "Installing runner dependencies ..."
-pip install --no-index numpy psutil 2>/dev/null || pip install numpy psutil
+echo "Installing runner dependencies (pinned stack from pins.toml + psutil) ..."
+while read -r s; do
+    [ -n "$s" ] && (pip install --no-index "$s" 2>/dev/null || pip install "$s")
+done < <(python "$HERE/check_env.py" stack-specs --venv neuromechanist)
+pip install --no-index psutil 2>/dev/null || pip install psutil
 
 echo "Installing the pinned pyAMICA snapshot (see pins.toml) ..."
 while read -r spec; do

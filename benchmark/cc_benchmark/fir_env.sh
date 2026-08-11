@@ -112,6 +112,17 @@ if [ "$REINSTALL" = true ]; then
     source "$VENV_PATH/bin/activate"
     pip install --no-index --upgrade pip
 
+    # Scientific stack PINNED from pins.toml (jax/jaxlib/numpy/scipy/mne/mne-bids)
+    # so a fresh build is reproducible; installed FIRST so the extras + amica below
+    # resolve against these versions. verify --strict enforces them. (For a GPU job
+    # the [jax-gpu] extra + -f index add the CUDA jaxlib backend at the same pinned
+    # version — strict compares base versions, so the +cuda/+cc local segment is
+    # ignored.)
+    echo "Installing the pinned scientific stack ..."
+    while read -r s; do
+        [ -n "$s" ] && (pip install --no-index "$s" 2>/dev/null || pip install "$s")
+    done < <(python "$SCRIPT_DIR/check_env.py" stack-specs --venv fir)
+
     # Extras must match this repository's pyproject.toml, which defines
     # jax-cpu, jax-gpu and amica -- NOT the all/gpu extras that amica-python
     # defines. This file was copied across from that repo, so it asked pip for
@@ -135,7 +146,9 @@ if [ "$REINSTALL" = true ]; then
     # which has no wheel for this platform and builds through maturin/bindgen,
     # failing on a missing libclang -- which aborted the whole environment
     # build under `set -e` after everything else had installed correctly.
-    pip install mne-bids
+    # mne-bids is already installed (pinned) by the stack step above; this is a
+    # no-op safety net, kept for the openneuro-py note.
+    pip install --no-index "mne-bids==0.19.0" 2>/dev/null || true
 
     # Install the reference `amica` package itself. The [jax-cpu]/[jax-gpu]
     # extras above install JAX but NOT amica (this repo's `amica` extra is
