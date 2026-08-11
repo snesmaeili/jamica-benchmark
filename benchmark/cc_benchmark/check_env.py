@@ -132,9 +132,13 @@ def _strict_stack_check(venv: dict) -> bool:
     """
     path = _published_lock_path(venv)
     if not path.exists():
-        print(f"STRICT: no committed published lock at {path.relative_to(HERE.parent)} — "
-              f"cannot verify the numerical stack in paper mode. Recover + commit it, "
-              f"or run without strict.", file=sys.stderr)
+        try:
+            shown = path.relative_to(HERE.parent)
+        except ValueError:
+            shown = path
+        print(f"STRICT: no committed published lock at {shown} — cannot verify the "
+              f"numerical stack in paper mode. Recover + commit it, or run without "
+              f"strict.", file=sys.stderr)
         return False
     try:
         published = json.loads(path.read_text()).get("stack", {})
