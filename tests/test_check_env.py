@@ -207,9 +207,10 @@ def test_strict_stack_match_ok_and_env_triggers_strict(monkeypatch):
     assert ce.cmd_verify(venv) == 1
 
 
-def test_strict_requires_a_committed_published_lock(monkeypatch, capsys):
+def test_strict_requires_a_committed_published_lock(monkeypatch, tmp_path, capsys):
     ce = load_check_env()
-    venv = ce.load_venv(PINS, "fir")  # no published lock committed for fir
+    monkeypatch.setattr(ce, "PUBLISHED_LOCKS_DIR", tmp_path)  # empty dir -> no lock
+    venv = ce.load_venv(PINS, "fir")
     _patch_installed(monkeypatch, ce, [_FakeDist(
         "amica", "0.3.0", "git+https://github.com/snesmaeili/amica.git",
         "92003b459a376622ddb7c4a69351de6b40ac8759")])
