@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 import sys
 from importlib import metadata as im
@@ -29,6 +30,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 PINS_DEFAULT = HERE / "pins.toml"
 LOCKS_DIR = HERE / "locks"
+PUBLISHED_LOCKS_DIR = LOCKS_DIR / "published"  # committed publication reference locks
 
 # Recorded so time/memory deltas can be separated from stack-version deltas.
 STACK = ("torch", "jax", "jaxlib", "numpy", "scipy", "mne", "mne-bids")
@@ -118,7 +120,44 @@ def cmd_specs(venv: dict) -> int:
     return 0
 
 
-def cmd_verify(venv: dict) -> int:
+def _published_lock_path(venv: dict) -> Path:
+    return PUBLISHED_LOCKS_DIR / f"{venv['name']}.lock.json"
+
+
+def _strict_stack_check(venv: dict) -> bool:
+    """Paper mode: the installed numerical stack MUST match the committed
+    publication lock. A drift (e.g. torch 2.13.0 where the paper used 2.12.0) is
+    FATAL, not a warning. Requires a committed published lock — a paper run whose
+    stack cannot be checked against a reference is not paper-grade.
+    """
+    path = _published_lock_path(venv)
+    if not path.exists():
+        print(f"STRICT: no committed published lock at {path.relative_to(HERE.parent)} — "
+              f"cannot verify the numerical stack in paper mode. Recover + commit it, "
+              f"or run without strict.", file=sys.stderr)
+        return False
+    try:
+        published = json.loads(path.read_text()).get("stack", {})
+    except Exception as exc:
+        print(f"STRICT: unreadable published lock {path}: {exc}", file=sys.stderr)
+        return False
+    now = _stack_versions()
+    ok = True
+    for name, want in published.items():
+        got = now.get(name)
+        if got is None:
+            print(f"STRICT: {name} not installed (published {want})", file=sys.stderr)
+            ok = False
+        elif _base_version(got) != _base_version(want):
+            print(f"STRICT: stack drift {name} {got} != published {want}", file=sys.stderr)
+            ok = False
+    if ok:
+        print(f"STRICT stack OK vs published lock ({len(published)} pkgs)")
+    return ok
+
+
+def cmd_verify(venv: dict, strict: bool = False) -> int:
+    strict = strict or os.environ.get("AMICA_STRICT_STACK") == "1"
     installed = installed_by_url()
     ok = True
     for pkg in venv.get("packages", []):
@@ -165,10 +204,16 @@ def cmd_verify(venv: dict) -> int:
                   f"!= pinned {want_commit}")
             continue
         print(f"OK       {pkg['name']}: {want_commit} ({got['version']})")
+    # Stack: FATAL drift vs the committed publication lock in strict/paper mode
+    # (AMICA_STRICT_STACK=1 or --strict); otherwise a soft warn vs the as-built lock.
+    if strict:
+        if not _strict_stack_check(venv):
+            ok = False
+    else:
+        _report_stack_drift(venv)
     if not ok:
         print("check_env: installed != intended — refusing to proceed.", file=sys.stderr)
         return 1
-    _report_stack_drift(venv)
     return 0
 
 
@@ -264,6 +309,9 @@ def main(argv=None) -> int:
     parser.add_argument("--venv", help="venv name in pins.toml (required except for fortran-sha)")
     parser.add_argument("--name", help="package name (for `pin`)")
     parser.add_argument("--field", default="commit", help="pin field to print (for `pin`): commit|version")
+    parser.add_argument("--strict", action="store_true",
+                        help="verify: FATAL on numerical-stack drift vs the committed "
+                             "published lock (paper mode; also via AMICA_STRICT_STACK=1).")
     parser.add_argument("--pins", type=Path, default=PINS_DEFAULT)
     args = parser.parse_args(argv)
     if args.command == "fortran-sha":
@@ -275,7 +323,9 @@ def main(argv=None) -> int:
         if not args.name:
             parser.error("--name is required for 'pin'")
         return cmd_pin(venv, args.name, args.field)
-    return {"specs": cmd_specs, "verify": cmd_verify, "lock": cmd_lock}[args.command](venv)
+    if args.command == "verify":
+        return cmd_verify(venv, strict=args.strict)
+    return {"specs": cmd_specs, "lock": cmd_lock}[args.command](venv)
 
 
 if __name__ == "__main__":

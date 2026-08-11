@@ -173,6 +173,42 @@ def test_verify_commit_pin_fails_on_missing(monkeypatch, capsys):
     assert "MISSING" in capsys.readouterr().out
 
 
+def test_strict_stack_drift_is_fatal(monkeypatch, capsys):
+    ce = load_check_env()
+    venv = ce.load_venv(PINS, "competitors")
+    _patch_versions(monkeypatch, ce, {"pyamica": "0.3.0", "amica-python": "0.1.1"})
+    # torch 2.13.0 where the published lock says 2.12.0 -> FATAL in strict mode
+    monkeypatch.setattr(ce, "_stack_versions", lambda: {
+        "torch": "2.13.0+computecanada", "numpy": "2.4.2+computecanada",
+        "scipy": "1.17.0+computecanada", "mne": "1.12.1"})
+    assert ce.cmd_verify(venv, strict=True) == 1
+    assert "stack drift" in capsys.readouterr().err
+
+
+def test_strict_stack_match_ok_and_env_triggers_strict(monkeypatch):
+    ce = load_check_env()
+    venv = ce.load_venv(PINS, "competitors")
+    _patch_versions(monkeypatch, ce, {"pyamica": "0.3.0", "amica-python": "0.1.1"})
+    monkeypatch.setattr(ce, "_stack_versions", lambda: {
+        "torch": "2.12.0+computecanada", "numpy": "2.4.2+computecanada",
+        "scipy": "1.17.0+computecanada", "mne": "1.12.1"})
+    assert ce.cmd_verify(venv, strict=True) == 0
+    # AMICA_STRICT_STACK=1 turns strict on without the flag; drift then fails
+    monkeypatch.setenv("AMICA_STRICT_STACK", "1")
+    monkeypatch.setattr(ce, "_stack_versions", lambda: {"torch": "9.9.9"})
+    assert ce.cmd_verify(venv) == 1
+
+
+def test_strict_requires_a_committed_published_lock(monkeypatch, capsys):
+    ce = load_check_env()
+    venv = ce.load_venv(PINS, "fir")  # no published lock committed for fir
+    _patch_installed(monkeypatch, ce, [_FakeDist(
+        "amica", "0.3.0", "git+https://github.com/snesmaeili/amica.git",
+        "92003b459a376622ddb7c4a69351de6b40ac8759")])
+    assert ce.cmd_verify(venv, strict=True) == 1
+    assert "no committed published lock" in capsys.readouterr().err
+
+
 def test_pin_prints_single_field(capsys):
     ce = load_check_env()
     fir = ce.load_venv(PINS, "fir")
