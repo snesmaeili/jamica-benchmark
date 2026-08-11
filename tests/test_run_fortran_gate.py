@@ -96,6 +96,24 @@ def test_wrong_binary_sha_is_rejected_before_any_fit(monkeypatch, tmp_path):
     assert doc["fortran_bin"] == "/bin/true"
 
 
+def test_short_expected_sha_is_rejected(monkeypatch, tmp_path):
+    """An 8-char prefix is too weak to identify a build — reject it, don't bless it."""
+    rf = load_run_fortran()
+    X = np.random.default_rng(0).standard_normal((3, 200))
+    npz = tmp_path / "in.npz"
+    np.savez(npz, X=X)
+    out = tmp_path / "result.json"
+    monkeypatch.setenv("AMICA17_BIN", "/bin/true")
+    monkeypatch.setenv("AMICA17_SHA_EXPECTED", "c02f22c3")  # 8 hex — too short
+    monkeypatch.setattr(sys, "argv", [
+        "run_fortran.py", "--input", str(npz), "--output", str(out),
+        "--config", json.dumps({"max_iter": 3, "n_mix": 3, "seed": 5}),
+    ])
+    rf.main()
+    doc = json.loads(out.read_text())
+    assert "error" in doc and "expected_sha_too_short" in doc["error"]
+
+
 def test_clean_exit_with_nonfinite_W_is_error(monkeypatch, tmp_path):
     """returncode 0 + maxrss present, but an all-NaN W must NOT be a success row."""
     rf = load_run_fortran()
