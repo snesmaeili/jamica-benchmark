@@ -29,7 +29,7 @@
 set -o pipefail
 
 cd "$SLURM_SUBMIT_DIR"
-source fir_env.sh
+source fir_env.sh || exit 1
 
 # --- point the amica runner at the current package -------------------------
 # The cluster's checkout predates both the package rename (amica_python ->

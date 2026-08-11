@@ -24,7 +24,7 @@
 set -o pipefail
 
 cd "$SLURM_SUBMIT_DIR"          # benchmark/cc_benchmark/
-source fir_env.sh              # modules (incl. cuda/cudnn) + .venv_fir + env.local
+source fir_env.sh || exit 1              # modules (incl. cuda/cudnn) + .venv_fir + env.local
 REPO_ROOT="$(cd "$SLURM_SUBMIT_DIR/../.." && pwd)"
 
 # installed == intended: assert the pinned competitor + pamica commits before the

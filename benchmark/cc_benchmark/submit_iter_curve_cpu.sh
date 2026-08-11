@@ -33,7 +33,7 @@
 set -o pipefail
 
 cd "$SLURM_SUBMIT_DIR"          # benchmark/cc_benchmark/
-source fir_env.sh               # modules + .venv_fir + env.local (BIDS_ROOT, AMICA_RESULTS_DIR, ...)
+source fir_env.sh || exit 1               # modules + .venv_fir + env.local (BIDS_ROOT, AMICA_RESULTS_DIR, ...)
 
 # --- point the amica runner at the current package -------------------------
 # The cluster's checkout predates both the package rename (amica_python ->
