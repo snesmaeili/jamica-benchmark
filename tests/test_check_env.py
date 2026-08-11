@@ -57,15 +57,17 @@ def test_canon_url_preserves_ssh_user_at_host():
     assert ce.canon_url("git@github.com:owner/repo.git") == "git@github.com:owner/repo"
 
 
-def test_specs_prints_pinned_git_urls(capsys):
+def test_specs_version_pins_and_git_pins(capsys):
     ce = load_check_env()
-    venv = ce.load_venv(PINS, "competitors")
-    assert ce.cmd_specs(venv) == 0
-    out = capsys.readouterr().out.strip().splitlines()
-    assert out == [
-        "git+https://github.com/DerAndereJohannes/pyamica.git@a8a4d7e0ad14a88cf2cabeff5094cd0c8a262536",
-        "git+https://github.com/scott-huberty/amica-python.git@e15e15888a5f6d366c6b16b1884bd373c319c085",
+    # competitors are PyPI version pins -> `name==version`
+    assert ce.cmd_specs(ce.load_venv(PINS, "competitors")) == 0
+    assert capsys.readouterr().out.strip().splitlines() == [
+        "pyamica==0.3.0", "amica-python==0.1.1",
     ]
+    # neuromechanist is a git commit pin -> `git+url@commit`
+    assert ce.cmd_specs(ce.load_venv(PINS, "neuromechanist")) == 0
+    assert capsys.readouterr().out.strip() == \
+        "git+https://github.com/sccn/pAMICA.git@526aa3231623490ea21ef9c45acbb50730929622"
 
 
 def test_unknown_venv_raises():
@@ -78,35 +80,49 @@ def _patch_installed(monkeypatch, ce, dists):
     monkeypatch.setattr(ce.im, "distributions", lambda: iter(dists))
 
 
-def test_verify_ok_when_commit_matches(monkeypatch):
+def _patch_versions(monkeypatch, ce, versions):
+    def fake_version(name):
+        if name in versions:
+            return versions[name]
+        raise ce.im.PackageNotFoundError(name)
+    monkeypatch.setattr(ce.im, "version", fake_version)
+    monkeypatch.setattr(ce.im, "distributions", lambda: iter([]))  # version path ignores these
+
+
+def test_verify_version_pin_ok_including_local_suffix(monkeypatch):
     ce = load_check_env()
     venv = ce.load_venv(PINS, "competitors")
-    dists = [
-        _FakeDist("pyamica", "0.4.1", "https://github.com/DerAndereJohannes/pyamica.git",
-                  "a8a4d7e0ad14a88cf2cabeff5094cd0c8a262536"),
-        # scott's install reports a canonicalized name; matching is by URL, not name.
-        _FakeDist("amica-python", "0.2.0", "git+https://github.com/scott-huberty/amica-python.git",
-                  "e15e15888a5f6d366c6b16b1884bd373c319c085"),
-    ]
-    _patch_installed(monkeypatch, ce, dists)
+    # the +computecanada local segment must still match the pinned base version
+    _patch_versions(monkeypatch, ce, {"pyamica": "0.3.0", "amica-python": "0.1.1+computecanada"})
     assert ce.cmd_verify(venv) == 0
 
 
-def test_verify_fails_on_commit_mismatch(monkeypatch, capsys):
+def test_verify_version_pin_mismatch(monkeypatch, capsys):
     ce = load_check_env()
     venv = ce.load_venv(PINS, "competitors")
-    dists = [
-        _FakeDist("pyamica", "0.4.1", "https://github.com/DerAndereJohannes/pyamica.git",
-                  "deadbeef" * 5),  # wrong commit
-        _FakeDist("amica-python", "0.2.0", "https://github.com/scott-huberty/amica-python.git",
-                  "e15e15888a5f6d366c6b16b1884bd373c319c085"),
-    ]
-    _patch_installed(monkeypatch, ce, dists)
+    _patch_versions(monkeypatch, ce, {"pyamica": "0.4.0", "amica-python": "0.1.1"})
     assert ce.cmd_verify(venv) == 1
     assert "MISMATCH" in capsys.readouterr().out
 
 
-def test_verify_fails_on_missing(monkeypatch, capsys):
+def test_verify_version_pin_missing(monkeypatch, capsys):
+    ce = load_check_env()
+    venv = ce.load_venv(PINS, "competitors")
+    _patch_versions(monkeypatch, ce, {"pyamica": "0.3.0"})  # amica-python absent
+    assert ce.cmd_verify(venv) == 1
+    assert "MISSING" in capsys.readouterr().out
+
+
+def test_verify_commit_pin_ok(monkeypatch):
+    ce = load_check_env()
+    venv = ce.load_venv(PINS, "neuromechanist")
+    dists = [_FakeDist("pyAMICA", "0.1.dev0", "git+https://github.com/sccn/pAMICA.git",
+                       "526aa3231623490ea21ef9c45acbb50730929622")]
+    _patch_installed(monkeypatch, ce, dists)
+    assert ce.cmd_verify(venv) == 0
+
+
+def test_verify_commit_pin_fails_on_missing(monkeypatch, capsys):
     ce = load_check_env()
     venv = ce.load_venv(PINS, "neuromechanist")
     _patch_installed(monkeypatch, ce, [])  # nothing installed / clobbered
@@ -114,10 +130,12 @@ def test_verify_fails_on_missing(monkeypatch, capsys):
     assert "MISSING" in capsys.readouterr().out
 
 
-def test_every_pins_venv_has_packages():
+def test_every_pins_venv_pkg_has_a_pin():
     ce = load_check_env()
     doc = ce._load_toml(PINS)
     for venv in doc["venv"]:
         assert venv["packages"], venv["name"]
         for pkg in venv["packages"]:
-            assert len(pkg["commit"]) == 40, (venv["name"], pkg["name"])  # full SHA
+            # each package is pinned by a PyPI version OR a full 40-char git SHA
+            assert pkg.get("version") or len(pkg.get("commit", "")) == 40, \
+                (venv["name"], pkg["name"])

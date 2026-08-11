@@ -47,9 +47,10 @@ pip install --upgrade pip
 echo "Installing torch ..."
 pip install --no-index torch 2>/dev/null || pip install torch
 
-# The competitor AMICA implementations, installed by full-SHA from pins.toml.
-# Installing by SHA is drift-proof: a later upstream push cannot change what
-# these resolve to, and check_env.py asserts the installed commit below.
+# The competitor AMICA implementations, installed from pins.toml. These are the
+# PUBLISHED PyPI releases (pyamica==0.3.0, amica-python==0.1.1), recovered from
+# the surviving publication venv; a version pin is the stricter identity for a
+# released wheel, and check_env.py asserts the installed version below.
 echo "Installing the pinned competitor implementations (see pins.toml) ..."
 while read -r spec; do
     [ -n "$spec" ] && pip install "$spec"

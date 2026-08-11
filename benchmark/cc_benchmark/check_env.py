@@ -94,9 +94,17 @@ def installed_by_url() -> dict:
     return out
 
 
+def _base_version(v: str) -> str:
+    """Strip a PEP 440 local segment so 2.12.0+computecanada == 2.12.0."""
+    return (v or "").split("+", 1)[0]
+
+
 def cmd_specs(venv: dict) -> int:
     for pkg in venv.get("packages", []):
-        print(f"git+{pkg['url']}@{pkg['commit']}")
+        if pkg.get("version"):  # PyPI version pin
+            print(f"{pkg['name']}=={pkg['version']}")
+        else:                   # git commit pin
+            print(f"git+{pkg['url']}@{pkg['commit']}")
     return 0
 
 
@@ -104,6 +112,23 @@ def cmd_verify(venv: dict) -> int:
     installed = installed_by_url()
     ok = True
     for pkg in venv.get("packages", []):
+        # Version-pinned (PyPI wheel): the installed release version IS the
+        # identity — these have no direct_url commit to match on.
+        if pkg.get("version"):
+            try:
+                got_v = im.version(pkg["name"])
+            except Exception:
+                got_v = None
+            if got_v is None:
+                ok = False
+                print(f"MISSING  {pkg['name']}: not installed (pinned =={pkg['version']})")
+            elif _base_version(got_v) != _base_version(pkg["version"]):
+                ok = False
+                print(f"MISMATCH {pkg['name']}: installed {got_v} != pinned =={pkg['version']}")
+            else:
+                print(f"OK       {pkg['name']}: =={pkg['version']} ({got_v})")
+            continue
+        # Commit-pinned (git): match by direct_url source URL + commit.
         want_url = canon_url(pkg["url"])
         want_commit = pkg["commit"]
         got = installed.get(want_url)
@@ -160,6 +185,13 @@ def cmd_lock(venv: dict) -> int:
     installed = installed_by_url()
     packages = {}
     for pkg in venv.get("packages", []):
+        if pkg.get("version"):  # PyPI: record the installed release version
+            try:
+                packages[pkg["name"]] = {"version": im.version(pkg["name"]),
+                                         "commit": pkg.get("commit"), "url": pkg.get("url")}
+            except Exception:
+                pass
+            continue
         got = installed.get(canon_url(pkg["url"]))
         if got is not None:
             packages[pkg["name"]] = {"version": got["version"], "commit": got["commit"],
