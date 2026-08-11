@@ -1,16 +1,15 @@
 {
   "venv": "competitors",
-  "published": true,
-  "source": "Recovered 2026-08-11 from the surviving publication .venv_competitors on Compute Canada fir; see benchmark/cc_benchmark/provenance/README.md. Versions were not captured per-run, so this is reconstructed from the intact venv.",
-  "python": "3.11.5",
+  "reference": true,
+  "source": "Our reproducible reference (not a historical capture). The competitor CODE is pinned to the published PyPI releases; the transitive stack is pinned in pins.toml to versions the Alliance wheelhouse still carries, so a fresh setup_competitors.sh build reproduces this exactly. check_env verify --strict enforces it. Base versions (the +computecanada local segment is site-resolved and ignored in the comparison).",
+  "python": "3.11",
   "packages": {
     "pyamica": {"version": "0.3.0", "commit": "a8a4d7e0ad14a88cf2cabeff5094cd0c8a262536"},
     "amica-python": {"version": "0.1.1", "commit": "cad98a6cc98782ffb6f1bff22c99b31431ee5832"}
   },
   "stack": {
-    "torch": "2.12.0+computecanada",
-    "numpy": "2.4.2+computecanada",
-    "scipy": "1.17.0+computecanada",
-    "mne": "1.12.1"
+    "torch": "2.12.0",
+    "numpy": "2.4.2",
+    "scipy": "1.17.0"
   }
 }

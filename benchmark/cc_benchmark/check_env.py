@@ -292,6 +292,14 @@ def cmd_pin(venv: dict, name: str, field: str) -> int:
     return 1
 
 
+def cmd_stack_specs(venv: dict) -> int:
+    """Print `name==version` for each pinned transitive-stack package, so setup
+    scripts install the reproducible stack (`pip install`) rather than latest."""
+    for name, ver in (venv.get("stack") or {}).items():
+        print(f"{name}=={ver}")
+    return 0
+
+
 def cmd_fortran_sha(pins_path: Path) -> int:
     """Print the pinned Fortran amica17 binary sha256 (the single source of truth)."""
     doc = _load_toml(pins_path)
@@ -305,7 +313,8 @@ def cmd_fortran_sha(pins_path: Path) -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("specs", "verify", "lock", "pin", "fortran-sha"))
+    parser.add_argument("command",
+                        choices=("specs", "stack-specs", "verify", "lock", "pin", "fortran-sha"))
     parser.add_argument("--venv", help="venv name in pins.toml (required except for fortran-sha)")
     parser.add_argument("--name", help="package name (for `pin`)")
     parser.add_argument("--field", default="commit", help="pin field to print (for `pin`): commit|version")
@@ -325,7 +334,7 @@ def main(argv=None) -> int:
         return cmd_pin(venv, args.name, args.field)
     if args.command == "verify":
         return cmd_verify(venv, strict=args.strict)
-    return {"specs": cmd_specs, "lock": cmd_lock}[args.command](venv)
+    return {"specs": cmd_specs, "stack-specs": cmd_stack_specs, "lock": cmd_lock}[args.command](venv)
 
 
 if __name__ == "__main__":

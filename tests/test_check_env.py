@@ -70,6 +70,14 @@ def test_specs_version_pins_and_git_pins(capsys):
         "git+https://github.com/sccn/pAMICA.git@526aa3231623490ea21ef9c45acbb50730929622"
 
 
+def test_stack_specs_emits_pinned_stack(capsys):
+    ce = load_check_env()
+    assert ce.cmd_stack_specs(ce.load_venv(PINS, "competitors")) == 0
+    assert capsys.readouterr().out.strip().splitlines() == [
+        "torch==2.12.0", "numpy==2.4.2", "scipy==1.17.0",
+    ]
+
+
 def test_unknown_venv_raises():
     ce = load_check_env()
     with pytest.raises(SystemExit):

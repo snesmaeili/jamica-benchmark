@@ -42,10 +42,15 @@ fi
 source "$VENV/bin/activate"
 pip install --upgrade pip
 
-# torch: Alliance wheelhouse wheel (--no-index) is CUDA-enabled and works for BOTH the CPU
-# and GPU comparisons; fall back to PyPI off-Alliance.
-echo "Installing torch ..."
-pip install --no-index torch 2>/dev/null || pip install torch
+# Transitive scientific stack, PINNED from pins.toml (torch==2.12.0 etc.) so a
+# fresh build is reproducible instead of floating to the wheelhouse's latest.
+# The Alliance --no-index wheel is CUDA-enabled and serves BOTH the CPU and GPU
+# comparisons; fall back to PyPI off-Alliance. Installed FIRST so the competitor
+# wheels resolve against these exact versions.
+echo "Installing the pinned scientific stack ..."
+while read -r s; do
+    [ -n "$s" ] && (pip install --no-index "$s" 2>/dev/null || pip install "$s")
+done < <(python "$HERE/check_env.py" stack-specs --venv competitors)
 
 # The competitor AMICA implementations, installed from pins.toml. These are the
 # PUBLISHED PyPI releases (pyamica==0.3.0, amica-python==0.1.1), recovered from

@@ -34,6 +34,11 @@ schema_version = "1"
 [[venv]]
 name = "competitors"
 python = "3.11"
+# Transitive scientific stack, pinned so a fresh build is reproducible (the
+# Alliance wheelhouse still carries these). setup_*.sh install these first (base
+# versions; the +computecanada local segment is resolved by the wheelhouse), and
+# check_env verify --strict enforces them against the committed reference lock.
+stack = { torch = "2.12.0", numpy = "2.4.2", scipy = "1.17.0" }
 packages = [
   { name = "pyamica",      module = "pyamica", version = "0.3.0", url = "https://github.com/DerAndereJohannes/pyamica.git",   commit = "a8a4d7e0ad14a88cf2cabeff5094cd0c8a262536" },
   { name = "amica-python", module = "amica",   version = "0.1.1", url = "https://github.com/scott-huberty/amica-python.git", commit = "cad98a6cc98782ffb6f1bff22c99b31431ee5832" },
