@@ -50,8 +50,36 @@ while read -r spec; do
     [ -n "$spec" ] && pip install "$spec"
 done < <(python "$HERE/check_env.py" specs --venv neuromechanist)
 
-echo "=== verify imports ==="
-python -c "import numpy, pyAMICA; print('OK — numpy', numpy.__version__, '| pyAMICA imports')"
+# Restore params.json, which the non-editable wheel build drops. pyAMICA's
+# pyproject at this commit declares `package-data = {"pyAMICA" = ["data/*"]}`
+# only -- NOT params.json -- so `pip install git+...@<sha>` (a wheel build)
+# omits it. But pyAMICA.load_default_params() reads <pkg>/params.json
+# unconditionally at AMICA() construction, even though run_neuromechanist.py
+# passes every parameter explicitly, so without it every run dies with
+# FileNotFoundError before the first iteration. Sina's original install was
+# editable (`pip install -e .`), which kept the file reachable via the source
+# tree; ours is a git wheel install, so we fetch it from the pinned commit.
+echo "Restoring params.json (dropped by the non-editable wheel build) ..."
+_PYAMICA_SHA="$(python "$HERE/check_env.py" pin --venv neuromechanist --name pyAMICA)"
+_PKG_DIR="$(python -c 'import pyAMICA, os; print(os.path.dirname(pyAMICA.__file__))')"
+curl -fsSL "https://raw.githubusercontent.com/sccn/pAMICA/${_PYAMICA_SHA}/pyAMICA/params.json" \
+    -o "$_PKG_DIR/params.json"
+python -c "import json; json.load(open('$_PKG_DIR/params.json'))" \
+    && echo "  params.json restored (valid JSON) -> $_PKG_DIR/params.json"
+
+echo "=== verify imports + AMICA() construction ==="
+# Construct AMICA the way run_neuromechanist.py does -- this is the call that
+# reads params.json, so it fails the setup loudly here rather than three hours
+# into an array job if the restore above ever regresses.
+python -c "
+import numpy, pyAMICA
+from pyAMICA import AMICA
+AMICA(num_models=1, num_mix=3, num_comps=4, max_iter=1, lrate=0.1,
+      do_newton=True, newt_start=50, do_sphere=False, do_mean=False,
+      do_opt_block=False, do_history=False, do_reject=False,
+      share_comps=False, seed=0, verbose=False, use_tqdm=False)
+print('OK — numpy', numpy.__version__, '| pyAMICA imports + AMICA() constructs')
+"
 
 echo "=== verify pins ==="
 python "$HERE/check_env.py" verify --venv neuromechanist
