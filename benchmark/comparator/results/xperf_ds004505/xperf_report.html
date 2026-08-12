@@ -203,6 +203,29 @@
       reference)</span>, so these are fair timing comparisons of code computing the same answer.</li>
   </ul>
 
+  <h2>Environment &amp; version pinning</h2>
+  <div class="panel">
+    <p class="note" style="margin:0 0 18px">Every implementation runs in its own version-pinned virtual
+      environment. <span class="mono">pins.toml</span> is the single source of truth, and
+      <span class="mono">check_env&nbsp;verify</span> asserts installed&nbsp;==&nbsp;intended before any fit —
+      so the measures are tied to exact commits, not "whatever was installed".</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Implementation</th><th>Package · version</th><th>Commit / sha</th><th>Scientific stack</th></tr></thead>
+      <tbody>
+        <tr class="amica"><td>amica-python <span class="tag">JAX</span></td><td>amica 0.1.0</td><td>92003b4</td><td>numpy 2.4.2 · scipy 1.17.0 · jax 0.10.2 <small style="color:var(--faint)">(+cuda12 on GPU)</small></td></tr>
+        <tr><td>scott-huberty <span class="tag">PyTorch</span></td><td>amica-python 0.1.1</td><td>cad98a6c</td><td>torch 2.12.0 · numpy 2.4.2 · scipy 1.17.0</td></tr>
+        <tr><td>pyamica <span class="tag">PyTorch</span></td><td>pyamica 0.3.0</td><td>a8a4d7e0</td><td>torch 2.12.0 · numpy 2.4.2 · scipy 1.17.0</td></tr>
+        <tr class="slow"><td>pAMICA <span class="tag">SCCN</span></td><td>pamica 0.3.1</td><td>0e6b7f5</td><td>torch 2.13.0 · numpy 2.4.2 · scipy 1.17.0</td></tr>
+        <tr><td>Fortran amica17 <span class="tag">reference</span></td><td>vendored source</td><td>sha 665b5771…</td><td>gcc 12.3 · openmpi 4.1.5 · flexiblas</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note" style="margin-top:16px">The Fortran reference is built from vendored source (three documented
+      patches, incl. the <span class="mono">fix_init</span> segfault fix) and parity-validated against amica-python to
+      <span class="mono">ΔLL 7e-8 · |W corr| 0.9999999999</span>. amica-JAX on GPU uses a dedicated
+      <span class="mono">.venv_fir_gpu</span> with the <span class="mono">jax_cuda12</span> plugins. Every result carries
+      a provenance stamp (impl commit, harness commit, content-hashed run id).</p>
+  </div>
+
   <h2>Method &amp; honest caveats</h2>
   <ul class="clean">
     <li><b>Setup.</b> Each implementation runs in its own version-pinned virtual environment
