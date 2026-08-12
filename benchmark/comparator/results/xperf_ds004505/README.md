@@ -8,6 +8,12 @@ models) are deliberately not committed.
 Run: 2026-08-12 · Compute Canada **fir** · dataset **ds004505**, 25 subjects,
 64 components, 100 iterations, 1 seed. 250/250 cells, 0 failures.
 
+**Hardware.** CPU — AMD EPYC **Turin** (Zen 5) node, 192 cores / 768 GB, of which
+**8 cores + 40 GB** were allocated per job (`def-kjerbi_cpu`). GPU — 1× **NVIDIA
+H100 80GB HBM3** (nodes carry 4× H100), with **4 CPU cores + 32 GB** per job
+(`def-kjerbi_gpu`). Software base: StdEnv/2023 · gcc 12.3 · cuda 12.6 · cudnn ·
+Python 3.11.
+
 ## Files
 
 | file | what |

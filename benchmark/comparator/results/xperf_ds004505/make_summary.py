@@ -59,7 +59,9 @@ def main():
     cpu, gpu = d["cpu"], d["gpu"]
     summary = {
         "run": {"dataset": "ds004505", "n_subjects": 25, "n_components": 64, "max_iter": 100, "seeds": 1,
-                "cpu": "def-kjerbi_cpu 8 cores", "gpu": "NVIDIA H100 80GB",
+                "cluster": "Compute Canada / Alliance 'fir'",
+                "cpu": "AMD EPYC Turin (Zen 5) node, 192 cores / 768 GB; 8 cores + 40 GB allocated (partition def-kjerbi_cpu)",
+                "gpu": "1x NVIDIA H100 80GB HBM3 (4x H100 per node); 4 CPU cores + 32 GB allocated (partition def-kjerbi_gpu)",
                 "timing": "wall time of fit() incl JIT compile, cold-consistent (per-subject JAX_COMPILATION_CACHE_DIR)",
                 "numerical_agreement_Wcorr": "0.997-1.000 vs Fortran reference"},
         "aggregate": {"cpu": {i: agg(cpu, i) for i in IMPLS if agg(cpu, i)},
