@@ -237,7 +237,7 @@ def test_fortran_sha_from_pins(capsys):
     ce = load_check_env()
     assert ce.cmd_fortran_sha(PINS) == 0
     assert capsys.readouterr().out.strip() == \
-        "180301398ff72fe5f5effc6885567136a4be0a07794a1dc424c4d84cb441459a"
+        "665b577176553c4bb21c4681e135a3af89c65b1851b69f346dc401a8322c6efd"
 
 
 def test_every_pins_venv_pkg_has_a_pin():

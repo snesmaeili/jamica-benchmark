@@ -70,7 +70,7 @@ packages = [
 # parity of a fresh build should be reconfirmed with fortran submit_parity.sbatch.)
 [fortran]
 name = "amica17"
-sha256 = "180301398ff72fe5f5effc6885567136a4be0a07794a1dc424c4d84cb441459a"
+sha256 = "665b577176553c4bb21c4681e135a3af89c65b1851b69f346dc401a8322c6efd"
 built_from = "fortran/build.sh (gcc/12.3 + openmpi/4.1.5 + flexiblas on fir)"
 
 # .venv_pamica (Python 3.12) — current sccn/pAMICA release. NB: this venv is
