@@ -1,0 +1,266 @@
+<title>AMICA cross-implementation benchmark — ds004505</title>
+<style>
+  :root{
+    --ground:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f5;
+    --ink:#171c24; --muted:#5a6472; --faint:#8a94a3; --hair:#e2e6ec;
+    --accent:#0e7c86; --accent-soft:#0e7c8618;
+    --fast:#2f8f66; --slow:#c8791f; --slow-soft:#c8791f1a;
+    --bar-neutral:#9aa6b4;
+    --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#0e1217; --surface:#161c24; --surface-2:#1c2430;
+      --ink:#e6eaf0; --muted:#9aa4b3; --faint:#6c7788; --hair:#27313e;
+      --accent:#3db6c9; --accent-soft:#3db6c920;
+      --fast:#4cbf8b; --slow:#e0954a; --slow-soft:#e0954a1f; --bar-neutral:#5a6675;
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f5;
+    --ink:#171c24; --muted:#5a6472; --faint:#8a94a3; --hair:#e2e6ec;
+    --accent:#0e7c86; --accent-soft:#0e7c8618;
+    --fast:#2f8f66; --slow:#c8791f; --slow-soft:#c8791f1a; --bar-neutral:#9aa6b4;
+  }
+  :root[data-theme="dark"]{
+    --ground:#0e1217; --surface:#161c24; --surface-2:#1c2430;
+    --ink:#e6eaf0; --muted:#9aa4b3; --faint:#6c7788; --hair:#27313e;
+    --accent:#3db6c9; --accent-soft:#3db6c920;
+    --fast:#4cbf8b; --slow:#e0954a; --slow-soft:#e0954a1f; --bar-neutral:#5a6675;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:clamp(20px,4vw,52px) clamp(16px,4vw,40px) 80px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+    font-weight:600;margin:0 0 10px}
+  h1{font-size:clamp(26px,4.4vw,40px);line-height:1.1;margin:0 0 12px;font-weight:680;
+    letter-spacing:-.02em;text-wrap:balance}
+  .lede{font-size:clamp(15px,2vw,17px);color:var(--muted);max-width:64ch;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;padding:16px 0 0;
+    border-top:1px solid var(--hair)}
+  .meta div{font-size:13px}
+  .meta .k{color:var(--faint);letter-spacing:.03em}
+  .meta .v{color:var(--ink);font-family:var(--mono);font-size:12.5px}
+  h2{font-size:13px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);
+    font-weight:650;margin:56px 0 18px;padding-bottom:9px;border-bottom:1px solid var(--hair)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:18px 18px 16px}
+  .card .stat{font-family:var(--mono);font-size:29px;font-weight:600;letter-spacing:-.02em;
+    line-height:1;color:var(--accent)}
+  .card.slow .stat{color:var(--slow)}
+  .card .lbl{font-size:13px;color:var(--muted);margin-top:9px}
+  .card .lbl b{color:var(--ink);font-weight:600}
+  .panel{background:var(--surface);border:1px solid var(--hair);border-radius:13px;
+    padding:clamp(16px,3vw,26px);margin-top:4px}
+  .chart-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+  .chart-title h3{margin:0;font-size:15px;font-weight:640}
+  .chart-title .unit{font-size:12px;color:var(--faint);font-family:var(--mono)}
+  .chart{margin-top:16px;display:flex;flex-direction:column;gap:11px}
+  .row{display:grid;grid-template-columns:170px 1fr;align-items:center;gap:14px}
+  .row .name{font-size:13px;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+  .row .name small{color:var(--faint);font-size:11px}
+  .track{position:relative;height:26px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+  .fill{position:absolute;inset:0 auto 0 0;border-radius:6px;display:flex;align-items:center;
+    justify-content:flex-end;padding-right:9px;min-width:44px;
+    font-family:var(--mono);font-size:12px;font-weight:600;color:#fff;
+    transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .fill.amica{background:var(--accent)}
+  .fill.slow{background:var(--slow)}
+  .fill.neutral{background:var(--bar-neutral)}
+  .axis{margin-top:12px;font-size:11px;color:var(--faint);font-family:var(--mono);
+    display:flex;justify-content:space-between}
+  .tblwrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+  th,td{text-align:right;padding:10px 12px;border-bottom:1px solid var(--hair)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:600}
+  tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  tbody td:first-child{font-family:var(--sans)}
+  tr.amica td{background:var(--accent-soft)}
+  tr.amica td:first-child{font-weight:640;color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+  tr.slow td{background:var(--slow-soft)}
+  .tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:1px 7px;border-radius:5px;
+    background:var(--surface-2);color:var(--muted);margin-left:6px}
+  .tag.win{color:var(--fast)}
+  .tag.tie{color:var(--slow)}
+  p.note{font-size:14px;color:var(--muted);max-width:66ch}
+  ul.clean{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:13px}
+  ul.clean li{position:relative;padding-left:20px;font-size:14.5px;color:var(--ink);max-width:70ch}
+  ul.clean li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;
+    border-radius:2px;background:var(--accent)}
+  ul.clean li.warn::before{background:var(--slow)}
+  ul.clean li b{font-weight:640}
+  ul.clean li .mono{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .two{display:grid;grid-template-columns:1fr;gap:20px}
+  @media(min-width:680px){.two{grid-template-columns:1fr 1fr}}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--hair);
+    font-size:12.5px;color:var(--faint);font-family:var(--mono);line-height:1.7}
+  .foot-note{font-family:var(--sans);color:var(--muted);margin-top:8px;max-width:66ch;font-size:12.5px}
+  @media(max-width:520px){.row{grid-template-columns:1fr}.row .name{text-align:left}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Cross-implementation benchmark · reproduction</p>
+  <h1>AMICA reimplementations, head to head on CPU and GPU</h1>
+  <p class="lede">Six implementations of the AMICA algorithm — including the new SCCN <b>pAMICA</b> —
+    fit the same EEG data, in isolated pinned environments, on one CPU and one H100. All converge to the
+    same unmixing matrix; the question is how fast each gets there.</p>
+
+  <div class="meta">
+    <div><span class="k">Dataset</span> &nbsp;<span class="v">ds004505 · 25 subjects</span></div>
+    <div><span class="k">Config</span> &nbsp;<span class="v">64 comps · 100 iter · 1 seed</span></div>
+    <div><span class="k">Hardware</span> &nbsp;<span class="v">8-core CPU · NVIDIA H100</span></div>
+    <div><span class="k">Timing</span> &nbsp;<span class="v">fit() wall, cold-consistent</span></div>
+    <div><span class="k">Agreement</span> &nbsp;<span class="v">|W corr| 0.997–1.000</span></div>
+  </div>
+
+  <h2>What the numbers say</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="stat">9.6 s</div>
+      <div class="lbl"><b>amica-python (JAX)</b> — fastest on GPU, 100 iterations</div>
+    </div>
+    <div class="card slow">
+      <div class="stat">27×</div>
+      <div class="lbl"><b>pAMICA</b> slower than amica on GPU <span style="color:var(--faint)">(266 s vs 9.6 s)</span></div>
+    </div>
+    <div class="card">
+      <div class="stat">23×</div>
+      <div class="lbl">amica's <b>CPU→GPU speedup</b> — vs pAMICA's 2.5×</div>
+    </div>
+    <div class="card">
+      <div class="stat">0/25</div>
+      <div class="lbl">subjects where <b>pAMICA</b> beats amica on either device</div>
+    </div>
+  </div>
+
+  <h2>GPU — fit time per implementation (H100)</h2>
+  <div class="panel">
+    <div class="chart-title"><h3>Lower is faster · log scale</h3><span class="unit">seconds · mean of 25</span></div>
+    <div class="chart" id="gpuChart"></div>
+    <div class="axis"><span>1s</span><span>10s</span><span>100s</span><span>1000s</span></div>
+    <p class="note" style="margin-top:16px">Three implementations collapse into a ~10 s tier on GPU;
+      pAMICA sits alone at 266 s. It is the only impl that barely benefits from the accelerator.</p>
+  </div>
+
+  <h2>CPU — fit time per implementation (8 cores)</h2>
+  <div class="panel">
+    <div class="chart-title"><h3>Lower is faster · log scale</h3><span class="unit">seconds · mean of 25</span></div>
+    <div class="chart" id="cpuChart"></div>
+    <div class="axis"><span>100s</span><span>316s</span><span>1000s</span><span>3160s</span></div>
+    <p class="note" style="margin-top:16px">On CPU the field spreads out. amica-python's chunked JAX path
+      is fastest by a wide margin; the vendored Fortran reference and DerAndereJohannes' pyamica are the slowest.</p>
+  </div>
+
+  <h2>Full results</h2>
+  <div class="two">
+    <div class="panel">
+      <div class="chart-title" style="margin-bottom:14px"><h3>GPU · H100</h3><span class="unit">seconds</span></div>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Implementation</th><th>mean</th><th>± std</th><th>min–max</th></tr></thead>
+        <tbody id="gpuTable"></tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="chart-title" style="margin-bottom:14px"><h3>CPU · 8 cores</h3><span class="unit">seconds</span></div>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Implementation</th><th>mean</th><th>± std</th><th>min–max</th></tr></thead>
+        <tbody id="cpuTable"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <h2>Is it statistically real? (paired, n=25)</h2>
+  <div class="panel">
+    <div class="tblwrap"><table>
+      <thead><tr><th>GPU comparison</th><th>amica</th><th>other</th><th>amica wins</th><th>t-test p</th><th>Wilcoxon p</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr class="amica"><td>amica vs scott-huberty</td><td>9.56</td><td>10.06</td><td>18/25</td><td>0.097</td><td>0.048</td><td><span class="tag tie">tie</span></td></tr>
+        <tr><td>amica vs pyamica</td><td>9.56</td><td>10.96</td><td>20/25</td><td>0.010</td><td>0.005</td><td><span class="tag win">amica</span></td></tr>
+        <tr><td>amica vs pAMICA</td><td>9.56</td><td>265.7</td><td>25/25</td><td>&lt;1e-25</td><td>6e-8</td><td><span class="tag win">amica</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note" style="margin-top:16px">amica-python is <b>indistinguishable from scott-huberty on GPU</b> —
+      both sit in the same fast tier, and the nominal 0.5 s edge is not robust across tests. It is
+      significantly faster than pyamica, and overwhelmingly faster than pAMICA. On CPU, amica-chunked
+      beats every implementation with p&lt;1e-10.</p>
+  </div>
+
+  <h2>Reading of the result</h2>
+  <ul class="clean">
+    <li><b>amica-python is the fastest AMICA implementation</b> measured — fastest on GPU (9.6 s) and,
+      via its chunked path, fastest on CPU (218 s).</li>
+    <li><b>pAMICA is the clear outlier.</b> It is ~27× slower than amica on GPU and ~3× on CPU, and
+      it barely accelerates from CPU to GPU <span class="mono">(673 s → 266 s, 2.5×)</span> while amica,
+      scott and pyamica gain 23–100×. The signature — flat CPU→GPU scaling — points to it being
+      <b>overhead-bound, not compute-bound</b> (eager per-component work that never saturates the GPU),
+      rather than doing more math. <span class="mono">[inferred from scaling, not profiled]</span></li>
+    <li>The three fast implementations (amica, scott, pyamica) are a <b>statistical near-tie on GPU</b>
+      around ~10 s. The interesting contrast is not among them — it is pAMICA vs the field.</li>
+    <li>Every implementation agrees numerically <span class="mono">(|W corr| 0.997–1.000 vs the Fortran
+      reference)</span>, so these are fair timing comparisons of code computing the same answer.</li>
+  </ul>
+
+  <h2>Method &amp; honest caveats</h2>
+  <ul class="clean">
+    <li><b>Setup.</b> Each implementation runs in its own version-pinned virtual environment
+      <span class="mono">(amica @92003b4 · pAMICA v0.3.1 · scott amica-python 0.1.1 · pyamica · Fortran built from source)</span>,
+      one subprocess per fit. Timing is the wall clock of <span class="mono">fit()</span>, which includes
+      first-iteration/JIT compilation for every impl — measured cold and consistently after a cache-race fix,
+      so no implementation gets a hidden warm-cache advantage.</li>
+    <li class="warn"><b>Single seed, 100 iterations, 25 subjects.</b> Enough to separate pAMICA from the field
+      by orders of magnitude, but the amica-vs-scott GPU tie would need multiple seeds to call either way.</li>
+    <li class="warn"><b>amica-JAX on GPU required a dedicated jax-gpu environment</b> (jax_cuda12 plugins);
+      the default env is JAX-CPU. The pAMICA-is-slow finding is inferred from CPU↔GPU scaling, not a kernel profile.</li>
+    <li><b>Fortran is CPU-only</b> here — it is the numerical reference (built from vendored source,
+      parity-validated to ΔLL 7e-8), not a speed contender, and does not run in the GPU comparison.</li>
+  </ul>
+
+  <footer>
+    ds004505 · 25 subjects · 64 components · 100 iterations · 1 seed · cold-consistent fit() wall time<br>
+    CPU def-kjerbi_cpu (8 cores) · GPU NVIDIA H100 80GB · 250/250 cells, 0 failures
+    <div class="foot-note">Generated from the cross-implementation perf campaign. Per-subject timings exported to
+      <span style="font-family:var(--mono)">xperf_times.csv</span>. Numbers are provenance-stamped and reproducible from the repo.</div>
+  </footer>
+</div>
+
+<script>
+  const GPU=[
+    {n:"amica-python",s:"JAX chunked",m:9.56,sd:1.1,mn:8.5,mx:14.5,c:"amica"},
+    {n:"scott-huberty",s:"PyTorch",m:10.06,sd:1.3,mn:8.0,mx:13.4,c:"neutral"},
+    {n:"pyamica",s:"PyTorch",m:10.96,sd:2.1,mn:7.8,mx:14.3,c:"neutral"},
+    {n:"pAMICA",s:"PyTorch · SCCN",m:265.67,sd:25.3,mn:197.6,mx:330.2,c:"slow"},
+  ];
+  const CPU=[
+    {n:"amica-python",s:"JAX chunked",m:218.2,sd:41.0,mn:138.3,mx:318.7,c:"amica"},
+    {n:"amica-python",s:"JAX full",m:458.3,sd:78.5,mn:285.9,mx:581.1,c:"amica"},
+    {n:"scott-huberty",s:"PyTorch",m:558.3,sd:104.0,mn:362.3,mx:812.0,c:"neutral"},
+    {n:"pAMICA",s:"PyTorch · SCCN",m:672.8,sd:215.9,mn:361.7,mx:1132.3,c:"slow"},
+    {n:"Fortran amica17",s:"reference",m:913.5,sd:142.2,mn:642.9,mx:1157.3,c:"neutral"},
+    {n:"pyamica",s:"PyTorch",m:1125.4,sd:178.2,mn:740.0,mx:1485.9,c:"neutral"},
+  ];
+  const L=Math.log10;
+  function bars(el,data,lo,hi){
+    const span=L(hi)-L(lo);
+    el.innerHTML=data.map(d=>{
+      const w=Math.max(3,((L(d.m)-L(lo))/span)*100);
+      const lab=d.m<100?d.m.toFixed(1):Math.round(d.m);
+      return `<div class="row"><div class="name">${d.n}<br><small>${d.s}</small></div>
+        <div class="track"><div class="fill ${d.c}" style="width:${w}%">${lab}s</div></div></div>`;
+    }).join("");
+  }
+  function rows(el,data){
+    el.innerHTML=data.map(d=>{
+      const cls=d.c==="amica"?"amica":(d.c==="slow"?"slow":"");
+      return `<tr class="${cls}"><td>${d.n} <span class="tag">${d.s}</span></td>
+        <td>${d.m<100?d.m.toFixed(2):d.m.toFixed(0)}</td><td>${d.sd.toFixed(1)}</td>
+        <td>${d.mn.toFixed(0)}–${d.mx.toFixed(0)}</td></tr>`;
+    }).join("");
+  }
+  bars(document.getElementById("gpuChart"),GPU,1,1000);
+  bars(document.getElementById("cpuChart"),CPU,100,3160);
+  rows(document.getElementById("gpuTable"),GPU);
+  rows(document.getElementById("cpuTable"),CPU);
+</script>

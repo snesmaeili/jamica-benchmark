@@ -1,0 +1,143 @@
+{
+  "run": {
+    "dataset": "ds004505",
+    "n_subjects": 25,
+    "n_components": 64,
+    "max_iter": 100,
+    "seeds": 1,
+    "cpu": "def-kjerbi_cpu 8 cores",
+    "gpu": "NVIDIA H100 80GB",
+    "timing": "wall time of fit() incl JIT compile, cold-consistent (per-subject JAX_COMPILATION_CACHE_DIR)",
+    "numerical_agreement_Wcorr": "0.997-1.000 vs Fortran reference"
+  },
+  "aggregate": {
+    "cpu": {
+      "amica_python_jax": {
+        "n": 25,
+        "time_mean_s": 458.322,
+        "time_std_s": 78.45,
+        "time_min_s": 285.88,
+        "time_max_s": 581.099,
+        "peak_mem_gb_mean": 20.5
+      },
+      "amica_python_jax_chunked": {
+        "n": 25,
+        "time_mean_s": 218.22,
+        "time_std_s": 41.045,
+        "time_min_s": 138.296,
+        "time_max_s": 318.705,
+        "peak_mem_gb_mean": 3.278
+      },
+      "pyamica_torch": {
+        "n": 25,
+        "time_mean_s": 1125.389,
+        "time_std_s": 178.156,
+        "time_min_s": 740.021,
+        "time_max_s": 1485.909,
+        "peak_mem_gb_mean": 3.279
+      },
+      "scott_huberty_torch": {
+        "n": 25,
+        "time_mean_s": 558.302,
+        "time_std_s": 104.018,
+        "time_min_s": 362.321,
+        "time_max_s": 811.954,
+        "peak_mem_gb_mean": 6.112
+      },
+      "pamica_torch": {
+        "n": 25,
+        "time_mean_s": 672.831,
+        "time_std_s": 215.929,
+        "time_min_s": 361.664,
+        "time_max_s": 1132.274,
+        "peak_mem_gb_mean": 3.278
+      },
+      "fortran_amica17": {
+        "n": 25,
+        "time_mean_s": 913.474,
+        "time_std_s": 142.242,
+        "time_min_s": 642.887,
+        "time_max_s": 1157.304,
+        "peak_mem_gb_mean": 1.645
+      }
+    },
+    "gpu": {
+      "amica_python_jax_chunked": {
+        "n": 25,
+        "time_mean_s": 9.564,
+        "time_std_s": 1.113,
+        "time_min_s": 8.523,
+        "time_max_s": 14.514,
+        "peak_mem_gb_mean": 3.285
+      },
+      "pyamica_torch": {
+        "n": 25,
+        "time_mean_s": 10.956,
+        "time_std_s": 2.093,
+        "time_min_s": 7.786,
+        "time_max_s": 14.285,
+        "peak_mem_gb_mean": 3.285
+      },
+      "scott_huberty_torch": {
+        "n": 25,
+        "time_mean_s": 10.056,
+        "time_std_s": 1.256,
+        "time_min_s": 8.049,
+        "time_max_s": 13.373,
+        "peak_mem_gb_mean": 3.285
+      },
+      "pamica_torch": {
+        "n": 25,
+        "time_mean_s": 265.672,
+        "time_std_s": 25.334,
+        "time_min_s": 197.608,
+        "time_max_s": 330.185,
+        "peak_mem_gb_mean": 3.285
+      }
+    }
+  },
+  "paired_tests_gpu_vs_amica_chunked": {
+    "scott_huberty_torch": {
+      "n": 25,
+      "a_faster_in": 18,
+      "a_mean": 9.56,
+      "b_mean": 10.06,
+      "ttest_p": 0.09662,
+      "wilcoxon_p": 0.04826
+    },
+    "pyamica_torch": {
+      "n": 25,
+      "a_faster_in": 20,
+      "a_mean": 9.56,
+      "b_mean": 10.96,
+      "ttest_p": 0.01006,
+      "wilcoxon_p": 0.00507
+    },
+    "pamica_torch": {
+      "n": 25,
+      "a_faster_in": 25,
+      "a_mean": 9.56,
+      "b_mean": 265.67,
+      "ttest_p": 0.0,
+      "wilcoxon_p": 0.0
+    }
+  },
+  "paired_tests_cpu_vs_amica_chunked": {
+    "scott_huberty_torch": {
+      "n": 25,
+      "a_faster_in": 25,
+      "a_mean": 218.22,
+      "b_mean": 558.3,
+      "ttest_p": 0.0,
+      "wilcoxon_p": 0.0
+    },
+    "pamica_torch": {
+      "n": 25,
+      "a_faster_in": 25,
+      "a_mean": 218.22,
+      "b_mean": 672.83,
+      "ttest_p": 0.0,
+      "wilcoxon_p": 0.0
+    }
+  }
+}
