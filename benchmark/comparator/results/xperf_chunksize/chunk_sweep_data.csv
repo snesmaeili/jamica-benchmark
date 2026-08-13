@@ -150,6 +150,6 @@ real_each_optimum_gpu,jamica,chunk_size,full-batch,5.2,s,"25-subj median, at own
 real_each_optimum_gpu,pamica,block_size,full-batch,9.2,s,"25-subj median, at own optimum"
 real_each_optimum_gpu,pyamica,chunk_t,full-batch,9.7,s,"25-subj median, at own optimum"
 real_each_optimum_gpu,scott,batch_size,65536,10.1,s,"25-subj median, at own optimum"
-real_pamica_sensitivity_gpu,pamica,block_size,512 (default),139.6,s,artifact
+real_pamica_sensitivity_gpu,pamica,block_size,1024 (near 512 default),139.6,s,artifact
 real_pamica_sensitivity_gpu,pamica,block_size,16384 (tuned),14.3,s,tuned
 real_pamica_sensitivity_gpu,pamica,block_size,full-batch (best),9.2,s,best

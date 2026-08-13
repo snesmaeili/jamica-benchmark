@@ -5,7 +5,7 @@ memory as a function of each AMICA implementation's batching knob, on GPU and CP
 and **main**, plus a **steady-state (compile-excluded)** re-measurement.
 
 ## What this answers
-1. Each implementation exposes a batching knob that moves fit time 3–13×; defaults are footguns
+1. Each implementation exposes a batching knob that moves fit time up to ~17× and peak memory up to ~30×; defaults are footguns
    (pAMICA `block_size=512` is the worst: 12× off its GPU optimum, 9.4× off its CPU optimum).
 2. The optimum **flips by device** (e.g. scott-huberty is fastest at full-batch on CPU, slowest at
    full-batch on GPU).
@@ -78,7 +78,7 @@ compile-masking artifact of the 20-iter window; both prescribed the steady-state
 in `gpu_steady_*`.
 
 ## Real-workload each-at-optimum (ds004505, 25-subj median, 100 iters, H100)
-jamica 5.5s · pAMICA 9.2s (full-batch, 19 GB VRAM) · pyamica 12.8s (16384) · scott 45.7s (16384).
+**Per the current 25-subject main sweep** (`gen_report.py` / `chunk_sweep_data.csv`), each at its best measured chunk: jamica 5.2s (full) · pAMICA 9.2s (full) · pyamica 9.7s (full) · scott-huberty 10.1s (65536, ~1.4 GB). *(This supersedes an earlier release-build opt-campaign that reported 5.5 / 9.2 / 12.8 / 45.7s — different build + different per-impl optima; the sweep above is the authoritative one.)*
 Run through the orchestrator (`implementation_perf.py`) with each impl's best chunk set via env
 (`AMICA_CHUNK_SIZE`, `AMICA_PAMICA_BLOCK_SIZE`, `AMICA_PYAMICA_CHUNK`, `AMICA_SCOTT_BATCH`). The
 env-override for the three competitor runners is upstreamed in `../../runners/` (see git log);

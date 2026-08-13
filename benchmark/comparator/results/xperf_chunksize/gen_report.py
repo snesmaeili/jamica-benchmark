@@ -63,7 +63,7 @@ CPU_FIT_MISS = {("pyamica",1024):("&gt;1h","bad"),   # exceeded the 3600s runner
 REAL_OPT = [("jamica","full-batch",5.2,8.1),("pamica","full-batch",9.2,19.3),
             ("pyamica","full-batch",9.7,28.3),("scott","65536",10.1,1.4)]
 # pAMICA default sensitivity (the 47x), GPU 25-subj median
-REAL_PAM = [("512 (default)",139.6,0.58,"artifact"),("16384 (tuned)",14.3,0.86,"tuned"),
+REAL_PAM = [("1024 (near 512 default)",139.6,0.58,"artifact"),("16384 (tuned)",14.3,0.86,"tuned"),
             ("full-batch (best)",9.2,19.25,"best")]
 
 def xlog(c): return math.log2(FULL*4 if c==FULL else c)
@@ -208,7 +208,7 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
 <header class="hero">
   <div class="kick">Cross-implementation AMICA · ds004505 · real EEG · bleeding-edge</div>
   <h1>Chunk size is the <em>hidden variable</em></h1>
-  <p class="lede">On real EEG, the batching knob moves fit time up to ~30× and peak memory up to ~30×.
+  <p class="lede">On real EEG, the batching knob moves fit time up to ~17× and peak memory up to ~30×.
   Every implementation is strongly chunk-sensitive; the defaults are footguns. jamica is fastest
   at every chunk and leanest at full-batch.</p>
   <div class="stamp"><span><b>Latest main:</b></span><span>jamica <code>df18b5e</code></span><span>scott <code>e15e158</code></span><span>pyamica <code>a8a4d7e</code></span><span>pAMICA <code>0c4da39</code></span><span>Fortran ref <code>665b577</code></span><span>· 25 subj · 64 comp · 100 iters · H100 + 8-core Xeon</span></div>
@@ -217,11 +217,11 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
 <section>
   <h2>The correction that motivated this</h2>
   <p class="sub">A naive comparison uses each library's default batching. pAMICA's default
-  (<code>block_size=512</code>) alone produced a ~15–47× "gap" that is a configuration artifact, not an
+  (<code>block_size=512</code>) alone produced most of the apparent gap — a configuration artifact, not an
   algorithmic one — on the same real subjects, the same pAMICA:</p>
   <div class="callout">
-    <div class="stat bad"><div class="big">140→9.2s</div><div class="lab">pAMICA on ds004505 (GPU median) from its 512 default to full-batch — a 15× self-speedup from one number.</div></div>
-    <div class="stat warn"><div class="big">~30×</div><div class="lab">Range of every library across the chunk axis on real data. The default is never the optimum, and the optimum flips by device.</div></div>
+    <div class="stat bad"><div class="big">140→9.2s</div><div class="lab">pAMICA on ds004505 (GPU median) from block_size=1024 to full-batch — ~15× from one number; its shipped 512 default is slower still.</div></div>
+    <div class="stat warn"><div class="big">~17×</div><div class="lab">Widest fit-time range across the chunk axis (worst-affected library); peak memory swings up to ~30×. The default is never the optimum, and it flips by device.</div></div>
     <div class="stat jamica"><div class="big">1.8×</div><div class="lab">jamica's real lead over pAMICA when both run at their own optimum — not tens of ×.</div></div>
   </div>
   <table><thead><tr><th><code>block_size</code></th><th>Fit time</th><th>Peak VRAM</th><th></th></tr></thead><tbody>{pamrows()}</tbody></table>
