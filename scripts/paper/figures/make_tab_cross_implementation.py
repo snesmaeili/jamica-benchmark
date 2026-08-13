@@ -44,7 +44,7 @@ HEADLINE_ITER = 1000
 
 DISPLAY = {
     "amica_python_jax": r"\texttt{amica} (JAX, full batch)",
-    "amica_python_jax_chunked": r"\texttt{amica} (JAX, blocked)",
+    "amica_python_jax_chunked": r"\texttt{amica} (JAX, chunked)",
     "scott_huberty_torch": r"AMICA-Python (PyTorch)",
     "pyamica_torch": r"\texttt{pyamica} (PyTorch)",
     "pamica_torch": r"\texttt{pAMICA} (PyTorch)",

@@ -58,7 +58,7 @@ Pick one of the two paths below.
    `/mnt/c/...`) and build:
 
    ```bash
-   cd /mnt/c/path/to/amica-benchmark/fortran
+   cd /mnt/c/path/to/jamica-benchmark/fortran
    BLAS=openblas ./build.sh
    ```
 
@@ -101,4 +101,4 @@ diff -r out/ /path/to/fortran_nondegenerate/   # numerical agreement
 
 The full sub-01 (118 ch × 1.2 M samples) parity test, including the param
 file and pre-processed `.fdt`, lives at
-`amica-benchmark/results/post_f1_audit/`.
+`jamica-benchmark/results/post_f1_audit/`.

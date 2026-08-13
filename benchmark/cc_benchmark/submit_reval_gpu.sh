@@ -57,7 +57,7 @@ if "gpu" not in kinds and "cuda" not in kinds:
 print("GPU confirmed.")
 PY
 # Which algorithm actually ran -- see submit_reval_cpu.sh.
-python -c "import amica; print('amica  ->', amica.__file__)"
+python -c "import jamica; print('amica  ->', amica.__file__)"
 python -c "import amica_python.benchmark.runner as r; print('harness->', r.__file__)"
 echo "harness commit: $(git -C "$REPO" rev-parse HEAD)"
 echo "release commit: $(git -C "${AMICA_RELEASE:-/scratch/$USER/amica_release}" rev-parse HEAD)"

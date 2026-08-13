@@ -38,7 +38,7 @@ python -c "import numpy, scipy; print('numpy', numpy.__version__, '| scipy', sci
 python -c "import mne; print('mne', mne.__version__)" || echo "mne unavailable"
 # Which algorithm actually ran. Print the resolved path, not the version
 # string: the whole point of this job is that those two can disagree.
-python -c "import amica; print('amica  ->', amica.__file__)"
+python -c "import jamica; print('amica  ->', amica.__file__)"
 python -c "import amica_python.benchmark.runner as r; print('harness->', r.__file__)"
 echo "harness commit: $(git -C "$REPO" rev-parse HEAD)"
 echo "release commit: $(git -C "${AMICA_RELEASE:-/scratch/$USER/amica_release}" rev-parse HEAD)"

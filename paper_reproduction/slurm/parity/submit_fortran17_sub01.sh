@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --output=logs/fortran17-sub01-%j.out
 #SBATCH --error=logs/fortran17-sub01-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 # Run amica17 (compiled from source on Narval) on the SAME preprocessed
 # sub-01 data Python uses. Definitive Fortran vs Python comparison.

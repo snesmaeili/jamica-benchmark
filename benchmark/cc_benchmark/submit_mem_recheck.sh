@@ -54,7 +54,7 @@ export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/amica-python/.venv
 # task still exits 0, so the array looks like it succeeded while producing
 # nothing. The pAMICA venv, by contrast, IS where the default expects it.
 export COMPETITORS_VENV="${COMPETITORS_VENV:-/scratch/$USER/amica-python/.venv_competitors/bin/python}"
-export PAMICA_VENV="${PAMICA_VENV:-/scratch/$USER/amica-benchmark/.venv_pamica/bin/python}"
+export PAMICA_VENV="${PAMICA_VENV:-/scratch/$USER/jamica-benchmark/.venv_pamica/bin/python}"
 for _v in "$AMICA_PYTHON_VENV" "$COMPETITORS_VENV" "$PAMICA_VENV"; do
     [ -x "$_v" ] || { echo "FATAL: no interpreter at $_v" >&2; exit 1; }
 done

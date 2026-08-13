@@ -1,4 +1,4 @@
-# amica-benchmark
+# jamica-benchmark
 
 Validation, benchmarking, and manuscript-reproduction materials for
 [`jamica`](https://github.com/snesmaeili/jamica) — a Python/JAX implementation of

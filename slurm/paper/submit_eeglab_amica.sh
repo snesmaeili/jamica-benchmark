@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --output=logs/eeglab-amica-%j.out
 #SBATCH --error=logs/eeglab-amica-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 module load StdEnv/2020 matlab/2023a.3
 ulimit -s unlimited

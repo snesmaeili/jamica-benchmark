@@ -3,7 +3,7 @@
 # cross-implementation MEMORY comparison (benchmark/comparator). Run ONCE per site.
 #
 #   pyamica  (DerAndereJohannes)  PyTorch     -> import pyamica
-#   amica    (scott-huberty)      PyTorch     -> import amica
+#   amica    (scott-huberty)      PyTorch     -> import jamica
 #   pyAMICA  (sccn/pAMICA @526aa32, the March-2025 pre-rename snapshot
 #             formerly at neuromechanist/pyAMICA)  pure NumPy  -> import pyAMICA
 #

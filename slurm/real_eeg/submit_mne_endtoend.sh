@@ -7,7 +7,7 @@
 #SBATCH --mem=32G
 #SBATCH --output=logs/mne-endtoend-%j.out
 #SBATCH --error=logs/mne-endtoend-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 module load cuda/12.6
 source /home/sesma/envs/amica/bin/activate

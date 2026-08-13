@@ -7,7 +7,7 @@
 #SBATCH --mem=16G
 #SBATCH --output=logs/test-sphere-%j.out
 #SBATCH --error=logs/test-sphere-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 module load cuda/12.6
 source /home/sesma/envs/amica/bin/activate
 python -u scripts/parity/test_fortran_sphere.py

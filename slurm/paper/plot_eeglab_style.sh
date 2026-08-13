@@ -6,7 +6,7 @@
 #SBATCH --mem=8G
 #SBATCH --output=logs/eeglab-topoplots-%j.out
 #SBATCH --error=logs/eeglab-topoplots-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 source /home/sesma/envs/amica/bin/activate
 export JAX_PLATFORMS=cpu
 

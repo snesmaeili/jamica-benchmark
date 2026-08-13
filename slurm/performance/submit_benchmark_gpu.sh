@@ -22,7 +22,7 @@ export MAX_ITER="${MAX_ITER:-200}"
 # Only run 1 Hz HP (skip the 2 Hz sweep for speed)
 export HP_FILTERS="1.0"
 
-cd /home/sesma/amica-benchmark
+cd /home/sesma/jamica-benchmark
 echo "Starting GPU benchmark: $(date)"
 echo "MAX_ITER=$MAX_ITER, GPU=$CUDA_VISIBLE_DEVICES"
 nvidia-smi 2>/dev/null || echo "No nvidia-smi"

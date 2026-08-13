@@ -27,7 +27,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # Allow running as `python scripts/paper/run_paper_pipeline.py`.
-ROOT = Path(__file__).resolve().parents[2]  # amica-benchmark root
+ROOT = Path(__file__).resolve().parents[2]  # jamica-benchmark root
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

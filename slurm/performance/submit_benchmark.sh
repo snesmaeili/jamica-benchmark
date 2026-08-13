@@ -20,7 +20,7 @@ export JAX_PLATFORMS=cpu
 # Override MAX_ITER via: MAX_ITER=2000 sbatch submit_benchmark.sh
 export MAX_ITER="${MAX_ITER:-500}"
 
-cd /home/sesma/amica-benchmark
+cd /home/sesma/jamica-benchmark
 echo "Starting benchmark: $(date)"
 echo "MAX_ITER=$MAX_ITER, SUBJECTS=${SUBJECTS:-sub-01}"
 python -u scripts/comparison/run_highdens_validation.py 2>&1

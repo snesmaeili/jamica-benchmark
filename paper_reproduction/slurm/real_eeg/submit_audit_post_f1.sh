@@ -7,7 +7,7 @@
 #SBATCH --mem=16G
 #SBATCH --output=logs/audit-post-f1-%j.out
 #SBATCH --error=logs/audit-post-f1-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 # Validate F1 (lrate state machine) + F2 (invsigmin=1e-8) on the
 # production failure mode: sub-01, 2000 iters, num_mix=3.

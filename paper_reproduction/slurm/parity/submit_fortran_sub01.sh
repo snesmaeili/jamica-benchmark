@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --output=logs/fortran-sub01-%j.out
 #SBATCH --error=logs/fortran-sub01-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 # Run the original Fortran amica15ub on the SAME preprocessed sub-01
 # data that Python uses. Direct comparison of algorithm behavior.

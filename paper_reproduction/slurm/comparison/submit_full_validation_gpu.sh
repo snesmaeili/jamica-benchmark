@@ -8,7 +8,7 @@
 #SBATCH --array=1-25
 #SBATCH --output=logs/full-gpu-%A_%a.out
 #SBATCH --error=logs/full-gpu-%A_%a.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 # Job array runs one subject per task in parallel.
 # Default: 1 subject × 1 HP filter × 3 methods (no FastICA), MAX_ITER=2000.

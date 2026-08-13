@@ -7,7 +7,7 @@
 #SBATCH --mem=16G
 #SBATCH --output=logs/test-fix-init-%j.out
 #SBATCH --error=logs/test-fix-init-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 module load cuda/12.6
 source /home/sesma/envs/amica/bin/activate
 python -u scripts/real_eeg/test_fix_init.py

@@ -82,6 +82,11 @@ AMICA_GPU_SUBMISSION = (
 MEMORY_CSV = WORKSPACE / "results/mem_compare/mem_comparison_table.csv"
 MEMORY_JSON_ROOT = WORKSPACE / "results/mem_compare"
 MEMORY_MULTISUBJECT_ROOT = WORKSPACE / "results/mem_multisubj"
+# Re-measured paired memory after the expectation step was chunked inside the
+# compiled graph. The archived trees above predate that change and report a
+# median 54% saving where the current release gives 79% at every recording, so
+# they are kept for provenance but are no longer what the figure plots.
+MEMORY_RECHECK_ROOT = WORKSPACE / "results/comparator/mem_recheck"
 RUNTIME_GPU_ROOTS = {
     100: WORKSPACE / "results/rt_gpu_100",
     600: WORKSPACE / "results/rt_gpu_600",
@@ -1776,11 +1781,20 @@ def load_fixed_workload_runtime_audit(*, write_output: bool = True) -> pd.DataFr
 
 def load_paired_chunking_memory() -> pd.DataFrame:
     """Load paired full/chunked CPU RSS for ds004505 sub-01--sub-06."""
-    roots = [MEMORY_JSON_ROOT / "cpu/ds004505_sub-01_mem"]
-    roots.extend(sorted(MEMORY_MULTISUBJECT_ROOT.glob("ds004505_sub-*_mem")))
+    # The re-measured campaign is the one the manuscript reports. Falling back to
+    # the archived trees would silently redraw the panel with numbers the text no
+    # longer states, so a missing campaign is an error rather than a fallback.
+    roots = sorted(MEMORY_RECHECK_ROOT.glob("sub-*"))
+    if not roots:
+        raise FileNotFoundError(
+            f"No re-measured paired memory under {MEMORY_RECHECK_ROOT}. "
+            "Run benchmark/cc_benchmark/submit_mem_recheck.sh (six subjects, "
+            "~10 min each) and sync its results before regenerating Figure 4."
+        )
     rows = []
     for root in roots:
-        subject = root.name.split("_")[1]
+        # Archived trees were named ds004505_sub-01_mem; the re-check writes sub-01.
+        subject = root.name if root.name.startswith("sub-") else root.name.split("_")[1]
         records = {}
         for path in root.glob("*_result.json"):
             record = json.loads(path.read_text(encoding="utf-8"))

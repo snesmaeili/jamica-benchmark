@@ -1,4 +1,4 @@
-# Dataset configuration for amica-benchmark
+# Dataset configuration for jamica-benchmark
 
 ds004505:
   path: /home/sesma/scratch/ds004505

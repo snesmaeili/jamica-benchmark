@@ -7,7 +7,7 @@
 #SBATCH --mem=16G
 #SBATCH --output=logs/compare-20iter-gpu-%j.out
 #SBATCH --error=logs/compare-20iter-gpu-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 module load cuda/12.6
 source /home/sesma/envs/amica/bin/activate

@@ -7,7 +7,7 @@
 #SBATCH --mem=32G
 #SBATCH --output=logs/bench-gpu-%j.out
 #SBATCH --error=logs/bench-gpu-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 source /home/sesma/envs/amica/bin/activate
 module load cuda/12.6 2>/dev/null || true

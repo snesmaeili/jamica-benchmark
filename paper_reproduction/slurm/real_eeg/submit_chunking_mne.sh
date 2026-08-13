@@ -6,7 +6,7 @@
 #SBATCH --mem=16G
 #SBATCH --output=logs/chunking-mne-%j.out
 #SBATCH --error=logs/chunking-mne-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 
 source /home/sesma/envs/amica/bin/activate
 export JAX_PLATFORMS=cpu

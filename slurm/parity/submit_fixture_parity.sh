@@ -6,7 +6,7 @@
 #SBATCH --mem=8G
 #SBATCH --output=logs/fixture-parity-%j.out
 #SBATCH --error=logs/fixture-parity-%j.err
-#SBATCH --chdir=/home/sesma/amica-benchmark
+#SBATCH --chdir=/home/sesma/jamica-benchmark
 module load StdEnv/2023 gcc/12.3 openmpi/4.1.5 flexiblas/3.3.1 2>/dev/null || module load gcc openmpi flexiblas 2>/dev/null || true
 source /home/sesma/envs/amica/bin/activate
 export JAX_PLATFORMS=cpu

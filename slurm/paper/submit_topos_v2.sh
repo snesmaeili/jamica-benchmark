@@ -12,5 +12,5 @@ source /home/sesma/envs/amica/bin/activate
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export DS_PATH="/home/sesma/scratch/ds004505"
 
-cd /home/sesma/amica-benchmark
+cd /home/sesma/jamica-benchmark
 python -u scripts/paper/plot_topos_v2.py

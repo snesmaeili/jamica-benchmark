@@ -17,8 +17,8 @@ extended Infomax, and FastICA on real EEG data.
 ### On Narval (Alliance HPC)
 
 ```bash
-git clone git@github.com:snesmaeili/amica-benchmark.git
-cd amica-benchmark
+git clone git@github.com:snesmaeili/jamica-benchmark.git
+cd jamica-benchmark
 
 # Use existing virtual environment
 source conf/narval.env
