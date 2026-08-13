@@ -7,7 +7,7 @@ latest main) jamica is fastest at every chunk and leanest at full-batch. The syn
 "flat curve" that once looked like robustness was a JIT-compile artifact (methodology section).
 CPU absolute timings carry a node-contention caveat (see NOTES_measurement.md); CPU *memory* is clean.
 """
-import math, os
+import math, os, csv
 
 FULL = 262144
 IMPLS = ["jamica", "pamica", "pyamica", "scott"]
@@ -332,4 +332,33 @@ STANDALONE = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
               '<meta name="viewport" content="width=device-width, initial-scale=1">'
               f'<title>{_title}</title></head><body>\n{HTML}\n</body></html>\n')
 open(os.path.join(HERE,"xperf_chunk_report_standalone.html"),"w").write(STANDALONE)
-print("wrote real-data report", len(HTML), "bytes (+ standalone", len(STANDALONE), "bytes)")
+
+# tidy dataset — regenerated from THIS report's real-data dicts (single source of truth),
+# so chunk_sweep_data.csv never drifts from the rendered numbers.
+def _cn(c): return "full" if c == FULL else str(c)
+_rows = [("dataset", "impl", "knob", "chunk", "value", "unit", "note")]
+for im in IMPLS:
+    for c, (t, v) in sorted(GPU[im].items()):
+        _rows.append(("gpu_fit_s_median", im, KNOB[im], _cn(c), t, "s", "real ds004505 25-subj median, H100"))
+        _rows.append(("gpu_vram_gb_median", im, KNOB[im], _cn(c), v, "GB", ""))
+    for c, (lo, hi) in sorted(GPU_BAND[im].items()):
+        _rows.append(("gpu_fit_s_min", im, KNOB[im], _cn(c), lo, "s", "min across 25 subj"))
+        _rows.append(("gpu_fit_s_max", im, KNOB[im], _cn(c), hi, "s", "max across 25 subj"))
+for im in CPU_IMPLS:
+    for c, v in sorted(CPU_RSS[im].items()):
+        _rows.append(("cpu_rss_gb_median", im, KNOB[im], _cn(c), v, "GB", "real ds004505 5-subj median, 8 cores"))
+    for c, v in sorted(CPU_FIT[im].items()):
+        _rows.append(("cpu_fit_s_min", im, KNOB[im], _cn(c), v, "s", "best-of-5 subj (least-contended, throttled %4)"))
+    for c, v in sorted(CPU_FIT_MED[im].items()):
+        _rows.append(("cpu_fit_s_median", im, KNOB[im], _cn(c), v, "s", "median (contention-noisy)"))
+for (im, c), (lab, _cls) in CPU_FIT_MISS.items():
+    _rows.append(("cpu_fit_s_min", im, KNOB[im], _cn(c), lab.replace("&gt;", ">"), "", "no value: timeout / OOM"))
+for im, cfg, t, vram in REAL_OPT:
+    _rows.append(("real_each_optimum_gpu", im, KNOB[im], cfg, t, "s", "25-subj median, at own optimum"))
+for cfg, t, v, tag in REAL_PAM:
+    _rows.append(("real_pamica_sensitivity_gpu", "pamica", "block_size", cfg, t, "s", tag))
+with open(os.path.join(HERE, "chunk_sweep_data.csv"), "w", newline="") as _f:
+    csv.writer(_f).writerows(_rows)
+
+print("wrote real-data report", len(HTML), "bytes (+ standalone", len(STANDALONE),
+      "bytes) + chunk_sweep_data.csv", len(_rows) - 1, "rows")
