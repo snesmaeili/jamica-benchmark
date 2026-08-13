@@ -40,7 +40,7 @@ CPU_RSS = {
  "fortran": {1024:0.72,4096:0.75,16384:0.86,65536:1.32,FULL:9.97},
 }
 # REAL CPU fit-time (s), throttled %4 rerun, 5 subjects. CPU_FIT = min across subjects
-# (best observed ≈ least-contended, the clean lower-bound curve); CPU_FIT_MED = median (still
+# (best observed ≈ least-contended, the tightest/cleanest curve); CPU_FIT_MED = median (still
 # carries residual node contention + per-subject data-size heterogeneity, shown for context).
 CPU_FIT = {  # min across subjects — the clean curve
  "jamica":   {1024:155.0,4096:156.5,16384:162.3,65536:181.6,FULL:288.3},
@@ -216,9 +216,10 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
 
 <section>
   <h2>The correction that motivated this</h2>
-  <p class="sub">A naive comparison uses each library's default batching. pAMICA's default
-  (<code>block_size=512</code>) alone produced most of the apparent gap — a configuration artifact, not an
-  algorithmic one — on the same real subjects, the same pAMICA:</p>
+  <p class="sub">A naive comparison uses each library's default batching, and pAMICA's default alone
+  produced most of the apparent gap — a configuration artifact, not an algorithmic one. (Its shipped
+  default is <code>block_size=512</code>, which we didn't re-measure on this sweep; the nearest measured
+  point, 1024, is already ~15× off its own optimum, and 512 is slower still.)</p>
   <div class="callout">
     <div class="stat bad"><div class="big">140→9.2s</div><div class="lab">pAMICA on ds004505 (GPU median) from block_size=1024 to full-batch — ~15× from one number; its shipped 512 default is slower still.</div></div>
     <div class="stat warn"><div class="big">~17×</div><div class="lab">Widest fit-time range across the chunk axis (worst-affected library); peak memory swings up to ~30×. The default is never the optimum, and it flips by device.</div></div>
@@ -258,7 +259,8 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
 <section>
   <h2>CPU — fit time &amp; memory</h2>
   <p class="sub">Real ds004505, 8 cores, 5 subjects (fair-share-neutral throttled rerun). Fit-time is
-  the <b>best-of-5 per cell</b> — a least-contended lower bound; memory is allocation-driven, so clean
+  the <b>best-of-5 per cell</b> — the least-contended (tightest) estimate; these CPU absolutes stay
+  contention-inflated, so trust the ordering and optima, not the exact seconds. Memory is allocation-driven, so clean
   regardless. ◯ = each impl's CPU optimum. Includes the Fortran amica17 reference (CPU-only).</p>
   <div class="grid2"><div class="card">{c_ct}</div><div class="card">{c_cr}</div></div>
   {legend(CPU_IMPLS)}
@@ -301,8 +303,8 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   <p class="sub">All curves above are latest <code>main</code>. Release→main is performance-neutral on
   GPU (measured identical); jamica's one perf-relevant commit (<code>2cd81e4</code>, "make CPU fits
   faster and smaller") touches the CPU E-step only. Competitor <code>main</code> builds move only
-  through the same batching knob; bumping to main rescues no one's default (pAMICA <code>main</code> is
-  still 140 s at 512). The CPU curves above are the clean throttled <code>main</code> build; a
+  through the same batching knob; bumping to main rescues no one's default (pAMICA <code>main</code>'s
+  default is still far from its optimum — its nearest measured point, 1024, is ~140 s). The CPU curves above are the clean throttled <code>main</code> build; a
   like-for-like release-vs-main CPU comparison at clean concurrency was out of scope for this pass.</p>
 </section>
 
