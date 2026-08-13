@@ -27,7 +27,7 @@ read -r S IMPL C <<< "$line"
 st=$(printf "sub-%02d" "$S")
 R=/scratch/yorguin/amica-benchmark-repro
 CACHE=/scratch/yorguin/realchunk_cache/ds004505_${st}_nc64.npz
-ALL="amica_python_jax amica_python_jax_chunked amica_python_numpy neuromechanist_numpy pyamica_torch scott_huberty_torch pamica_torch fortran_amica17"
+ALL="jamica jamica_chunked jamica_numpy neuromechanist_numpy pyamica_torch scott_huberty_torch pamica_torch fortran_amica17"
 SKIP=""; for k in $ALL; do [ "$k" = "$IMPL" ] || SKIP="$SKIP $k"; done
 export AMICA_PYTHON_VENV=$R/.venv_fir_gpu/bin/python
 export COMPETITORS_VENV=$R/.venv_competitors_main/bin/python

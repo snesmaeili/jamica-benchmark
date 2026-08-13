@@ -112,10 +112,10 @@ def main() -> int:
         return print(f"no input_*.npz under {run_dir}") or 1
     input_path = inputs[0]
 
-    ref_name = args.reference or "amica_python_jax_chunked_sub-01_seed0_result.json"
+    ref_name = args.reference or "jamica_chunked_sub-01_seed0_result.json"
     ref_path = run_dir / ref_name
     if not ref_path.exists():
-        cands = sorted(p.name for p in run_dir.glob("amica_python_jax*_result.json"))
+        cands = sorted(p.name for p in run_dir.glob("jamica*_result.json"))
         return print(f"reference {ref_name} not found; candidates: {cands}") or 1
     ref = json.loads(ref_path.read_text())
 

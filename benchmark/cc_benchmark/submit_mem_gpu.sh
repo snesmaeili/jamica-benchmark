@@ -52,7 +52,7 @@ python ../comparator/implementation_perf.py \
     --amica-device gpu --competitor-device gpu $NVML_OPT \
     --amica-chunk-size "${AMICA_MEM_CHUNK:-auto}" \
     $TAG_OPT \
-    --skip amica_python_jax amica_python_numpy neuromechanist_numpy fortran_amica17
+    --skip jamica jamica_numpy neuromechanist_numpy fortran_amica17
 
 echo "=== DONE. Results under $AMICA_COMPARATOR_RESULTS/ . Aggregate locally: ==="
 echo "  python ../comparator/aggregate_pilot.py --root '$AMICA_COMPARATOR_RESULTS' --impls all"

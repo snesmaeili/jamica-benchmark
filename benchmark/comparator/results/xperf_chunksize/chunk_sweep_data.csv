@@ -29,14 +29,14 @@ gpu_total_main,pamica,block_size,65536,1.5,s,
 gpu_vram_main,pamica,block_size,65536,1.32,GB,
 gpu_total_main,pamica,block_size,full,1.4,s,
 gpu_vram_main,pamica,block_size,full,3.47,GB,
-gpu_total_main,amica,chunk_size,4096,3.2,s,
-gpu_vram_main,amica,chunk_size,4096,0.57,GB,
-gpu_total_main,amica,chunk_size,16384,3.1,s,
-gpu_vram_main,amica,chunk_size,16384,0.57,GB,
-gpu_total_main,amica,chunk_size,65536,3.0,s,
-gpu_vram_main,amica,chunk_size,65536,0.68,GB,
-gpu_total_main,amica,chunk_size,full,2.7,s,
-gpu_vram_main,amica,chunk_size,full,1.21,GB,
+gpu_total_main,jamica,chunk_size,4096,3.2,s,
+gpu_vram_main,jamica,chunk_size,4096,0.57,GB,
+gpu_total_main,jamica,chunk_size,16384,3.1,s,
+gpu_vram_main,jamica,chunk_size,16384,0.57,GB,
+gpu_total_main,jamica,chunk_size,65536,3.0,s,
+gpu_vram_main,jamica,chunk_size,65536,0.68,GB,
+gpu_total_main,jamica,chunk_size,full,2.7,s,
+gpu_vram_main,jamica,chunk_size,full,1.21,GB,
 cpu_total_main,scott,batch_size,4096,115.0,s,
 cpu_rss_main,scott,batch_size,4096,0.68,GB,
 cpu_total_main,scott,batch_size,16384,108.9,s,
@@ -63,14 +63,14 @@ cpu_total_main,pamica,block_size,65536,18.6,s,
 cpu_rss_main,pamica,block_size,65536,1.73,GB,
 cpu_total_main,pamica,block_size,full,19.4,s,
 cpu_rss_main,pamica,block_size,full,2.31,GB,
-cpu_total_main,amica,chunk_size,4096,2.9,s,
-cpu_rss_main,amica,chunk_size,4096,0.54,GB,
-cpu_total_main,amica,chunk_size,16384,3.2,s,
-cpu_rss_main,amica,chunk_size,16384,0.81,GB,
-cpu_total_main,amica,chunk_size,65536,4.3,s,
-cpu_rss_main,amica,chunk_size,65536,2.4,GB,
-cpu_total_main,amica,chunk_size,full,9.9,s,
-cpu_rss_main,amica,chunk_size,full,2.35,GB,
+cpu_total_main,jamica,chunk_size,4096,2.9,s,
+cpu_rss_main,jamica,chunk_size,4096,0.54,GB,
+cpu_total_main,jamica,chunk_size,16384,3.2,s,
+cpu_rss_main,jamica,chunk_size,16384,0.81,GB,
+cpu_total_main,jamica,chunk_size,65536,4.3,s,
+cpu_rss_main,jamica,chunk_size,65536,2.4,GB,
+cpu_total_main,jamica,chunk_size,full,9.9,s,
+cpu_rss_main,jamica,chunk_size,full,2.35,GB,
 gpu_steady_main,scott,batch_size,1024,249.3,ms/it,differenced
 gpu_steady_main,scott,batch_size,4096,67.1,ms/it,differenced
 gpu_steady_main,scott,batch_size,16384,30.9,ms/it,differenced
@@ -86,16 +86,16 @@ gpu_steady_main,pamica,block_size,4096,60.2,ms/it,differenced
 gpu_steady_main,pamica,block_size,16384,22.2,ms/it,differenced
 gpu_steady_main,pamica,block_size,65536,25.8,ms/it,differenced
 gpu_steady_main,pamica,block_size,full,31.8,ms/it,differenced
-gpu_steady_main,amica,chunk_size,1024,46.0,ms/it,differenced
-gpu_steady_main,amica,chunk_size,4096,15.9,ms/it,differenced
-gpu_steady_main,amica,chunk_size,16384,5.7,ms/it,differenced
-gpu_steady_main,amica,chunk_size,65536,4.7,ms/it,differenced
-gpu_steady_main,amica,chunk_size,full,6.2,ms/it,differenced
-gpu_fixed_overhead,amica,chunk_size,-,2.6,s,differencing intercept
+gpu_steady_main,jamica,chunk_size,1024,46.0,ms/it,differenced
+gpu_steady_main,jamica,chunk_size,4096,15.9,ms/it,differenced
+gpu_steady_main,jamica,chunk_size,16384,5.7,ms/it,differenced
+gpu_steady_main,jamica,chunk_size,65536,4.7,ms/it,differenced
+gpu_steady_main,jamica,chunk_size,full,6.2,ms/it,differenced
+gpu_fixed_overhead,jamica,chunk_size,-,2.6,s,differencing intercept
 gpu_fixed_overhead,scott,batch_size,-,3.6,s,differencing intercept
 gpu_fixed_overhead,pyamica,chunk_t,-,1.4,s,differencing intercept
 gpu_fixed_overhead,pamica,block_size,-,3.0,s,differencing intercept
-real_each_optimum,amica,chunk_size,auto chunk,5.5,s,ds004505 25-subj median 100it
+real_each_optimum,jamica,chunk_size,auto chunk,5.5,s,ds004505 25-subj median 100it
 real_each_optimum,pamica,block_size,full-batch,9.2,s,ds004505 25-subj median 100it
 real_each_optimum,pyamica,chunk_t,16384,12.8,s,ds004505 25-subj median 100it
 real_each_optimum,scott,batch_size,16384,45.7,s,ds004505 25-subj median 100it

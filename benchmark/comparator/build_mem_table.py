@@ -25,7 +25,7 @@ COLUMNS = ["implementation", "device", "peak_rss_gb", "delta_rss_gb",
 
 # Row order as the manuscript table presents them: amica first, then the other
 # implementations, then the Fortran reference.
-ORDER = ["amica_python_jax", "amica_python_jax_chunked", "scott_huberty_torch",
+ORDER = ["jamica", "jamica_chunked", "scott_huberty_torch",
          "pamica_torch", "pyamica_torch", "fortran_amica17"]
 
 

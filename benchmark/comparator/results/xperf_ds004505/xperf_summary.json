@@ -13,7 +13,7 @@
   },
   "aggregate": {
     "cpu": {
-      "amica_python_jax": {
+      "jamica": {
         "n": 25,
         "time_mean_s": 458.322,
         "time_std_s": 78.45,
@@ -21,7 +21,7 @@
         "time_max_s": 581.099,
         "peak_mem_gb_mean": 20.5
       },
-      "amica_python_jax_chunked": {
+      "jamica_chunked": {
         "n": 25,
         "time_mean_s": 218.22,
         "time_std_s": 41.045,
@@ -63,7 +63,7 @@
       }
     },
     "gpu": {
-      "amica_python_jax_chunked": {
+      "jamica_chunked": {
         "n": 25,
         "time_mean_s": 9.564,
         "time_std_s": 1.113,

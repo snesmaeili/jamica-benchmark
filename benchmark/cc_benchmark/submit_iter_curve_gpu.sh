@@ -4,7 +4,7 @@
 #
 # Produces the GPU panel of the runtime-vs-iterations figure, and replaces the
 # archived GPU runtime points, which cannot support a curve. On the archived
-# runs amica_python_jax_chunked takes 39.9 s at 100 iterations and 14.4 s at 600
+# runs jamica_chunked takes 39.9 s at 100 iterations and 14.4 s at 600
 # -- a negative per-iteration cost -- while scott_huberty and pyamica both land
 # on exactly 48.6 s at 600. At those magnitudes the measurement is dominated by
 # compilation and warm-up rather than by the fit, so the archived numbers cannot
@@ -141,7 +141,7 @@ python ../comparator/implementation_perf.py \
     --amica-chunk-size "${AMICA_MEM_CHUNK:-auto}" \
     --nvml-crosscheck \
     --out-tag "itercurve_gpu/warmup_iter${IT}" \
-    --skip amica_python_numpy amica_python_jax > /dev/null 2>&1 || true
+    --skip jamica_numpy jamica > /dev/null 2>&1 || true
 
 echo "--- timed run: max_iter=$IT ---"
 python ../comparator/implementation_perf.py \
@@ -154,6 +154,6 @@ python ../comparator/implementation_perf.py \
     --amica-chunk-size "${AMICA_MEM_CHUNK:-auto}" \
     --nvml-crosscheck \
     --out-tag "itercurve_gpu/iter${IT}" \
-    --skip amica_python_numpy amica_python_jax
+    --skip jamica_numpy jamica
 
 echo "=== DONE (max_iter=$IT). Results under $AMICA_COMPARATOR_RESULTS/itercurve_gpu/ ==="

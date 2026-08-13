@@ -31,10 +31,10 @@ import numpy as np
 
 # (implementation, device) -> (display label, color, sort order)
 SERIES = {
-    ("amica_python_jax", "cpu", "classic"): ("AMICA-classic\n(CPU)", "#9ecae1", 0),
-    ("amica_python_jax", "cpu", "fused"): ("AMICA-fused\n(CPU)", "#3182bd", 1),
+    ("jamica", "cpu", "classic"): ("AMICA-classic\n(CPU)", "#9ecae1", 0),
+    ("jamica", "cpu", "fused"): ("AMICA-fused\n(CPU)", "#3182bd", 1),
     ("pyamica_torch", "cpu", "fused"): ("pyamica\n(CPU)", "#e6550d", 2),
-    ("amica_python_jax", "gpu", "fused"): ("AMICA-fused\n(GPU)", "#31a354", 3),
+    ("jamica", "gpu", "fused"): ("AMICA-fused\n(GPU)", "#31a354", 3),
 }
 
 
@@ -67,16 +67,16 @@ def _load_one(path: Path, variant: str) -> dict | None:
 def collect(new_root: Path, old_root: Path | None) -> list[dict]:
     rows: list[dict] = []
     # New fused series
-    for series_dir, _impl in (("amica_cpu", "amica_python_jax"),
-                              ("amica_gpu", "amica_python_jax"),
+    for series_dir, _impl in (("amica_cpu", "jamica"),
+                              ("amica_gpu", "jamica"),
                               ("pyamica_cpu", "pyamica_torch")):
         for p in (new_root / series_dir).glob("**/*_result.json"):
             r = _load_one(p, "fused")
             if r:
                 rows.append(r)
-    # Old pilot baseline (classic CPU) — only the amica_python_jax rows
+    # Old pilot baseline (classic CPU) — only the jamica rows
     if old_root and old_root.exists():
-        for p in old_root.glob("**/amica_python_jax_*_result.json"):
+        for p in old_root.glob("**/jamica_*_result.json"):
             r = _load_one(p, "classic")
             if r:
                 rows.append(r)
@@ -152,10 +152,10 @@ def summarize(rows: list[dict]) -> None:
         lbl = SERIES[k][0].replace("\n", " ")
         print(f"  {lbl:24s}  median runtime={med_rt:7.1f}s   median mem={med_mem:5.2f}GB   (n={n})")
 
-    ac = ("amica_python_jax", "cpu", "classic")
-    af = ("amica_python_jax", "cpu", "fused")
+    ac = ("jamica", "cpu", "classic")
+    af = ("jamica", "cpu", "fused")
     pf = ("pyamica_torch", "cpu", "fused")
-    ag = ("amica_python_jax", "gpu", "fused")
+    ag = ("jamica", "gpu", "fused")
     if ac in meds and af in meds and meds[ac][0] and meds[af][0]:
         print(f"\n  fused-CPU vs classic-CPU : {meds[ac][0] / meds[af][0]:.2f}x "
               f"({meds[ac][0]:.0f}s -> {meds[af][0]:.0f}s)")
@@ -177,7 +177,7 @@ def main() -> None:
     ap.add_argument("--new-root", type=Path, required=True,
                     help="local dir with cmp_fused/{amica_cpu,amica_gpu,pyamica_cpu}/")
     ap.add_argument("--old-root", type=Path, default=None,
-                    help="optional pilot baseline dir (classic CPU amica_python_jax)")
+                    help="optional pilot baseline dir (classic CPU jamica)")
     ap.add_argument("--out-dir", type=Path, default=None)
     args = ap.parse_args()
     out_dir = args.out_dir or (args.new_root / "figures")

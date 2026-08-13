@@ -47,8 +47,8 @@ INK = "#202124"
 # Display names as the cross-implementation table already uses them, so a reader
 # moving between table and figure does not have to re-learn the row names.
 STYLE = {
-    "amica_python_jax_chunked": ("AMICA-Python (JAX, this work)", BLUE, "o", 2.4),
-    "amica_python_jax": ("AMICA-Python (JAX, full batch)", LIGHT_BLUE, "v", 1.3),
+    "jamica_chunked": ("AMICA-Python (JAX, this work)", BLUE, "o", 2.4),
+    "jamica": ("AMICA-Python (JAX, full batch)", LIGHT_BLUE, "v", 1.3),
     "scott_huberty_torch": ("AMICA-Python (PyTorch)", GREEN, "s", 1.3),
     "pyamica_torch": ("pyamica (PyTorch)", ORANGE, "D", 1.3),
     "pamica_torch": ("pAMICA (PyTorch)", MAGENTA, "^", 1.3),

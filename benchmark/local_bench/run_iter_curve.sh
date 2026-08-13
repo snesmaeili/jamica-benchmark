@@ -40,7 +40,7 @@ for IT in $ITERS; do
         --n-components "$N_COMPONENTS" \
         --max-iter "$IT" \
         --seeds "${SEEDS:-0}" \
-        --skip amica_python_numpy \
+        --skip jamica_numpy \
         --out-tag "$TAG/iter${IT}"
 done
 "$PY" "$HERE/canary.py" "after_all" "$CANARY_LOG"

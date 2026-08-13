@@ -109,9 +109,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--impls",
-        default="amica_python_jax,amica_python_jax_chunked,scott_huberty_torch,pyamica_torch,neuromechanist_numpy,fortran_amica17",
+        default="jamica,jamica_chunked,scott_huberty_torch,pyamica_torch,neuromechanist_numpy,fortran_amica17",
         help="Comma-separated implementations to include. Defaults to the 4 pilot "
-             "impls; excludes stray results (e.g. amica_python_numpy left over from "
+             "impls; excludes stray results (e.g. jamica_numpy left over from "
              "a smoke test). Pass 'all' to include every *_result.json found.",
     )
     args = parser.parse_args()
@@ -155,13 +155,13 @@ def main() -> None:
                 row[k] = res.get(k)
             tidy_rows.append(row)
 
-        # 2) Parity: Hungarian-matched |r| between amica_python_jax (reference)
+        # 2) Parity: Hungarian-matched |r| between jamica (reference)
         #    and each other impl on this subject.
-        ref = impl_results.get("amica_python_jax")
+        ref = impl_results.get("jamica")
         if ref is not None and ref.get("W") is not None:
             ref_W = np.asarray(ref["W"], dtype=float)
             for impl, res in impl_results.items():
-                if impl == "amica_python_jax":
+                if impl == "jamica":
                     continue
                 W = res.get("W")
                 if W is None:
@@ -171,7 +171,7 @@ def main() -> None:
                 parity_rows.append(
                     {
                         "subject": subject_tag,
-                        "reference": "amica_python_jax",
+                        "reference": "jamica",
                         "compared": impl,
                         "matched_mean_abs_corr": score,
                     }

@@ -16,7 +16,7 @@ from pathlib import Path
 from scipy import stats
 
 HERE = Path(__file__).parent
-IMPLS = ["amica_python_jax", "amica_python_jax_chunked", "pyamica_torch",
+IMPLS = ["jamica", "jamica_chunked", "pyamica_torch",
          "scott_huberty_torch", "pamica_torch", "fortran_amica17"]
 
 
@@ -67,10 +67,10 @@ def main():
         "aggregate": {"cpu": {i: agg(cpu, i) for i in IMPLS if agg(cpu, i)},
                       "gpu": {i: agg(gpu, i) for i in IMPLS if agg(gpu, i)}},
         "paired_tests_gpu_vs_amica_chunked": {
-            i: paired(gpu, "amica_python_jax_chunked", i)
+            i: paired(gpu, "jamica_chunked", i)
             for i in ("scott_huberty_torch", "pyamica_torch", "pamica_torch")},
         "paired_tests_cpu_vs_amica_chunked": {
-            i: paired(cpu, "amica_python_jax_chunked", i)
+            i: paired(cpu, "jamica_chunked", i)
             for i in ("scott_huberty_torch", "pamica_torch")},
     }
     (HERE / "xperf_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
