@@ -115,6 +115,11 @@ footer{padding:34px 0 0;color:var(--mut);font-size:.86rem}
   2187 s next to @16384 = 1039 s). The <em>ordering</em> and <em>optima</em> hold, but absolute CPU
   seconds are inflated. A fair-share-neutral throttled rerun (job array, <code>%4</code> concurrency) is
   in progress to produce clean CPU absolutes. Full analysis + noise estimate: <code>NOTES_measurement.md</code>.</div>
+  <p class="note" style="margin-bottom:6px"><b>CPU fit time (s), 5-subject median — ⚠️ contention-contaminated upper bounds.</b>
+  Shown as a table, not a curve: the numbers are non-monotonic (contention), so a smooth line would misrepresent them.
+  The clean throttled rerun replaces these.</p>
+  <table><thead><tr><th>Implementation</th><th>1K</th><th>4K</th><th>16K</th><th>65K</th><th>full</th></tr></thead><tbody><tr><td><span class="dot" style="background:#6366f1"></span>amica-python (JAX)</td><td class="num">255s</td><td class="num">196s</td><td class="num">218s</td><td class="num">211s</td><td class="num">395s</td></tr><tr><td><span class="dot" style="background:#d97706"></span>pAMICA (sccn)</td><td class="num">573s</td><td class="num">333s</td><td class="num">305s</td><td class="num">932s</td><td class="num">834s</td></tr><tr><td><span class="dot" style="background:#0d9488"></span>pyamica</td><td class="num">—</td><td class="num">2187s</td><td class="num">1039s</td><td class="num">1174s</td><td class="num">1006s</td></tr><tr><td><span class="dot" style="background:#e11d48"></span>scott-huberty</td><td class="num">292s</td><td class="num">242s</td><td class="num">272s</td><td class="num">346s</td><td class="num">—</td></tr><tr><td><span class="dot" style="background:#7c3aed"></span>Fortran amica17</td><td class="num">848s</td><td class="num">894s</td><td class="num">774s</td><td class="num">936s</td><td class="num">971s</td></tr></tbody></table>
+  <p class="note">"—" = cell missing or failed (e.g. Fortran diverges at <code>block=1024</code>·100 iters; scott/pyamica full-batch OOM on some subjects). Even as upper bounds these confirm CPU is ~20–40× the H100 and Fortran (serial reference) is the slowest — but trust the <em>ordering</em>, not the seconds.</p>
 </section>
 
 <section>

@@ -39,6 +39,14 @@ CPU_RSS = {
  "scott":   {1024:2.06,4096:2.06,16384:2.06,65536:2.31},
  "fortran": {1024:0.72,4096:0.75,16384:0.86,65536:1.32,FULL:9.97},
 }
+# REAL CPU fit-time (s), 5-subj median — CONTENDED upper bounds (bycore node sharing); "-" = missing/failed
+CPU_FIT = {
+ "amica":   {1024:255.2,4096:195.7,16384:217.8,65536:211.2,FULL:394.7},
+ "pamica":  {1024:573.4,4096:333.1,16384:304.8,65536:931.9,FULL:833.6},
+ "pyamica": {4096:2187.2,16384:1038.7,65536:1174.5,FULL:1005.8},
+ "scott":   {1024:292.5,4096:242.3,16384:272.1,65536:345.6},
+ "fortran": {1024:848.2,4096:893.5,16384:774.4,65536:935.8,FULL:971.3},
+}
 # Real each-at-own-optimum on GPU (25-subj median), fit + vram
 REAL_OPT = [("amica","full-batch",5.2,8.1),("pamica","full-batch",9.2,19.3),
             ("pyamica","full-batch",9.7,28.3),("scott","65536",10.1,1.4)]
@@ -118,6 +126,12 @@ def optrows():
 def pamrows():
     bd={"artifact":'<span class="badge bad">config artifact</span>',"tuned":'<span class="badge ok">tuned</span>',"best":'<span class="badge best">best</span>'}
     return "".join(f'<tr><td><code>{cfg}</code></td><td class="num">{t:.1f}s</td><td class="num">{v:.2f} GB</td><td>{bd[tag]}</td></tr>' for cfg,t,v,tag in REAL_PAM)
+def cpufitrows():
+    r=""
+    for im in CPU_IMPLS:
+        cells="".join(f'<td class="num">{CPU_FIT[im].get(c,None) and f"{CPU_FIT[im][c]:.0f}s" or "—"}</td>' for c in XT)
+        r+=f'<tr><td><span class="dot" style="background:{COLOR[im]}"></span>{LABEL.get(im,"Fortran amica17")}</td>{cells}</tr>'
+    return r
 
 HTML=f"""<title>AMICA benchmark — chunk size is the hidden variable (real data)</title>
 <style>
@@ -236,6 +250,11 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   2187 s next to @16384 = 1039 s). The <em>ordering</em> and <em>optima</em> hold, but absolute CPU
   seconds are inflated. A fair-share-neutral throttled rerun (job array, <code>%4</code> concurrency) is
   in progress to produce clean CPU absolutes. Full analysis + noise estimate: <code>NOTES_measurement.md</code>.</div>
+  <p class="note" style="margin-bottom:6px"><b>CPU fit time (s), 5-subject median — ⚠️ contention-contaminated upper bounds.</b>
+  Shown as a table, not a curve: the numbers are non-monotonic (contention), so a smooth line would misrepresent them.
+  The clean throttled rerun replaces these.</p>
+  <table><thead><tr><th>Implementation</th><th>1K</th><th>4K</th><th>16K</th><th>65K</th><th>full</th></tr></thead><tbody>{cpufitrows()}</tbody></table>
+  <p class="note">"—" = cell missing or failed (e.g. Fortran diverges at <code>block=1024</code>·100 iters; scott/pyamica full-batch OOM on some subjects). Even as upper bounds these confirm CPU is ~20–40× the H100 and Fortran (serial reference) is the slowest — but trust the <em>ordering</em>, not the seconds.</p>
 </section>
 
 <section>
