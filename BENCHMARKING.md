@@ -4,7 +4,7 @@ How to reproduce the cross-implementation comparison on your own data, on a
 laptop or on a Slurm cluster. Every number in the manuscript's
 cross-implementation table and runtime figures comes from the scripts below.
 
-What gets compared: `amica` (JAX, this package, full-batch and blocked),
+What gets compared: `jamica` (JAX, this package, full-batch and blocked),
 AMICA-Python (PyTorch), `pyamica`, `pAMICA`, and Fortran AMICA 1.7 where a
 binary is available. All of them fit the *same* PCA-projected array, from the
 same seed, for the same iteration budget, in one invocation.
@@ -17,12 +17,12 @@ two or three:
 
 ```bash
 # the package under test, as an editable install so local changes are measured
-git clone git@github.com:snesmaeili/amica.git
-cd amica && python -m venv .venv-dev && .venv-dev/bin/pip install -e ".[dev]"
+git clone git@github.com:snesmaeili/jamica.git
+cd jamica && python -m venv .venv-dev && .venv-dev/bin/pip install -e ".[dev]"
 
 # the competitors
 python3.12 -m venv ~/amica-venvs/comp
-~/amica-venvs/comp/bin/pip install pyamica pamica amica torch psutil scipy
+~/amica-venvs/comp/bin/pip install pyamica pamica jamica torch psutil scipy
 ```
 
 `benchmark/cc_benchmark/setup_competitors.sh` and `setup_pamica.sh` do this on
@@ -80,7 +80,7 @@ If neither `datalad` nor `git-annex` is available, the scripts fall back to
 
 ```bash
 cd benchmark/local_bench
-export AMICA_PYTHON_VENV=/path/to/amica/.venv-dev/bin/python
+export AMICA_PYTHON_VENV=/path/to/jamica/.venv-dev/bin/python
 export COMPETITORS_VENV=/path/to/amica-venvs/comp/bin/python
 
 export MNE_DATASETS_SAMPLE_PATH=/path/to/mne_data
@@ -137,14 +137,14 @@ edit:
 | `AMICA_MEM_NCOMP` | PCA rank | `64` |
 | `AMICA_ITERS` | iteration caps to visit | `100 400 700 1000` |
 | `AMICA_ITER_TAG` | results subdirectory | `itercurve_cpu` |
-| `AMICA_SRC` | source checkout of `amica` to measure | `/scratch/$USER/amica-blocked` |
+| `AMICA_SRC` | source checkout of `jamica` to measure | `/scratch/$USER/amica-blocked` |
 
 ```bash
 # same recording at a different rank, into its own directory
 sbatch --export=ALL,AMICA_MEM_NCOMP=30,AMICA_ITER_TAG=itercurve_c30 submit_iter_curve_cpu.sh
 ```
 
-Each job asserts on the compute node, before its first fit, that `amica`
+Each job asserts on the compute node, before its first fit, that `jamica`
 imports from `$AMICA_SRC` and that its default `chunk_size` is `"auto"`, and
 exits otherwise. That guard exists because an older checkout imports and fits
 perfectly well — it would simply produce a plausible curve for a different
@@ -175,9 +175,9 @@ These ship with the package rather than living here, because they profile it
 rather than compare it:
 
 ```bash
-python -m amica.benchmark.profile_cpu       # where an iteration's time goes
-python -m amica.benchmark.profile_memory    # where a fit's peak memory goes
-python -m amica.benchmark.profile_scaling   # how cost scales with samples and rank
+python -m jamica.benchmark.profile_cpu       # where an iteration's time goes
+python -m jamica.benchmark.profile_memory    # where a fit's peak memory goes
+python -m jamica.benchmark.profile_scaling   # how cost scales with samples and rank
 python scripts/regression_vs_ref.py         # this checkout vs any baseline commit
 ```
 

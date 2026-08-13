@@ -13,7 +13,7 @@ cd ../../../amica-python && python -m venv .venv-dev
 
 # 2. A competitors environment (pAMICA needs Python >= 3.12)
 python3.12 -m venv C:/amica-venvs/comp
-C:/amica-venvs/comp/Scripts/pip install pyamica pamica amica torch psutil scipy
+C:/amica-venvs/comp/Scripts/pip install pyamica pamica jamica torch psutil scipy
 
 # 3. Point the scripts at both, if your layout differs from the defaults
 export AMICA_PYTHON_VENV=/path/to/amica-python/.venv-dev/bin/python
@@ -73,7 +73,7 @@ These live in the package, not here, because they profile it rather than
 compare it:
 
 ```bash
-python -m amica.benchmark.profile_cpu        # where an iteration's time goes
-python -m amica.benchmark.profile_memory     # where a fit's peak memory goes
-python -m amica.benchmark.compare_precision  # what float32 costs and buys
+python -m jamica.benchmark.profile_cpu        # where an iteration's time goes
+python -m jamica.benchmark.profile_memory     # where a fit's peak memory goes
+python -m jamica.benchmark.compare_precision  # what float32 costs and buys
 ```

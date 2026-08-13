@@ -6,9 +6,9 @@
 > [`../README.md`](../README.md). The two will drift; where they disagree, the
 > root is correct.
 
-Validation and benchmarking suite for [`amica`](https://github.com/snesmaeili/amica).
+Validation and benchmarking suite for [`jamica`](https://github.com/snesmaeili/jamica).
 
-Scripts, Slurm job templates, and analysis pipelines used to validate `amica`
+Scripts, Slurm job templates, and analysis pipelines used to validate `jamica`
 against the reference Fortran AMICA 1.7 and to benchmark it against Picard,
 extended Infomax, and FastICA on real EEG data.
 
@@ -24,7 +24,7 @@ cd amica-benchmark
 source conf/narval.env
 
 # Install the package being benchmarked
-pip install amica
+pip install jamica
 
 # Verify
 make check-env
@@ -34,7 +34,7 @@ make check-env
 
 ```bash
 pip install -e ".[jax-cpu]"
-pip install amica
+pip install jamica
 ```
 
 ## Benchmarking goals
@@ -81,5 +81,5 @@ results/        # Output directory (.gitignored except README)
 
 ## Related
 
-- [`amica`](https://github.com/snesmaeili/amica) — the package being benchmarked
+- [`jamica`](https://github.com/snesmaeili/jamica) — the package being benchmarked
 - [scott-huberty/amica-benchmark](https://github.com/scott-huberty/amica-benchmark) — reference benchmark repo

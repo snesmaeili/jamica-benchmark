@@ -11,10 +11,10 @@
 # the algorithm under amica_python/, and that copy predates PR #17 (it has no
 # rank guard and no _blocked_posteriors). The published numbers came from it,
 # so it is kept as the historical record and left alone. The re-validation must
-# exercise the *release* instead, so the harness imports `amica` and the two
+# exercise the *release* instead, so the harness imports `jamica` and the two
 # packages are separated by path:
 #
-#   amica                     -> $AMICA_RELEASE   the release under test
+#   jamica                     -> $AMICA_RELEASE   the release under test
 #   amica_python.benchmark.*  -> $REPO            the harness
 #
 # Nothing is pip-installed editable, so PYTHONPATH is authoritative and no
@@ -23,7 +23,7 @@
 # resolving amica_python to an unrelated feature-branch checkout.)
 #
 # Verified on compute node fc30669, job 53256186: numpy 2.4.2, scipy 1.17.0,
-# mne 1.12.1, jax 0.9.1 -- matching the published stack -- with amica resolving
+# mne 1.12.1, jax 0.9.1 -- matching the published stack -- with jamica resolving
 # to the release checkout and the rank/chunking fixes both present.
 #
 # Requires $REPO to be set by the caller (the submit scripts derive it from
@@ -92,9 +92,9 @@ else
   pip install onnxruntime
 fi
 
-if [ ! -d "$AMICA_RELEASE/amica" ]; then
+if [ ! -d "$AMICA_RELEASE/jamica" ]; then
   echo "reval env: FATAL -- no release checkout at $AMICA_RELEASE" >&2
-  echo "  git clone https://github.com/snesmaeili/amica.git $AMICA_RELEASE" >&2
+  echo "  git clone https://github.com/snesmaeili/jamica.git $AMICA_RELEASE" >&2
   return 1 2>/dev/null || exit 1
 fi
 

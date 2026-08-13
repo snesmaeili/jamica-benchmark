@@ -2,8 +2,8 @@
 
 Two phases (separate module environments on the cluster):
 
-  prep     - generate/load data; write data.fdt + amica.param   (numpy only)
-             [shell step in between: mpirun -np 1 amica17 amica.param]
+  prep     - generate/load data; write data.fdt + jamica.param   (numpy only)
+             [shell step in between: mpirun -np 1 amica17 jamica.param]
   compare  - read Fortran outputs + initial weights; run amica-python from the
              *same* initialisation (init_mean/sphere/weights/params); score
              ΔLL, Hungarian matched-row |r| on W, matched-source |r|, iter count
@@ -95,7 +95,7 @@ def cmd_prep(args):
     np.save(wd / "X.npy", X)  # for amica-python in the compare phase
     hp = hyperparams(args.m, args.max_iter, args.do_newton)
     fio.write_param(
-        wd / "amica.param",
+        wd / "jamica.param",
         files=str(args.container_data + "/data.fdt"),
         outdir=str(args.container_out + "/"),
         n_channels=X.shape[0], n_samples=X.shape[1],
@@ -110,7 +110,7 @@ def cmd_prep(args):
                 do_newton=int(bool(args.do_newton)), seed=int(args.seed),
                 dataset=args.dataset)
     (wd / "meta.json").write_text(json.dumps(meta, indent=2), newline="\n")
-    print(f"[prep] wrote {wd/'data'/'data.fdt'} ({X.shape}) + amica.param; m={args.m} "
+    print(f"[prep] wrote {wd/'data'/'data.fdt'} ({X.shape}) + jamica.param; m={args.m} "
           f"newton={args.do_newton} max_iter={args.max_iter}")
 
 
@@ -158,9 +158,9 @@ def cmd_compare(args):
     # We additionally reuse Fortran's *computed sphere* + mean so the whitened data is
     # identical -> both implementations start from the identical state, isolating pure
     # algorithmic agreement.
-    # Installed amica package, not the vendored algorithm copy - see runner.py.
-    from amica.config import AmicaConfig
-    from amica.solver import Amica
+    # Installed jamica package, not the vendored algorithm copy - see runner.py.
+    from jamica.config import AmicaConfig
+    from jamica.solver import Amica
     hp = hyperparams(m, meta["max_iter"], meta["do_newton"])
     # Thread the FULL shared hyperparameter set so nothing relies on an
     # AmicaConfig default that could silently differ from the Fortran .param

@@ -40,7 +40,7 @@ def _benchmark_runner():
     """Resolve the archived dataset loader used by the main benchmark."""
 
     errors = []
-    for package in ("amica_python", "amica"):
+    for package in ("amica_python", "jamica"):
         try:
             module = __import__(f"{package}.benchmark.runner", fromlist=["runner"])
             return module, package
@@ -54,9 +54,9 @@ def _benchmark_runner():
 
 def _amica_fit(train_raw, args):
     try:
-        from amica import fit_ica
+        from jamica import fit_ica
 
-        package = "amica"
+        package = "jamica"
     except ImportError:
         from amica_python import fit_ica
 

@@ -39,10 +39,10 @@ try:  # the cluster venv installs the package under its original name
         compute_v3_artifacts,
     )
 except ImportError:  # released name
-    import amica as amica_pkg
-    from amica import fit_ica
-    from amica.solver import Amica
-    from amica.benchmark.runner import (  # type: ignore[no-redef]
+    import jamica as amica_pkg
+    from jamica import fit_ica
+    from jamica.solver import Amica
+    from jamica.benchmark.runner import (  # type: ignore[no-redef]
         load_data,
         preprocess,
         compute_v3_artifacts,

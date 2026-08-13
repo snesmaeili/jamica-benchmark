@@ -1,11 +1,11 @@
 # amica-benchmark
 
 Validation, benchmarking, and manuscript-reproduction materials for
-[`amica`](https://github.com/snesmaeili/amica) — a Python/JAX implementation of
+[`jamica`](https://github.com/snesmaeili/jamica) — a Python/JAX implementation of
 AMICA for MNE-Python.
 
 This repository holds the scripts, Slurm jobs, and analysis pipelines used to
-validate `amica` against the reference Fortran AMICA 1.7, to compare it with
+validate `jamica` against the reference Fortran AMICA 1.7, to compare it with
 other AMICA implementations and with Picard, extended Infomax, and FastICA on
 real EEG, and to generate every figure and table in the preprint.
 
@@ -13,9 +13,9 @@ real EEG, and to generate every figure and table in the preprint.
 
 | If you want to… | Go to |
 |---|---|
-| Compare `amica` against **other AMICA implementations** | `scripts/comparison/runners/` — one runner each for pyAMICA, neuromechanist/pyAMICA, Scott Huberty's amica-python, and `amica`; `benchmark/comparator/runners/` adds the Fortran runner |
+| Compare `jamica` against **other AMICA implementations** | `scripts/comparison/runners/` — one runner each for pyAMICA, neuromechanist/pyAMICA, Scott Huberty's amica-python, and `jamica`; `benchmark/comparator/runners/` adds the Fortran runner |
 | Compare against **Picard / Infomax / FastICA** | `benchmark/cc_benchmark/submit_{picard,infomax,fastica}_cpu_v3.sh` |
-| Check **Fortran AMICA 1.7 parity** | `scripts/parity/` — adapters for Fortran, pyAMICA and `amica`, plus metrics and the run manifest. The patched reference source and its Docker build are in `fortran/` |
+| Check **Fortran AMICA 1.7 parity** | `scripts/parity/` — adapters for Fortran, pyAMICA and `jamica`, plus metrics and the run manifest. The patched reference source and its Docker build are in `fortran/` |
 | **Regenerate a manuscript figure or table** | `scripts/paper/figures/` — see its README |
 | Run the **multi-model** benchmark | `scripts/multimodel/` |
 | Reproduce a **cluster campaign** | `benchmark/cc_benchmark/` and `slurm/` |
@@ -24,14 +24,14 @@ real EEG, and to generate every figure and table in the preprint.
 ## Install
 
 ```bash
-pip install amica            # the package being benchmarked
+pip install jamica            # the package being benchmarked
 pip install -e ".[jax-cpu]"  # this repository's helpers
 ```
 
 On an Alliance/Compute Canada cluster, `source conf/narval.env` first, then
 `make check-env`.
 
-> **Version note.** The preprint's results were produced with `amica` 0.0.1.
+> **Version note.** The preprint's results were produced with `jamica` 0.0.1.
 > Version 0.1.0 changed chunked multi-model fitting and added rank estimation;
 > see the manuscript's availability statement for what that does and does not
 > affect. Reproduction should use the dependency versions recorded in the
@@ -80,11 +80,11 @@ tests/           unit tests for the benchmark tooling
 
 ## License
 
-BSD-3-Clause, matching [`amica`](https://github.com/snesmaeili/amica) — see
+BSD-3-Clause, matching [`jamica`](https://github.com/snesmaeili/jamica) — see
 `LICENSE`. The vendored Fortran in `fortran/` remains under its upstream terms;
 see `fortran/LICENSE.upstream`.
 
 ## Related
 
-- [`amica`](https://github.com/snesmaeili/amica) — the package being benchmarked
+- [`jamica`](https://github.com/snesmaeili/jamica) — the package being benchmarked
 - [scott-huberty/amica-benchmark](https://github.com/scott-huberty/amica-benchmark) — an independent benchmark repository

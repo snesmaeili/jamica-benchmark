@@ -22,7 +22,7 @@ def main() -> int:
     tag = sys.argv[1] if len(sys.argv) > 1 else "canary"
     out = sys.argv[2] if len(sys.argv) > 2 else None
 
-    from amica import Amica, AmicaConfig
+    from jamica import Amica, AmicaConfig
 
     rng = np.random.default_rng(12345)
     X = rng.laplace(size=(24, 40000))

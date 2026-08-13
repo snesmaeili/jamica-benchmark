@@ -1079,14 +1079,14 @@ def run_benchmark(raw, backend="jax", device="cpu", n_iter=500, *,
     os.environ["AMICA_NO_JAX"] = "1" if backend == "numpy" else "0"
     os.environ["JAX_PLATFORM_NAME"] = "gpu" if device == "gpu" else "cpu"
 
-    # Force reload of amica.backend to apply env vars.
-    # Import the *installed* amica package, not the algorithm copy vendored
+    # Force reload of jamica.backend to apply env vars.
+    # Import the *installed* jamica package, not the algorithm copy vendored
     # alongside this harness: the benchmark must exercise the released code.
     import importlib
-    import amica.backend
-    importlib.reload(amica.backend)
+    import jamica.backend
+    importlib.reload(jamica.backend)
 
-    from amica import fit_ica
+    from jamica import fit_ica
 
     fit_params = {}
     if chunk_size is not None:

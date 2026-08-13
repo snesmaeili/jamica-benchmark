@@ -23,7 +23,7 @@ import os
 # released package explicitly, because "the release did not move the numbers"
 # can only be tested by running the release.
 if os.environ.get("AMICA_USE_RELEASE") == "1":
-    from amica import fit_ica
+    from jamica import fit_ica
 else:
     from amica_python import fit_ica
 

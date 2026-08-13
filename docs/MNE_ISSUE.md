@@ -12,9 +12,9 @@ AMICA (Adaptive Mixture ICA) ranked #1 out of 22 ICA algorithms for EEG source s
 
 I've now built a **pure Python/JAX, BSD-3-licensed** implementation that removes this blocker:
 
-- **Package:** [`amica`](https://github.com/snesmaeili/amica)
+- **Package:** [`jamica`](https://github.com/snesmaeili/jamica)
 - **License:** BSD-3-Clause (MNE-compatible)
-- **Install:** `pip install amica-python`
+- **Install:** `pip install jamica`
 
 ### What AMICA adds over existing methods
 
@@ -58,9 +58,9 @@ ica.apply(raw)
 And a Picard-compatible functional API ready for direct integration:
 
 ```python
-from amica_python import amica
+from amica_python import jamica
 
-W, n_iter = amica(X, whiten=False, return_n_iter=True, random_state=42)
+W, n_iter = jamica(X, whiten=False, return_n_iter=True, random_state=42)
 ```
 
 ---
@@ -71,9 +71,9 @@ Following the exact Picard integration pattern in `mne/preprocessing/ica.py`. Th
 
 ```python
 elif self.method == "amica":
-    from amica_python import amica
+    from amica_python import jamica
 
-    W, n_iter = amica(
+    W, n_iter = jamica(
         data[:, sel].T,
         whiten=False,
         return_n_iter=True,
@@ -91,7 +91,7 @@ ica = mne.preprocessing.ICA(method='amica', fit_params=dict(num_mix=3))
 ica.fit(raw)
 ```
 
-`amica-python` would be an optional dependency (like `python-picard`), installed separately via `pip install amica-python`. JAX is optional within amica-python — it falls back to NumPy automatically if JAX isn't installed.
+`jamica` would be an optional dependency (like `python-picard`), installed separately via `pip install jamica`. JAX is optional within jamica — it falls back to NumPy automatically if JAX isn't installed.
 
 I'm happy to submit a PR implementing this if the maintainers are open to it. I'd include:
 

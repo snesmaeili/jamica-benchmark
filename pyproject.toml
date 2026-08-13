@@ -29,7 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 jax-cpu = ["jax[cpu]>=0.4"]
 jax-gpu = ["jax[cuda12]>=0.4"]
-amica = ["amica>=0.1.0"]
+jamica = ["jamica>=0.2.0"]
 
 [tool.setuptools]
 packages = []

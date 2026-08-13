@@ -184,35 +184,35 @@ def _nvidia_smi() -> str | None:
 
 
 def _import_amica(expected_commit: str):
-    import amica as amica_module
-    from amica import Amica, AmicaConfig
-    from amica.benchmark import runner
-    from amica.benchmark.metrics import complete_mir
+    import jamica as amica_module
+    from jamica import Amica, AmicaConfig
+    from jamica.benchmark import runner
+    from jamica.benchmark.metrics import complete_mir
 
     module_path = Path(amica_module.__file__).resolve()
     package_root = module_path.parent.parent
     package_commit = _git_commit(package_root)
     if package_commit == "unknown":
         raise RuntimeError(
-            f"resolved amica at {module_path}, but its Git commit is unavailable"
+            f"resolved jamica at {module_path}, but its Git commit is unavailable"
         )
     if package_commit != expected_commit:
         raise RuntimeError(
-            "resolved amica commit does not match the pinned deployment: "
+            "resolved jamica commit does not match the pinned deployment: "
             f"{package_commit} != {expected_commit} ({module_path})"
         )
     package_dirty = _git_dirty(package_root)
     if package_dirty is not False:
         raise RuntimeError(
-            "resolved amica worktree must be a clean, committed deployment; "
+            "resolved jamica worktree must be a clean, committed deployment; "
             f"dirty_state={package_dirty!r} ({package_root})"
         )
     try:
-        package_version = importlib.metadata.version("amica")
+        package_version = importlib.metadata.version("jamica")
     except importlib.metadata.PackageNotFoundError:
         package_version = getattr(amica_module, "__version__", "unknown")
     package = {
-        "name": "amica",
+        "name": "jamica",
         "version": package_version,
         "module_path": str(module_path),
         "root": str(package_root),

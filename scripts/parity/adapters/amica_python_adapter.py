@@ -22,7 +22,7 @@ class AmicaPythonAdapter(AmicaAdapter):
         log_det_sphere=None,
     ):
         try:
-            from amica import Amica, AmicaConfig
+            from jamica import Amica, AmicaConfig
         except ImportError:  # archived paper capsule
             from amica_python import Amica, AmicaConfig
 

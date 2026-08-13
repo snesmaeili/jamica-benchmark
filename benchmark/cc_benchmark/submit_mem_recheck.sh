@@ -13,7 +13,7 @@
 #
 # Memory is iteration-independent -- the peak is set by the array sizes, not the
 # loop count -- so 60 iterations suffices and matches what five of the six
-# archived runs used. Only the two amica arms run: the paragraph compares this
+# archived runs used. Only the two jamica arms run: the paragraph compares this
 # package's full-batch and automatic-blocking paths with each other, not with
 # other implementations.
 #
@@ -31,20 +31,20 @@ set -o pipefail
 cd "$SLURM_SUBMIT_DIR"
 source fir_env.sh
 
-# --- point the amica runner at the current package -------------------------
+# --- point the jamica runner at the current package -------------------------
 # The cluster's checkout predates both the package rename (amica_python ->
-# amica) and the E-step blocking this job exists to measure: /scratch/$USER/
+# jamica) and the E-step blocking this job exists to measure: /scratch/$USER/
 # amica-python is the old repo on an old branch, and its venv has amica_python
 # installed editable from a third checkout entirely. Reinstalling would mean
 # pip on a login node, or rebuilding a working venv to run one benchmark.
 # implementation_perf.run_subprocess copies os.environ into every runner, so a
 # fresh clone on PYTHONPATH reaches them without touching the venv.
 #
-#   git clone -b perf/cpu-profiling git@github.com:snesmaeili/amica.git /scratch/$USER/amica-blocked
+#   git clone -b perf/cpu-profiling git@github.com:snesmaeili/jamica.git /scratch/$USER/amica-blocked
 # AMICA_SRC is read by implementation_perf.py and applied to OUR runner only.
 # It must not go on PYTHONPATH globally: scott-huberty's package is imported as
-# `amica` too, so a global PYTHONPATH shadows it with ours and its runner dies
-# with "cannot import name 'AMICA' from amica".
+# `jamica` too, so a global PYTHONPATH shadows it with ours and its runner dies
+# with "cannot import name 'AMICA' from jamica".
 export AMICA_SRC="${AMICA_SRC:-/scratch/$USER/amica-blocked}"
 export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/amica-python/.venv_fir/bin/python}"
 
@@ -65,15 +65,15 @@ done
 # survive. (Runs on the compute node -- importing jax is compute.)
 AMICA_SRC="$AMICA_SRC" PYTHONPATH="$AMICA_SRC" "$AMICA_PYTHON_VENV" - <<'PYCHECK' || exit 1
 import os, sys
-import amica
-from amica import AmicaConfig
-src = os.path.realpath(amica.__file__)
+import jamica
+from jamica import AmicaConfig
+src = os.path.realpath(jamica.__file__)
 want = os.path.realpath(os.environ["AMICA_SRC"])
 if not src.startswith(want):
-    sys.exit(f"FATAL: imported amica from {src}, expected under {want}")
+    sys.exit(f"FATAL: imported jamica from {src}, expected under {want}")
 if AmicaConfig().chunk_size != "auto":
     sys.exit("FATAL: this build predates E-step blocking (chunk_size default is not 'auto')")
-print(f"amica OK: {src} | default chunk_size={AmicaConfig().chunk_size!r}")
+print(f"jamica OK: {src} | default chunk_size={AmicaConfig().chunk_size!r}")
 PYCHECK
 # Record which commit produced these numbers. The package is reached through a
 # source checkout, so a `git pull` in that directory silently changes what a

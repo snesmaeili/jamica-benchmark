@@ -45,14 +45,14 @@ def main() -> None:
     else:
         impl = "amica_python_jax"
 
-    # The package was renamed amica_python -> amica. Only the cluster venvs still
+    # The package was renamed amica_python -> jamica. Only the cluster venvs still
     # carry the old name, from editable installs that predate the rename, so
     # importing it unconditionally meant this runner could measure the archived
     # checkout and not the package anyone can install today. Prefer the current
     # name and keep the old one working, so both an existing cluster environment
-    # and a fresh `pip install amica` are measurable.
+    # and a fresh `pip install jamica` are measurable.
     try:
-        from amica import Amica, AmicaConfig
+        from jamica import Amica, AmicaConfig
     except ImportError:  # pragma: no cover - exercised by the legacy venvs
         from amica_python import Amica, AmicaConfig
 
