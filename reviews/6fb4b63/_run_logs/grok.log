@@ -1,0 +1,12 @@
+I am Grok 4.6, released by xAI. I'll read the review request first, then open the files it points to and write an independent judgment.I'll verify the rename against HEAD: scope, look-alikes, revert residue, generator consistency, CSV, and naming claims.Git isn't at the workspace root. I'll locate the repo, then keep verifying the generators, CSV, and revert.Workspace has no `.git`, so I'll verify against the tree and a parse-only generator run, then check the CSV and naming claims.The sibling repo is at `6fb4b63`. I'll use it for the net-diff and revert checks, and keep reading files from this workspace.I have enough evidence. Writing the independent audit to `reviews/6fb4b63/review_grok-4-6.md`.I am **Grok 4.6** (xAI). Audit is in `reviews/6fb4b63/review_grok-4-6.md`.
+
+**Verdict: keep.** The net `9dbf9b5..HEAD` change is the intended 7-file display rename under `benchmark/comparator/results/xperf_chunksize/`. The `0d7a23e` revert fully undid the repo-wide `0cd9e05` attempt.
+
+Checked against the tree, not just the brief:
+
+- Harness still stamps `amica_python_jax*`; `run_amica_python.py` exists; no `jamica` outside the study files
+- No look-alike damage (`pyamica`, `pamica`, `scott-huberty`, `amica17`, `amica_python/`, `amica-benchmark`)
+- Generator keys (`IMPLS`, `LABEL`, `KNOB`, `COLOR`, `COMMIT`, `GPU`, `GPU_BAND`, `CPU_*`, `REAL_OPT`, `CPU_IMPLS`) are consistent; both scripts regenerate the committed HTML byte-for-byte
+- CSV is CRLF→LF plus 23 `amica`→`jamica` impl-column swaps; numeric payload and competitor rows are identical
+
+Non-blocking nits only: the study README still says `amica-python` / `snesmaeili/amica` above the new naming note; CSV vs report numbers were already stale; runner still `from amica import` (out of scope).

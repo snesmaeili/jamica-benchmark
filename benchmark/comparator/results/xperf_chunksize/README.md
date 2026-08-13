@@ -9,8 +9,8 @@ and **main**, plus a **steady-state (compile-excluded)** re-measurement.
    (pAMICA `block_size=512` is the worst: 12× off its GPU optimum, 9.4× off its CPU optimum).
 2. The optimum **flips by device** (e.g. scott-huberty is fastest at full-batch on CPU, slowest at
    full-batch on GPU).
-3. amica-python's *apparent* flat GPU curve is **~entirely a JIT-compile artifact** of short (20-iter)
-   runs. In steady-state ms/iter the curve is a ~19× monotonic spread like everyone else. What amica
+3. jamica's *apparent* flat GPU curve is **~entirely a JIT-compile artifact** of short (20-iter)
+   runs. In steady-state ms/iter the curve is a ~19× monotonic spread like everyone else. What jamica
    actually has is a large fixed compile/setup cost + the fastest steady-state per-iteration, so it
    trails on tiny runs and leads once iterations amortize the compile (the 20-iter-synthetic-loses →
    100-iter-real-wins crossover). See the panel review below.
@@ -18,7 +18,7 @@ and **main**, plus a **steady-state (compile-excluded)** re-measurement.
 ## Versions (pinned commits)
 | impl | package | release | main |
 |---|---|---|---|
-| amica-python | `snesmaeili/amica` | `92003b4` | `df18b5e` (incl. `2cd81e4` CPU E-step rework) |
+| jamica (formerly amica-python) | `snesmaeili/jamica` | `92003b4` | `df18b5e` (incl. `2cd81e4` CPU E-step rework) |
 | scott-huberty | `scott-huberty/amica-python` (imports as `amica`) | — | `e15e1588` |
 | pyamica | `DerAndereJohannes/pyamica` | — | `a8a4d7e0` |
 | pAMICA | `sccn/pAMICA` (a.k.a. neuromechanist; imports as `pamica`) | — | `0c4da39e` |
@@ -78,7 +78,7 @@ compile-masking artifact of the 20-iter window; both prescribed the steady-state
 in `gpu_steady_*`.
 
 ## Real-workload each-at-optimum (ds004505, 25-subj median, 100 iters, H100)
-amica 5.5s · pAMICA 9.2s (full-batch, 19 GB VRAM) · pyamica 12.8s (16384) · scott 45.7s (16384).
+jamica 5.5s · pAMICA 9.2s (full-batch, 19 GB VRAM) · pyamica 12.8s (16384) · scott 45.7s (16384).
 Run through the orchestrator (`implementation_perf.py`) with each impl's best chunk set via env
 (`AMICA_CHUNK_SIZE`, `AMICA_PAMICA_BLOCK_SIZE`, `AMICA_PYAMICA_CHUNK`, `AMICA_SCOTT_BATCH`). The
 env-override for the three competitor runners is upstreamed in `../../runners/` (see git log);
