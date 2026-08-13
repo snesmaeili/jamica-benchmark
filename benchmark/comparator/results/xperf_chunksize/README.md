@@ -83,3 +83,13 @@ Run through the orchestrator (`implementation_perf.py`) with each impl's best ch
 (`AMICA_CHUNK_SIZE`, `AMICA_PAMICA_BLOCK_SIZE`, `AMICA_PYAMICA_CHUNK`, `AMICA_SCOTT_BATCH`). The
 env-override for the three competitor runners is upstreamed in `../../runners/` (see git log);
 `run_amica_python.py` already honored `AMICA_CHUNK_SIZE`.
+
+## Naming: jamica (formerly amica-python)
+
+Sina's JAX AMICA was renamed **amica-python → amica → jamica** (`snesmaeili/jamica`, PyPI `jamica`,
+import `jamica`). This study's **reports and tidy data (`chunk_sweep_data.csv`) display the current
+name `jamica`**. The shared benchmark harness (runner impl keys `amica_python_jax*`, the orchestrator,
+and the committed legacy measures) is intentionally left on its **run-time keys** — renaming those
+would rewrite historical run-time provenance plus the vendored `amica_python/` package and the
+paper-reproduction bundle, which is a repo-wide migration best owned upstream. So: reports say
+`jamica`; the machine keys still reflect exactly what the runs stamped (`amica_python_jax*`).

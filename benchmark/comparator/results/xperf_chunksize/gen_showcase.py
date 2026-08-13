@@ -3,21 +3,21 @@
 import math, os
 
 FULL = 262144
-IMPLS = ["amica", "pamica", "pyamica", "scott"]
-LABEL = {"amica":"amica-python (JAX)","pamica":"pAMICA (sccn)","pyamica":"pyamica","scott":"scott-huberty"}
-KNOB  = {"amica":"chunk_size","pamica":"block_size","pyamica":"chunk_t","scott":"batch_size"}
-COMMIT= {"amica":"df18b5e","pamica":"0c4da39","pyamica":"a8a4d7e","scott":"e15e158"}
-COLOR = {"amica":"#6366f1","pamica":"#d97706","pyamica":"#0d9488","scott":"#e11d48"}
+IMPLS = ["jamica", "pamica", "pyamica", "scott"]
+LABEL = {"jamica":"jamica","pamica":"pAMICA (sccn)","pyamica":"pyamica","scott":"scott-huberty"}
+KNOB  = {"jamica":"chunk_size","pamica":"block_size","pyamica":"chunk_t","scott":"batch_size"}
+COMMIT= {"jamica":"df18b5e","pamica":"0c4da39","pyamica":"a8a4d7e","scott":"e15e158"}
+COLOR = {"jamica":"#6366f1","pamica":"#d97706","pyamica":"#0d9488","scott":"#e11d48"}
 # GPU main, median of 25 subjects: chunk -> (median_s, min_s, max_s)
 T = {
- "amica":   {1024:(29.2,20.8,34.7),4096:(11.0,9.1,29.9),16384:(6.8,6.0,43.0),65536:(5.6,5.0,10.5),FULL:(5.2,4.1,30.5)},
+ "jamica":   {1024:(29.2,20.8,34.7),4096:(11.0,9.1,29.9),16384:(6.8,6.0,43.0),65536:(5.6,5.0,10.5),FULL:(5.2,4.1,30.5)},
  "pamica":  {1024:(139.6,99.2,170.4),4096:(36.9,29.2,49.8),16384:(14.3,11.6,40.6),65536:(11.6,8.2,34.5),FULL:(9.2,7.0,33.5)},
  "pyamica": {1024:(81.3,58.5,98.8),4096:(21.1,15.0,26.2),16384:(12.7,9.4,15.8),65536:(11.7,8.4,14.3),FULL:(9.7,7.0,12.1)},
  "scott":   {1024:(172.4,123.3,213.5),4096:(45.2,36.8,72.4),16384:(15.4,13.3,85.7),65536:(10.1,7.4,16.8)},  # full = OOM
 }
 # VRAM median (GB)
 V = {
- "amica":   {1024:2.19,4096:2.19,16384:2.19,65536:2.19,FULL:8.14},
+ "jamica":   {1024:2.19,4096:2.19,16384:2.19,65536:2.19,FULL:8.14},
  "pamica":  {1024:0.58,4096:0.64,16384:0.86,65536:1.75,FULL:19.25},
  "pyamica": {1024:1.66,4096:1.66,16384:1.66,65536:3.07,FULL:28.30},
  "scott":   {1024:0.58,4096:0.62,16384:0.77,65536:1.38},
@@ -109,18 +109,18 @@ svg.chart{{width:100%;height:auto;display:block;overflow:visible}}.cf{{margin:0}
   <div class="kick">Cross-implementation AMICA · real EEG · bleeding-edge</div>
   <h1>Chunk size drives fit time &amp; memory on real data</h1>
   <p class="lede">The batching knob moves fit time up to <b>~30×</b> and peak VRAM up to <b>~30×</b>.
-  amica-python is fastest at every setting and the leanest at full-batch.</p>
+  jamica is fastest at every setting and the leanest at full-batch.</p>
   <div class="stamp"><span><b>Bleeding-edge (latest main):</b></span>
-    <span>amica <code>df18b5e</code></span><span>scott-huberty <code>e15e158</code></span>
+    <span>jamica <code>df18b5e</code></span><span>scott-huberty <code>e15e158</code></span>
     <span>pyamica <code>a8a4d7e</code></span><span>pAMICA <code>0c4da39</code></span>
     <span>· ds004505 · 25 subjects · 64 comps · 100 iters · NVIDIA H100</span></div>
   <div class="grid2"><div class="card">{c_t}</div><div class="card">{c_v}</div></div>
   <div class="legend">{legend}<span class="lg">◯ each impl's optimum</span></div>
   <div class="take">
     <ul>
-      <li><b>amica-python wins at every chunk</b> (optimum <code>full/65536</code> ≈ 5.2 s vs pAMICA 9.2 s, pyamica 9.7 s, scott 10.1 s).</li>
+      <li><b>jamica wins at every chunk</b> (optimum <code>full/65536</code> ≈ 5.2 s vs pAMICA 9.2 s, pyamica 9.7 s, scott 10.1 s).</li>
       <li><b>Defaults are footguns.</b> Small blocks are catastrophic (scott/pAMICA 140–170 s at 1024); the sweet spot is per-implementation and only found by sweeping.</li>
-      <li><b>Full-batch is a memory trap:</b> pyamica <b>28 GB</b> / pAMICA <b>19 GB</b> at full, and scott-huberty <b>OOMs</b> — while amica reaches its best time in ~8 GB (and stays ~2 GB when chunked).</li>
+      <li><b>Full-batch is a memory trap:</b> pyamica <b>28 GB</b> / pAMICA <b>19 GB</b> at full, and scott-huberty <b>OOMs</b> — while jamica reaches its best time in ~8 GB (and stays ~2 GB when chunked).</li>
     </ul>
   </div>
   <p class="foot">Lines are per-subject medians (n=25); shaded band = min–max across subjects (the wide tails at small chunks are compile/scheduling variance). Fortran reference (CPU-only) and the full CPU curves are a separate panel. Runners + data: <code>results/xperf_chunksize/</code>.</p>
