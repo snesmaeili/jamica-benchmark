@@ -316,6 +316,14 @@ def main() -> None:
                         help="Resample to this sfreq before fitting (ds004505 only)")
     parser.add_argument("--out-tag", default=None,
                         help="Subdirectory under results/comparison/ for this run (default: dataset-subject tag)")
+    parser.add_argument("--cached-input", default=os.environ.get("AMICA_CACHED_INPUT"),
+                        help="Path to a cached projected-input .npz. If it exists, load it and "
+                             "SKIP preprocessing (decouples the one-time PCA from the sweep so atomic "
+                             "(impl,chunk) cells reuse it); if it does not exist, preprocess and write "
+                             "it here. Unset = preprocess in-process as before.")
+    parser.add_argument("--preprocess-only", action="store_true",
+                        help="Preprocess, write --cached-input, and exit before running any fit "
+                             "(the one-time per-subject step for the atomic-cell workflow).")
     args = parser.parse_args()
 
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
@@ -332,28 +340,50 @@ def main() -> None:
     run_dir = RESULTS_DIR / run_tag
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Build the shared input (PCA seed = first seed for determinism)
-    if args.dataset != "mne_sample":
-        print(f"[orchestrator] preprocessing {args.dataset} sub-{args.subject:02d} "
-              f"(n_comp={args.n_components}, resample={args.resample_sfreq} Hz, PCA seed={seeds[0]})...")
-        X, meta = preprocess_bids_subject(
-            dataset=args.dataset,
-            subject_id=args.subject,
-            n_components=args.n_components,
-            duration_sec=args.duration_sec,
-            resample_sfreq=args.resample_sfreq,
-            seed=seeds[0],
-            input_level=args.input_level,
-        )
-        subject_tag = f"sub-{args.subject:02d}"
+    # 1. Build the shared input (PCA seed = first seed for determinism).
+    #    --cached-input decouples the one-time PCA from the sweep: preprocess a subject
+    #    ONCE, cache the projected array, then fan out atomic (impl, chunk) cells that
+    #    load the cache. Preprocessing is deterministic (seeded), so the cached array is
+    #    identical to what the in-process path would produce. Default (no cache) is
+    #    exactly the previous behaviour.
+    subject_tag = f"sub-{args.subject:02d}" if args.dataset != "mne_sample" else "mne_sample"
+    _cache = args.cached_input
+    if _cache and os.path.exists(_cache):
+        print(f"[orchestrator] loading cached projected input from {_cache} (skipping preprocessing)")
+        _z = np.load(_cache, allow_pickle=False)
+        X = _z["X"]
+        meta = json.loads(str(_z["meta_json"])) if "meta_json" in _z.files else {}
+        meta.setdefault("sfreq", args.resample_sfreq)
+        meta.setdefault("n_samples", int(X.shape[1]))
     else:
-        print(f"[orchestrator] preprocessing MNE sample (n_comp={args.n_components}, PCA seed={seeds[0]})...")
-        X, meta = preprocess_mne_sample(n_components=args.n_components, seed=seeds[0])
-        subject_tag = "mne_sample"
+        if args.dataset != "mne_sample":
+            print(f"[orchestrator] preprocessing {args.dataset} sub-{args.subject:02d} "
+                  f"(n_comp={args.n_components}, resample={args.resample_sfreq} Hz, PCA seed={seeds[0]})...")
+            X, meta = preprocess_bids_subject(
+                dataset=args.dataset,
+                subject_id=args.subject,
+                n_components=args.n_components,
+                duration_sec=args.duration_sec,
+                resample_sfreq=args.resample_sfreq,
+                seed=seeds[0],
+                input_level=args.input_level,
+            )
+        else:
+            print(f"[orchestrator] preprocessing MNE sample (n_comp={args.n_components}, PCA seed={seeds[0]})...")
+            X, meta = preprocess_mne_sample(n_components=args.n_components, seed=seeds[0])
+        if _cache:
+            os.makedirs(os.path.dirname(_cache) or ".", exist_ok=True)
+            np.savez(_cache, X=X, meta_json=json.dumps(
+                {k: v for k, v in meta.items() if isinstance(v, (int, float, str, bool))}))
+            print(f"[orchestrator] cached projected input -> {_cache}")
+
+    if args.preprocess_only:
+        print("[orchestrator] --preprocess-only: cache written, exiting before any fit.")
+        return
 
     input_path = run_dir / f"input_{subject_tag}.npz"
     np.savez(input_path, X=X, **{k: v for k, v in meta.items() if isinstance(v, (int, float))})
-    print(f"[orchestrator]   X={X.shape}, sfreq={meta['sfreq']} Hz")
+    print(f"[orchestrator]   X={X.shape}, sfreq={meta.get('sfreq')} Hz")
 
     # Scale the per-runner cap with the requested work. A fixed 3600 s dropped
     # pyamica from the 600-iteration CPU campaign -- it needs ~3900 s there --
