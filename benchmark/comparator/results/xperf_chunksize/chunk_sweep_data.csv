@@ -80,11 +80,11 @@ cpu_rss_gb_median,jamica,chunk_size,4096,2.27,GB,"real ds004505 5-subj median, 8
 cpu_rss_gb_median,jamica,chunk_size,16384,2.23,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,jamica,chunk_size,65536,3.68,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,jamica,chunk_size,full,20.62,GB,"real ds004505 5-subj median, 8 cores"
-cpu_fit_s_min,jamica,chunk_size,1024,155.0,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,jamica,chunk_size,4096,156.5,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,jamica,chunk_size,16384,162.3,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,jamica,chunk_size,65536,181.6,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,jamica,chunk_size,full,288.3,s,"best-of-5 subj (least-contended, throttled %4)"
+cpu_fit_s_min,jamica,chunk_size,1024,155.0,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,jamica,chunk_size,4096,156.5,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,jamica,chunk_size,16384,162.3,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,jamica,chunk_size,65536,181.6,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,jamica,chunk_size,full,288.3,s,best-of-5 subj (fastest observed; contention + subject length both vary)
 cpu_fit_s_median,jamica,chunk_size,1024,276.4,s,median (contention-noisy)
 cpu_fit_s_median,jamica,chunk_size,4096,220.9,s,median (contention-noisy)
 cpu_fit_s_median,jamica,chunk_size,16384,186.6,s,median (contention-noisy)
@@ -95,11 +95,11 @@ cpu_rss_gb_median,pamica,block_size,4096,1.74,GB,"real ds004505 5-subj median, 8
 cpu_rss_gb_median,pamica,block_size,16384,2.36,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,pamica,block_size,65536,2.63,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,pamica,block_size,full,19.57,GB,"real ds004505 5-subj median, 8 cores"
-cpu_fit_s_min,pamica,block_size,1024,241.3,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,pamica,block_size,4096,261.0,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,pamica,block_size,16384,341.7,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,pamica,block_size,65536,833.0,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,pamica,block_size,full,754.2,s,"best-of-5 subj (least-contended, throttled %4)"
+cpu_fit_s_min,pamica,block_size,1024,241.3,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,pamica,block_size,4096,261.0,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,pamica,block_size,16384,341.7,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,pamica,block_size,65536,833.0,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,pamica,block_size,full,754.2,s,best-of-5 subj (fastest observed; contention + subject length both vary)
 cpu_fit_s_median,pamica,block_size,1024,534.9,s,median (contention-noisy)
 cpu_fit_s_median,pamica,block_size,4096,431.3,s,median (contention-noisy)
 cpu_fit_s_median,pamica,block_size,16384,408.7,s,median (contention-noisy)
@@ -109,10 +109,10 @@ cpu_rss_gb_median,pyamica,chunk_t,4096,1.94,GB,"real ds004505 5-subj median, 8 c
 cpu_rss_gb_median,pyamica,chunk_t,16384,2.75,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,pyamica,chunk_t,65536,3.81,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,pyamica,chunk_t,full,27.21,GB,"real ds004505 5-subj median, 8 cores"
-cpu_fit_s_min,pyamica,chunk_t,4096,2008.4,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,pyamica,chunk_t,16384,724.2,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,pyamica,chunk_t,65536,776.9,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,pyamica,chunk_t,full,903.2,s,"best-of-5 subj (least-contended, throttled %4)"
+cpu_fit_s_min,pyamica,chunk_t,4096,2008.4,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,pyamica,chunk_t,16384,724.2,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,pyamica,chunk_t,65536,776.9,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,pyamica,chunk_t,full,903.2,s,best-of-5 subj (fastest observed; contention + subject length both vary)
 cpu_fit_s_median,pyamica,chunk_t,4096,2345.0,s,median (contention-noisy)
 cpu_fit_s_median,pyamica,chunk_t,16384,969.9,s,median (contention-noisy)
 cpu_fit_s_median,pyamica,chunk_t,65536,980.8,s,median (contention-noisy)
@@ -121,10 +121,10 @@ cpu_rss_gb_median,scott,batch_size,1024,2.06,GB,"real ds004505 5-subj median, 8 
 cpu_rss_gb_median,scott,batch_size,4096,2.06,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,scott,batch_size,16384,2.06,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,scott,batch_size,65536,2.31,GB,"real ds004505 5-subj median, 8 cores"
-cpu_fit_s_min,scott,batch_size,1024,195.0,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,scott,batch_size,4096,164.5,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,scott,batch_size,16384,172.3,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,scott,batch_size,65536,235.5,s,"best-of-5 subj (least-contended, throttled %4)"
+cpu_fit_s_min,scott,batch_size,1024,195.0,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,scott,batch_size,4096,164.5,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,scott,batch_size,16384,172.3,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,scott,batch_size,65536,235.5,s,best-of-5 subj (fastest observed; contention + subject length both vary)
 cpu_fit_s_median,scott,batch_size,1024,257.9,s,median (contention-noisy)
 cpu_fit_s_median,scott,batch_size,4096,290.7,s,median (contention-noisy)
 cpu_fit_s_median,scott,batch_size,16384,268.9,s,median (contention-noisy)
@@ -134,11 +134,11 @@ cpu_rss_gb_median,fortran,block_size,4096,0.75,GB,"real ds004505 5-subj median, 
 cpu_rss_gb_median,fortran,block_size,16384,0.86,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,fortran,block_size,65536,1.32,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,fortran,block_size,full,9.97,GB,"real ds004505 5-subj median, 8 cores"
-cpu_fit_s_min,fortran,block_size,1024,639.8,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,fortran,block_size,4096,589.5,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,fortran,block_size,16384,730.3,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,fortran,block_size,65536,764.3,s,"best-of-5 subj (least-contended, throttled %4)"
-cpu_fit_s_min,fortran,block_size,full,790.9,s,"best-of-5 subj (least-contended, throttled %4)"
+cpu_fit_s_min,fortran,block_size,1024,639.8,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,fortran,block_size,4096,589.5,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,fortran,block_size,16384,730.3,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,fortran,block_size,65536,764.3,s,best-of-5 subj (fastest observed; contention + subject length both vary)
+cpu_fit_s_min,fortran,block_size,full,790.9,s,best-of-5 subj (fastest observed; contention + subject length both vary)
 cpu_fit_s_median,fortran,block_size,1024,759.7,s,median (contention-noisy)
 cpu_fit_s_median,fortran,block_size,4096,812.4,s,median (contention-noisy)
 cpu_fit_s_median,fortran,block_size,16384,845.0,s,median (contention-noisy)

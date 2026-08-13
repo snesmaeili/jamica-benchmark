@@ -39,7 +39,7 @@ CPU_RSS = {
  "fortran": {1024:0.72,4096:0.75,16384:0.86,65536:1.32,FULL:9.97},
 }
 # REAL CPU fit-time (s), throttled %4 rerun, 5 subjects. CPU_FIT = min across subjects
-# (best observed ≈ least-contended, the tightest/cleanest curve); CPU_FIT_MED = median (still
+# (best observed = fastest of 5; both contention and subject length vary); CPU_FIT_MED = median (still
 # carries residual node contention + per-subject data-size heterogeneity, shown for context).
 CPU_FIT = {  # min across subjects — the clean curve
  "jamica":   {1024:155.0,4096:156.5,16384:162.3,65536:181.6,FULL:288.3},
@@ -90,7 +90,11 @@ def chart(series, band, ylab, ylog, title, sub, impls, oom=None):
             for m0 in (1,2,5):
                 if vmin*0.7<=d0*m0<=vmax*1.25: ticks.append(d0*m0)
             d0*=10
-    else: ticks=[hi*i/4 for i in range(5)]
+    else:
+        raw=hi/4; e=10**math.floor(math.log10(raw)); f=raw/e
+        step=(1 if f<1.5 else 2 if f<3 else 5 if f<7 else 10)*e
+        ticks=[]; t0=0.0
+        while t0<=hi: ticks.append(t0); t0+=step
     for t in ticks:
         y=Y(t); s.append(f'<line x1="{ml}" y1="{y:.1f}" x2="{W-mr}" y2="{y:.1f}" class="grid"/>')
         lab=f'{t:.0f}' if t>=1 else f'{t:.1f}'
@@ -123,7 +127,7 @@ c_gt=chart(gpu_t,GPU_BAND,"fit time (s, log)",True,"GPU · fit time vs chunk","r
 c_gv=chart(gpu_v,None,"peak VRAM (GB)",False,"GPU · memory vs chunk","real ds004505 · H100 · median peak VRAM",IMPLS)
 CPU_IMPLS=["jamica","pamica","pyamica","scott","fortran"]
 c_cr=chart(CPU_RSS,None,"peak RSS (GB)",False,"CPU · memory vs chunk","real ds004505 · 8 cores · 5-subject median peak RSS",CPU_IMPLS)
-c_ct=chart(CPU_FIT,None,"fit time (s, log)",True,"CPU · fit time vs chunk","real ds004505 · 8 cores · best-of-5 subjects (least-contended)",CPU_IMPLS,oom={"scott":"full"})
+c_ct=chart(CPU_FIT,None,"fit time (s, log)",True,"CPU · fit time vs chunk","real ds004505 · 8 cores · best-of-5 subjects (fastest observed)",CPU_IMPLS,oom={"scott":"full"})
 
 def legend(impls):
     it="".join(f'<span class="lg"><i style="background:{COLOR[i]}"></i>{LABEL.get(i,"Fortran amica17")} <code>{KNOB[i]}</code> <span class="cm">@{COMMIT[i]}</span></span>' for i in impls)
@@ -182,7 +186,7 @@ svg.chart{{width:100%;height:auto;display:block;overflow:visible}}
 table{{width:100%;border-collapse:collapse;font-size:.95rem;margin:.2em 0 1em}}
 th,td{{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}}
 th{{font-size:.74rem;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);font-weight:650}}
-tr.hi td{{background:color-mix(in srgb,var(--accent) 9%,transparent)}}tbody tr:last-child td{{border-bottom:none}}
+tbody tr:last-child td{{border-bottom:none}}
 .dot{{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:middle}}
 .badge{{font-size:.72rem;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap}}
 .badge.bad{{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}}.badge.ok{{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}}.badge.best{{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}}
@@ -190,12 +194,11 @@ tr.hi td{{background:color-mix(in srgb,var(--accent) 9%,transparent)}}tbody tr:l
 .stat{{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}}
 .stat .big{{font-size:1.9rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}}
 .stat .lab{{color:var(--mut);font-size:.86rem;margin-top:6px}}
-.stat.jamica .big{{color:var(--accent)}}.stat.bad .big{{color:var(--bad)}}.stat.warn .big{{color:var(--warn)}}
+.stat.bad .big{{color:var(--bad)}}.stat.warn .big{{color:var(--warn)}}
 p{{max-width:68ch}}.note{{font-size:.9rem;color:var(--mut)}}
 .warn-box{{background:color-mix(in srgb,var(--warn) 8%,var(--panel));border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:10px;padding:14px 18px;margin:6px 0 14px;font-size:.92rem}}
 ul.tk{{max-width:68ch;padding-left:0;list-style:none}}ul.tk li{{padding:7px 0 7px 24px;position:relative;border-bottom:1px solid var(--line)}}
 ul.tk li:before{{content:"";position:absolute;left:3px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--accent)}}
-.quote{{border-left:3px solid var(--accent);padding:4px 0 4px 16px;margin:14px 0;color:var(--mut);font-style:italic;max-width:68ch}}
 footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
 .prov{{display:grid;grid-template-columns:150px 1fr;gap:4px 16px;font-size:.9rem;margin-top:8px}}.prov dt{{color:var(--mut)}}.prov dd{{margin:0;font-family:ui-monospace,monospace;font-size:.86em}}
 </style>
@@ -217,7 +220,7 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   depending on the package. We swept it across five values (1024 → full-batch) and recorded fit time
   and peak memory, on the same subjects, for each device.</p>
   <div class="callout">
-    <div class="stat warn"><div class="big">~17×</div><div class="lab">Widest fit-time range across the setting, within a single implementation. Each package's shipped default typically sits far from its own fastest setting.</div></div>
+    <div class="stat warn"><div class="big">~17×</div><div class="lab">Widest fit-time range across the batch/chunk setting, within a single implementation. A setting that is fast on one device can be slow on the other.</div></div>
     <div class="stat warn"><div class="big">~30×</div><div class="lab">Widest peak-memory range across the setting. Memory grows sharply toward full-batch — enough to run some implementations out of memory on an 80&nbsp;GB card.</div></div>
     <div class="stat"><div class="big">GPU ⇄ CPU</div><div class="lab">The best setting flips by device: large / full-batch on the H100, small / mid on CPU. A single recommended value is wrong for both.</div></div>
   </div>
@@ -233,34 +236,34 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   <ul class="tk" style="margin-top:20px">
     <li><b>Larger settings are faster on the GPU.</b> Fit time falls as the chunk grows; the fastest
     measured setting is at or near full-batch for jamica, pAMICA and pyamica, and 65K for scott-huberty.</li>
-    <li><b>Shipped defaults are usually far from the fastest setting.</b> Small blocks are slow — 140–170&nbsp;s
-    at 1024 for scott-huberty and pAMICA, versus 5–15&nbsp;s at their best. The fastest setting is
-    per-implementation and only found by sweeping.</li>
-    <li><b>Memory grows sharply toward full-batch.</b> At full-batch, pyamica peaks near <b>28&nbsp;GB</b>
-    and pAMICA near <b>19&nbsp;GB</b>, and scott-huberty runs out of memory; jamica reaches its fastest
-    time in ~8&nbsp;GB (≈2&nbsp;GB when chunked).</li>
+    <li><b>Small settings are slow.</b> At 1024, scott-huberty and pAMICA take 140–170&nbsp;s, versus
+    ~9–10&nbsp;s at each one's own fastest setting. The fastest setting is per-implementation and only found by sweeping.</li>
+    <li><b>Memory grows sharply toward full-batch.</b> At full-batch, pyamica peaks near <b>28&nbsp;GB</b>,
+    pAMICA near <b>19&nbsp;GB</b> and jamica near <b>8&nbsp;GB</b>, and scott-huberty runs out of memory.
+    Chunking trades a large amount of memory for a little time — all four drop to a few GB at smaller settings.</li>
   </ul>
 </section>
 
 <section>
   <h2>Each implementation at its own fastest setting</h2>
   <p class="sub">Fit time when every implementation runs at its own best measured setting on the H100
-  (real ds004505, 25-subject median). This is the like-for-like comparison; comparing shipped defaults
-  instead would exaggerate the differences, because the defaults sit at very different distances from
-  each optimum.</p>
+  (real ds004505, 25-subject median). These rows share the same dataset, subject set, iteration count
+  (100), component count and fit-time metric — but equal iterations is not equal convergence, and the
+  memory counters differ by framework (JAX <code>peak_bytes_in_use</code> vs Torch
+  <code>max_memory_allocated</code>), so read the numbers as directional.</p>
   <table><thead><tr><th>Implementation</th><th>Setting</th><th>Fit time</th><th>Relative</th><th>Peak VRAM</th></tr></thead><tbody>{optrows()}</tbody></table>
   <p class="note">At their respective best settings the four fall within ~1.9× of each other. As one
-  illustration of default-vs-optimum distance, pAMICA's <code>block_size</code> on the GPU:</p>
+  measured illustration of how far a single setting can sit from an implementation's optimum, pAMICA's
+  <code>block_size</code> on the GPU:</p>
   <table><thead><tr><th><code>block_size</code></th><th>Fit time</th><th>Peak VRAM</th><th></th></tr></thead><tbody>{pamrows()}</tbody></table>
   <p class="note">pAMICA's shipped default is <code>block_size=512</code>, which we did not re-measure
-  on this sweep; the nearest measured point, 1024, is already ~15× off its own fastest setting, and 512
-  is slower still. The torch backend does not auto-tune the setting.</p>
+  on this sweep; the nearest measured point, 1024, is already ~15× off its own fastest setting.</p>
 </section>
 
 <section>
   <h2>CPU — fit time &amp; memory</h2>
   <p class="sub">Real ds004505, 8 cores, 5 subjects. ◯ marks each implementation's fastest CPU setting.
-  Includes the Fortran amica17 reference (CPU-only). Fit time is the best (least-contended) of the 5
+  Includes the Fortran amica17 reference (CPU-only). Fit time is the best-observed (fastest) of the 5
   subjects per cell — see the measurement note below.</p>
   <div class="grid2"><div class="card">{c_ct}</div><div class="card">{c_cr}</div></div>
   {legend(CPU_IMPLS)}
@@ -269,19 +272,21 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
     1024, scott-huberty/Fortran ~4096, pyamica 16384) — the opposite of the GPU, where large/full-batch
     won. Small blocks fit CPU cache; on the H100 they starve the device. The recommended setting depends
     on the device.</li>
-    <li><b>Best-case CPU times</b> (least-contended of 5 subjects): jamica ~155&nbsp;s, scott-huberty
-    ~164&nbsp;s, pAMICA ~241&nbsp;s, Fortran ~589&nbsp;s, pyamica ~724&nbsp;s.</li>
+    <li><b>Best-observed CPU times</b> (fastest of 5 subjects, approximate — see note): jamica and
+    scott-huberty are closest at ~155–165&nbsp;s, then pAMICA ~240&nbsp;s, Fortran ~590&nbsp;s and pyamica ~720&nbsp;s.</li>
     <li><b>Full-batch is memory-heavy on CPU too</b> (jamica 21&nbsp;GB, pyamica 27&nbsp;GB); the Fortran
-    reference is the leanest everywhere (~0.7&nbsp;GB).</li>
+    reference uses the least memory at every measured setting (0.72&nbsp;GB at 1024, up to 9.97&nbsp;GB at full-batch).</li>
     <li><b>Two settings failed outright:</b> pyamica at 1024 exceeded the 1-hour timeout; scott-huberty
     at full-batch ran out of memory — both absent from the curve.</li>
   </ul>
   <div class="warn-box" style="margin-top:14px"><b>On the CPU timing numbers.</b> CPU fits were measured
   on shared cluster nodes, and AMICA fits are memory-bandwidth-bound, so jobs sharing a node interfere
-  and per-cell absolute times are noisy. We report the best (least-contended) of 5 subjects per cell,
-  which recovers a clean trend; the per-cell median stays non-monotonic. Treat absolute CPU seconds as
-  approximate and rely on the ordering and each implementation's fastest setting. CPU <em>memory</em> is
-  allocation-driven and clean regardless. Full detail: <code>NOTES_measurement.md</code>.</div>
+  and per-cell absolute times are noisy. The 5 subjects also differ in recording length, so a per-cell
+  median mixes both contention and data size and stays non-monotonic. We plot the best-observed (fastest)
+  of the 5 per cell to recover a clean trend — but that minimum reflects both a quieter node and a shorter
+  subject, so treat absolute CPU seconds as approximate, contention-inflated figures. Rely on the curve
+  shapes and each implementation's fastest setting, and read the cross-implementation ordering as coarse.
+  CPU <em>memory</em> is allocation-driven and clean regardless. Full detail: <code>NOTES_measurement.md</code>.</div>
 </section>
 
 <footer>
@@ -296,10 +301,11 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
     <dt>Caveats</dt><dd>NOTES_measurement.md (CPU contention + noise estimate)</dd>
   </dl>
   <p class="note" style="margin-top:16px">All fit times are 100-iteration runs; for JIT-compiled
-  implementations this amortizes the one-time compile so the numbers reflect steady-state throughput.
-  GPU numbers are 25-subject medians and CPU <em>memory</em> is clean; CPU <em>fit-times</em> are the
-  best (least-contended) of 5 subjects — treat the absolute CPU seconds as approximate, and rely on the
-  shapes, the ordering, and each implementation's fastest setting.</p>
+  implementations this amortizes the one-time compile so the numbers reflect steady-state throughput —
+  on much shorter runs that compile cost dominates and the ranking can differ. GPU numbers are 25-subject
+  medians and CPU <em>memory</em> is clean; CPU <em>fit-times</em> are the best-observed (fastest) of 5
+  subjects, approximate — rely on the curve shapes and each implementation's fastest setting rather than
+  the exact CPU seconds or ranking.</p>
 </footer>
 </div>"""
 HERE=os.path.dirname(os.path.abspath(__file__))
@@ -327,7 +333,7 @@ for im in CPU_IMPLS:
     for c, v in sorted(CPU_RSS[im].items()):
         _rows.append(("cpu_rss_gb_median", im, KNOB[im], _cn(c), v, "GB", "real ds004505 5-subj median, 8 cores"))
     for c, v in sorted(CPU_FIT[im].items()):
-        _rows.append(("cpu_fit_s_min", im, KNOB[im], _cn(c), v, "s", "best-of-5 subj (least-contended, throttled %4)"))
+        _rows.append(("cpu_fit_s_min", im, KNOB[im], _cn(c), v, "s", "best-of-5 subj (fastest observed; contention + subject length both vary)"))
     for c, v in sorted(CPU_FIT_MED[im].items()):
         _rows.append(("cpu_fit_s_median", im, KNOB[im], _cn(c), v, "s", "median (contention-noisy)"))
 for (im, c), (lab, _cls) in CPU_FIT_MISS.items():
