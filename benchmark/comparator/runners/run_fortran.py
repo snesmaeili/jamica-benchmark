@@ -66,7 +66,11 @@ def main() -> None:
         files=str(data_dir / "data.fdt"),
         outdir=str(out_dir) + "/",
         n_channels=n_comp, n_samples=n_samples,
-        block_size=min(int(n_samples), 100000),
+        # block_size override for the chunk-size study (clamped to n_samples so a
+        # large sentinel means full-batch); default matches the parity recipe.
+        block_size=(min(int(os.environ["AMICA_FORTRAN_BLOCK"]), int(n_samples))
+                    if os.environ.get("AMICA_FORTRAN_BLOCK")
+                    else min(int(n_samples), 100000)),
         # Run amica17's standard sphere/mean/PCA path (the validated parity config). On the
         # already-projected, unit-variance input, PCA(pcakeep=n_comp) is just a rotation. NOTE:
         # do_sphere=0/doPCA=0 makes amica17 exit at init with 0 iterations.

@@ -102,3 +102,19 @@ diff -r out/ /path/to/fortran_nondegenerate/   # numerical agreement
 The full sub-01 (118 ch × 1.2 M samples) parity test, including the param
 file and pre-processed `.fdt`, lives at
 `amica-benchmark/results/post_f1_audit/`.
+
+## Durable pinned binary (reproducibility)
+
+The parity-validated reference binary is **sha `665b577176553c4bb21c4681e135a3af89c65b1851b69f346dc401a8322c6efd`**
+(what `pins.toml` / `check_env.py fortran-sha` expect). A rebuild will **not** reproduce
+this exact sha — compiler/BLAS drift changes the bytes — so the binary is preserved as an
+artifact, not just the source above.
+
+- Durable copy (our own project space, survives the 60-day `/scratch` wipe):
+  `/project/rrg-kjerbi/yorguin/amica_fortran_reference/{amica17,SHA256SUMS,PROVENANCE.md}`
+- Point the harness at it with `export AMICA17_BIN=/project/rrg-kjerbi/yorguin/amica_fortran_reference/amica17`.
+- **Not** the same as `/project/rrg-kjerbi/sesma-shared/amica-repro/amica17`, which is a
+  *different* build (sha `c02f22c…`, per its own `BUILD_PROVENANCE.md`). Do not default to it.
+
+`run_fortran.py` honors `AMICA_FORTRAN_BLOCK` to sweep `block_size` (clamped to `n_samples`);
+unset it reproduces the parity recipe (`min(n_samples, 100000)`).
