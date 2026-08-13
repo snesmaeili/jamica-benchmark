@@ -1,203 +1,162 @@
-<title>AMICA benchmark — chunk size is the hidden variable</title>
+<title>AMICA benchmark — chunk size is the hidden variable (real data)</title>
 <style>
 :root{--bg:#f7f8fb;--panel:#fff;--ink:#1a1d29;--mut:#5b6172;--line:#e3e6ef;--accent:#6366f1;--good:#0d9488;--bad:#e11d48;--warn:#d97706;--code:#eef0f7;--shadow:0 1px 2px rgba(20,24,45,.05),0 8px 24px rgba(20,24,45,.05)}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1017;--panel:#161a24;--ink:#e7e9f2;--mut:#9aa0b4;--line:#262c3a;--accent:#8b8ff5;--code:#1d2230;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35)}}
 :root[data-theme=dark]{--bg:#0e1017;--panel:#161a24;--ink:#e7e9f2;--mut:#9aa0b4;--line:#262c3a;--accent:#8b8ff5;--code:#1d2230;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35)}
 :root[data-theme=light]{--bg:#f7f8fb;--panel:#fff;--ink:#1a1d29;--mut:#5b6172;--line:#e3e6ef;--accent:#6366f1;--code:#eef0f7;--shadow:0 1px 2px rgba(20,24,45,.05),0 8px 24px rgba(20,24,45,.05)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;background:var(--code);padding:.08em .4em;border-radius:5px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em;background:var(--code);padding:.06em .4em;border-radius:5px}
 .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-header.hero{padding:64px 0 30px;border-bottom:1px solid var(--line)}
-.kick{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700}
-h1{font-size:clamp(2rem,4.5vw,3.1rem);line-height:1.05;letter-spacing:-.02em;margin:.28em 0 .3em;text-wrap:balance;font-weight:800}
+header.hero{padding:60px 0 28px;border-bottom:1px solid var(--line)}
+.kick{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(2rem,4.4vw,3rem);line-height:1.05;letter-spacing:-.02em;margin:.28em 0 .3em;text-wrap:balance;font-weight:800}
 h1 em{font-style:normal;color:var(--accent)}
-.lede{font-size:1.16rem;color:var(--mut);max-width:66ch;margin:0}
-.tldr{margin:26px 0 0;padding:18px 22px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;box-shadow:var(--shadow)}
-section{padding:46px 0 6px;border-bottom:1px solid var(--line)}
+.lede{font-size:1.14rem;color:var(--mut);max-width:66ch;margin:0}
+.stamp{display:inline-flex;flex-wrap:wrap;gap:6px 14px;margin:16px 0 0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;font-size:.83rem}
+.stamp b{color:var(--accent)}
+section{padding:44px 0 6px;border-bottom:1px solid var(--line)}
 h2{font-size:1.5rem;letter-spacing:-.01em;margin:0 0 4px;font-weight:750}
 .sub{color:var(--mut);margin:.1em 0 1.3em;max-width:68ch}
-.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px 12px 4px}
-.cf{margin:0}.cf figcaption{font-size:.82rem;color:var(--mut);padding:4px 6px 8px}
+.cf{margin:0}.cf figcaption{font-size:.82rem;color:var(--mut);padding:3px 5px 8px}
 svg.chart{width:100%;height:auto;display:block;overflow:visible}
-.chart .grid{stroke:var(--line);stroke-width:1}.chart .vg{stroke-dasharray:2 3;opacity:.7}
-.chart .ct{fill:var(--ink);font:700 13px ui-sans-serif,system-ui}
-.chart .cx,.chart .cy{fill:var(--mut);font:11px ui-sans-serif,system-ui}
+.chart .grid{stroke:var(--line)}.chart .vg{stroke-dasharray:2 3;opacity:.7}
+.chart .ct{fill:var(--ink);font:700 13px ui-sans-serif}.chart .cx,.chart .cy{fill:var(--mut);font:11px ui-sans-serif}
 .chart .cyt,.chart .cxt{fill:var(--mut);font:10px ui-monospace,monospace}.chart .cyt{text-anchor:end}.chart .cxt{text-anchor:middle}
+.chart .oom{fill:#e11d48;font:600 10px ui-sans-serif;text-anchor:middle}
 .legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:14px 2px 2px;font-size:.82rem;color:var(--mut);align-items:center}
-.lg{display:inline-flex;align-items:center;gap:6px}.lg i{width:15px;height:3px;border-radius:2px;display:inline-block}
-.star{color:var(--accent)}.ring{color:var(--mut)}
+.lg{display:inline-flex;align-items:center;gap:6px}.lg i{width:15px;height:3px;border-radius:2px}.cm{font-family:ui-monospace,monospace;font-size:.78em;opacity:.7}
 table{width:100%;border-collapse:collapse;font-size:.95rem;margin:.2em 0 1em}
 th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
 th{font-size:.74rem;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);font-weight:650}
-tr.hi td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
-tbody tr:last-child td{border-bottom:none}
+tr.hi td{background:color-mix(in srgb,var(--accent) 9%,transparent)}tbody tr:last-child td{border-bottom:none}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:middle}
 .badge{font-size:.72rem;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap}
-.badge.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
-.badge.ok{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
-.badge.best{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
-.callout{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:8px 0 20px}
-@media(max-width:720px){.callout{grid-template-columns:1fr}}
+.badge.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}.badge.ok{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.badge.best{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.callout{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:8px 0 20px}@media(max-width:720px){.callout{grid-template-columns:1fr}}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
 .stat .big{font-size:1.9rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
 .stat .lab{color:var(--mut);font-size:.86rem;margin-top:6px}
 .stat.amica .big{color:var(--accent)}.stat.bad .big{color:var(--bad)}.stat.warn .big{color:var(--warn)}
 p{max-width:68ch}.note{font-size:.9rem;color:var(--mut)}
-ul.tk{max-width:68ch;padding-left:0;list-style:none}
-ul.tk li{padding:7px 0 7px 26px;position:relative;border-bottom:1px solid var(--line)}
-ul.tk li:before{content:"";position:absolute;left:4px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
-.fbar{display:grid;grid-template-columns:170px 1fr 54px;align-items:center;gap:10px;margin:7px 0;font-size:.9rem}
-.ftrack{height:9px;background:var(--code);border-radius:6px;overflow:hidden}.ffill{display:block;height:100%;border-radius:6px}
-.fv{font-variant-numeric:tabular-nums;color:var(--mut);text-align:right}
-footer{padding:34px 0 0;color:var(--mut);font-size:.86rem}
-.prov{display:grid;grid-template-columns:150px 1fr;gap:4px 16px;font-size:.9rem;margin-top:8px}
-.prov dt{color:var(--mut)}.prov dd{margin:0;font-family:ui-monospace,monospace;font-size:.86em}
+.warn-box{background:color-mix(in srgb,var(--warn) 8%,var(--panel));border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:10px;padding:14px 18px;margin:6px 0 14px;font-size:.92rem}
+ul.tk{max-width:68ch;padding-left:0;list-style:none}ul.tk li{padding:7px 0 7px 24px;position:relative;border-bottom:1px solid var(--line)}
+ul.tk li:before{content:"";position:absolute;left:3px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
 .quote{border-left:3px solid var(--accent);padding:4px 0 4px 16px;margin:14px 0;color:var(--mut);font-style:italic;max-width:68ch}
+footer{padding:34px 0 0;color:var(--mut);font-size:.86rem}
+.prov{display:grid;grid-template-columns:150px 1fr;gap:4px 16px;font-size:.9rem;margin-top:8px}.prov dt{color:var(--mut)}.prov dd{margin:0;font-family:ui-monospace,monospace;font-size:.86em}
 </style>
 <div class="wrap">
 <header class="hero">
-  <div class="kick">Cross-implementation AMICA · ds004505 · H100 + Xeon · main builds</div>
+  <div class="kick">Cross-implementation AMICA · ds004505 · real EEG · bleeding-edge</div>
   <h1>Chunk size is the <em>hidden variable</em></h1>
-  <p class="lede">The "47× slower" gap between AMICA implementations was a default-configuration
-  artifact. Fix the batching knob and the field collapses to under 2× at each library's optimum. And
-  the "flat curve" that looked like robustness? It was fixed compile cost hiding an ordinary steep
-  curve — <em>no</em> implementation is insensitive to this knob.</p>
-  <div class="tldr"><b>Two corrections.</b> (1) Every library exposes a batching knob that moves fit
-  time <b>3–13×</b> in wall-clock and <b>20–500×</b> in steady-state ms/iter; each ships a default
-  wrong for the H100 (pAMICA's 512 is the 47× culprit), and the optimum <b>flips by device</b>.
-  (2) amica-python is not "chunk-robust" — its flat 20-iter curve was ~2.5 s of JIT compile masking a
-  normal steady-state spread. Compared at each library's <em>own</em> optimum on the real ds004505
-  workload, amica leads at 5.5 s (pAMICA 1.7×, pyamica 2.3×, scott 8.3×).</div>
+  <p class="lede">On real EEG, the batching knob moves fit time up to ~30× and peak memory up to ~30×.
+  Every implementation is strongly chunk-sensitive; the defaults are footguns. amica-python is fastest
+  at every chunk and leanest at full-batch.</p>
+  <div class="stamp"><span><b>Latest main:</b></span><span>amica <code>df18b5e</code></span><span>scott <code>e15e158</code></span><span>pyamica <code>a8a4d7e</code></span><span>pAMICA <code>0c4da39</code></span><span>Fortran ref <code>665b577</code></span><span>· 25 subj · 64 comp · 100 iters · H100 + 8-core Xeon</span></div>
 </header>
 
 <section>
-  <h2>The steady-state truth</h2>
-  <p class="sub">The headline chart. A short benchmark reports a <em>total</em> that mixes a fixed
-  per-fit cost (JIT compile for JAX; CUDA/kernel init for torch) with the per-iteration compute. Strip
-  the fixed cost by differencing two iteration counts, <code>(T₄₀−T₁₀)/30</code>, and the real
-  per-iteration curve appears — <b>steep for everyone</b>, amica included.</p>
-  <div class="grid2">
-    <div class="card"><figure class="cf"><figcaption>2-point differenced (T₄₀−T₁₀)/30 · H100 · nobody is flat</figcaption><svg viewBox="0 0 500 330" class="chart" role="img" aria-label="Steady-state ms/iter (compile removed)"><text x="54" y="16" class="ct">Steady-state ms/iter (compile removed)</text><text x="54" y="324" class="cx">chunk / block size (samples) →</text><text transform="translate(13,154.0) rotate(-90)" class="cy">steady ms/iter (log)</text><line x1="54" y1="253.8" x2="486" y2="253.8" class="grid"/><text x="48" y="256.8" class="cyt">5.0</text><line x1="54" y1="221.8" x2="486" y2="221.8" class="grid"/><text x="48" y="224.8" class="cyt">10</text><line x1="54" y1="189.9" x2="486" y2="189.9" class="grid"/><text x="48" y="192.9" class="cyt">20</text><line x1="54" y1="147.6" x2="486" y2="147.6" class="grid"/><text x="48" y="150.6" class="cyt">50</text><line x1="54" y1="115.6" x2="486" y2="115.6" class="grid"/><text x="48" y="118.6" class="cyt">100</text><line x1="54" y1="83.6" x2="486" y2="83.6" class="grid"/><text x="48" y="86.6" class="cyt">200</text><line x1="54" y1="41.4" x2="486" y2="41.4" class="grid"/><text x="48" y="44.4" class="cyt">500</text><line x1="68.6" y1="30" x2="68.6" y2="278" class="grid vg"/><text x="68.6" y="294" class="cxt">512</text><line x1="178.5" y1="30" x2="178.5" y2="278" class="grid vg"/><text x="178.5" y="294" class="cxt">4K</text><line x1="251.7" y1="30" x2="251.7" y2="278" class="grid vg"/><text x="251.7" y="294" class="cxt">16K</text><line x1="324.9" y1="30" x2="324.9" y2="278" class="grid vg"/><text x="324.9" y="294" class="cxt">64K</text><line x1="471.4" y1="30" x2="471.4" y2="278" class="grid vg"/><text x="471.4" y="294" class="cxt">full</text><path d="M105.3,151.4 L178.5,200.4 L251.7,247.8 L324.9,256.7 L471.4,243.9" fill="none" stroke="#6366f1" stroke-width="2.4"/><circle cx="105.3" cy="151.4" r="3" fill="#6366f1"/><circle cx="178.5" cy="200.4" r="3" fill="#6366f1"/><circle cx="251.7" cy="247.8" r="3" fill="#6366f1"/><circle cx="324.9" cy="256.7" r="3" fill="#6366f1"/><circle cx="471.4" cy="243.9" r="3" fill="#6366f1"/><circle cx="324.9" cy="256.7" r="6" fill="none" stroke="#6366f1" stroke-width="2"/><path d="M105.3,73.5 L178.5,134.0 L251.7,169.8 L324.9,248.6 L471.4,267.7" fill="none" stroke="#e11d48" stroke-width="2.4"/><circle cx="105.3" cy="73.5" r="3" fill="#e11d48"/><circle cx="178.5" cy="134.0" r="3" fill="#e11d48"/><circle cx="251.7" cy="169.8" r="3" fill="#e11d48"/><circle cx="324.9" cy="248.6" r="3" fill="#e11d48"/><circle cx="471.4" cy="267.7" r="3" fill="#e11d48"/><circle cx="471.4" cy="267.7" r="6" fill="none" stroke="#e11d48" stroke-width="2"/><path d="M105.3,98.5 L178.5,160.7 L251.7,183.4 L324.9,189.9 L471.4,193.5" fill="none" stroke="#0d9488" stroke-width="2.4"/><circle cx="105.3" cy="98.5" r="3" fill="#0d9488"/><circle cx="178.5" cy="160.7" r="3" fill="#0d9488"/><circle cx="251.7" cy="183.4" r="3" fill="#0d9488"/><circle cx="324.9" cy="189.9" r="3" fill="#0d9488"/><circle cx="471.4" cy="193.5" r="3" fill="#0d9488"/><circle cx="471.4" cy="193.5" r="6" fill="none" stroke="#0d9488" stroke-width="2"/><path d="M68.6,42.1 L178.5,139.0 L251.7,185.0 L324.9,178.1 L471.4,168.5" fill="none" stroke="#d97706" stroke-width="2.4"/><circle cx="68.6" cy="42.1" r="3" fill="#d97706"/><circle cx="178.5" cy="139.0" r="3" fill="#d97706"/><circle cx="251.7" cy="185.0" r="3" fill="#d97706"/><circle cx="324.9" cy="178.1" r="3" fill="#d97706"/><circle cx="471.4" cy="168.5" r="3" fill="#d97706"/><circle cx="251.7" cy="185.0" r="6" fill="none" stroke="#d97706" stroke-width="2"/></svg></figure></div>
-    <div class="card"><figure class="cf"><figcaption>H100 · what a naive benchmark reports — conflates fixed cost + steady</figcaption><svg viewBox="0 0 500 330" class="chart" role="img" aria-label="GPU total time (20 iters)"><text x="54" y="16" class="ct">GPU total time (20 iters)</text><text x="54" y="324" class="cx">chunk / block size (samples) →</text><text transform="translate(13,154.0) rotate(-90)" class="cy">20-iter total (s, log)</text><line x1="54" y1="249.9" x2="486" y2="249.9" class="grid"/><text x="48" y="252.9" class="cyt">0.50</text><line x1="54" y1="206.3" x2="486" y2="206.3" class="grid"/><text x="48" y="209.3" class="cyt">1.0</text><line x1="54" y1="162.7" x2="486" y2="162.7" class="grid"/><text x="48" y="165.7" class="cyt">2.0</text><line x1="54" y1="105.1" x2="486" y2="105.1" class="grid"/><text x="48" y="108.1" class="cyt">5.0</text><line x1="54" y1="61.5" x2="486" y2="61.5" class="grid"/><text x="48" y="64.5" class="cyt">10</text><line x1="68.6" y1="30" x2="68.6" y2="278" class="grid vg"/><text x="68.6" y="294" class="cxt">512</text><line x1="178.5" y1="30" x2="178.5" y2="278" class="grid vg"/><text x="178.5" y="294" class="cxt">4K</text><line x1="251.7" y1="30" x2="251.7" y2="278" class="grid vg"/><text x="251.7" y="294" class="cxt">16K</text><line x1="324.9" y1="30" x2="324.9" y2="278" class="grid vg"/><text x="324.9" y="294" class="cxt">64K</text><line x1="471.4" y1="30" x2="471.4" y2="278" class="grid vg"/><text x="471.4" y="294" class="cxt">full</text><path d="M178.5,133.2 L251.7,135.2 L324.9,137.2 L471.4,143.9" fill="none" stroke="#6366f1" stroke-width="2.4"/><circle cx="178.5" cy="133.2" r="3" fill="#6366f1"/><circle cx="251.7" cy="135.2" r="3" fill="#6366f1"/><circle cx="324.9" cy="137.2" r="3" fill="#6366f1"/><circle cx="471.4" cy="143.9" r="3" fill="#6366f1"/><circle cx="471.4" cy="143.9" r="6" fill="none" stroke="#6366f1" stroke-width="2"/><path d="M105.3,91.6 L178.5,151.3 L251.7,185.2 L324.9,189.8 L471.4,124.1" fill="none" stroke="#e11d48" stroke-width="2.4"/><circle cx="105.3" cy="91.6" r="3" fill="#e11d48"/><circle cx="178.5" cy="151.3" r="3" fill="#e11d48"/><circle cx="251.7" cy="185.2" r="3" fill="#e11d48"/><circle cx="324.9" cy="189.8" r="3" fill="#e11d48"/><circle cx="471.4" cy="124.1" r="3" fill="#e11d48"/><circle cx="324.9" cy="189.8" r="6" fill="none" stroke="#e11d48" stroke-width="2"/><path d="M105.3,137.2 L178.5,220.4 L251.7,249.9 L324.9,264.0 L471.4,249.9" fill="none" stroke="#0d9488" stroke-width="2.4"/><circle cx="105.3" cy="137.2" r="3" fill="#0d9488"/><circle cx="178.5" cy="220.4" r="3" fill="#0d9488"/><circle cx="251.7" cy="249.9" r="3" fill="#0d9488"/><circle cx="324.9" cy="264.0" r="3" fill="#0d9488"/><circle cx="471.4" cy="249.9" r="3" fill="#0d9488"/><circle cx="324.9" cy="264.0" r="6" fill="none" stroke="#0d9488" stroke-width="2"/><path d="M68.6,46.5 L178.5,154.0 L251.7,189.8 L324.9,180.8 L471.4,185.2" fill="none" stroke="#d97706" stroke-width="2.4"/><circle cx="68.6" cy="46.5" r="3" fill="#d97706"/><circle cx="178.5" cy="154.0" r="3" fill="#d97706"/><circle cx="251.7" cy="189.8" r="3" fill="#d97706"/><circle cx="324.9" cy="180.8" r="3" fill="#d97706"/><circle cx="471.4" cy="185.2" r="3" fill="#d97706"/><circle cx="251.7" cy="189.8" r="6" fill="none" stroke="#d97706" stroke-width="2"/><path d="M471.4,136.9 L473.2,141.3 L478.0,141.7 L474.4,144.8 L475.5,149.5 L471.4,147.0 L467.2,149.5 L468.4,144.8 L464.7,141.7 L469.5,141.3 Z" fill="#6366f1" stroke="#fff" stroke-width="0.6"/></svg></figure></div>
-  </div>
-  <div class="legend"><span class="lg"><i style="background:#6366f1"></i>amica-python (JAX) <code>chunk_size</code></span><span class="lg"><i style="background:#e11d48"></i>scott-huberty <code>batch_size</code></span><span class="lg"><i style="background:#0d9488"></i>pyamica <code>chunk_t</code></span><span class="lg"><i style="background:#d97706"></i>pAMICA (sccn) <code>block_size</code></span><span class="lg"><b class="star">★</b> amica <code>auto</code> &nbsp; <b class="ring">◯</b> each impl's optimum</span></div>
-  <ul class="tk" style="margin-top:22px">
-    <li><b>No one is flat.</b> Steady ms/iter swings ~20× (amica 46→4.7), ~65× (scott 249→3.7), ~8×
-    (pyamica) and <b>~130×</b> (pAMICA 492→22). amica's earlier "1.3× flat" total was fixed compile
-    (~2.5 s) sitting under a 2.5–3.2 s wall clock — a measurement artifact, not robustness.</li>
-    <li><b>The fixed cost is not amica's alone.</b> Differencing exposes each library's per-fit
-    overhead — and the torch implementations' CUDA/kernel-init cost is comparable or larger:</li>
-  </ul>
-  <div style="max-width:520px;margin:6px 0 4px"><div class="fbar"><span class="fl">amica-python (JAX)</span><span class="ftrack"><span class="ffill" style="width:72%;background:#6366f1"></span></span><span class="fv">~2.6s</span></div><div class="fbar"><span class="fl">scott-huberty</span><span class="ftrack"><span class="ffill" style="width:100%;background:#e11d48"></span></span><span class="fv">~3.6s</span></div><div class="fbar"><span class="fl">pyamica</span><span class="ftrack"><span class="ffill" style="width:39%;background:#0d9488"></span></span><span class="fv">~1.4s</span></div><div class="fbar"><span class="fl">pAMICA (sccn)</span><span class="ftrack"><span class="ffill" style="width:83%;background:#d97706"></span></span><span class="fv">~3.0s</span></div></div>
-  <p class="note">Fixed per-fit overhead (differencing intercept). It amortizes: it dominates a 20-iter
-  synthetic and vanishes in a 100-iter real fit — which is exactly why the synthetic-vs-real ranking
-  flips.</p>
-</section>
-
-<section>
-  <h2>Why the naive comparison misfired</h2>
+  <h2>The correction that motivated this</h2>
+  <p class="sub">A naive comparison uses each library's default batching. pAMICA's default
+  (<code>block_size=512</code>) alone produced a ~15–47× "gap" that is a configuration artifact, not an
+  algorithmic one — on the same real subjects, the same pAMICA:</p>
   <div class="callout">
-    <div class="stat bad"><div class="big">275→9.5s</div><div class="lab">pAMICA on ds004505 (GPU) from its <code>block_size=512</code> default to full-batch — a 29× self-speedup from one number. This is the "47×".</div></div>
-    <div class="stat warn"><div class="big">3–13×</div><div class="lab">Range every library's default sits above its own optimum. scott &amp; pyamica ship full-batch defaults 3–7× off on GPU too.</div></div>
-    <div class="stat amica"><div class="big">1.7×</div><div class="lab">Real remaining lead of amica over pAMICA when both run at their own optimum — not 47×.</div></div>
+    <div class="stat bad"><div class="big">140→9.2s</div><div class="lab">pAMICA on ds004505 (GPU median) from its 512 default to full-batch — a 15× self-speedup from one number.</div></div>
+    <div class="stat warn"><div class="big">~30×</div><div class="lab">Range of every library across the chunk axis on real data. The default is never the optimum, and the optimum flips by device.</div></div>
+    <div class="stat amica"><div class="big">1.8×</div><div class="lab">amica's real lead over pAMICA when both run at their own optimum — not tens of ×.</div></div>
   </div>
-  <table>
-    <thead><tr><th><code>block_size</code></th><th>Fit time</th><th>Peak VRAM</th><th></th></tr></thead>
-    <tbody><tr><td><code>512 (default)</code></td><td class="num">275.0s</td><td class="num">0.57 GB</td><td><span class="badge bad">config artifact</span></td></tr><tr><td><code>65536 (tuned)</code></td><td class="num">12.1s</td><td class="num">1.75 GB</td><td><span class="badge ok">tuned</span></td></tr><tr><td><code>full-batch (best)</code></td><td class="num">9.5s</td><td class="num">19.23 GB</td><td><span class="badge best">absolute best</span></td></tr></tbody>
-  </table>
-  <p class="note">pAMICA's torch backend does not auto-tune <code>block_size</code> (only its numpy
-  backend + the Fortran reference do). Reporting its shipped default as "pAMICA performance" is what
-  produced the 47× headline. Its true best is 9.5 s — at a 19 GB VRAM cost.</p>
+  <table><thead><tr><th><code>block_size</code></th><th>Fit time</th><th>Peak VRAM</th><th></th></tr></thead><tbody><tr><td><code>512 (default)</code></td><td class="num">139.6s</td><td class="num">0.58 GB</td><td><span class="badge bad">config artifact</span></td></tr><tr><td><code>16384 (tuned)</code></td><td class="num">14.3s</td><td class="num">0.86 GB</td><td><span class="badge ok">tuned</span></td></tr><tr><td><code>full-batch (best)</code></td><td class="num">9.2s</td><td class="num">19.25 GB</td><td><span class="badge best">best</span></td></tr></tbody></table>
+  <p class="note">pAMICA's torch backend does not auto-tune <code>block_size</code>; reporting its
+  shipped default as "pAMICA performance" is what produced the headline gap.</p>
 </section>
 
 <section>
-  <h2>The curves — total time &amp; memory</h2>
-  <p class="sub">Synthetic sweeps (64 ch, 1 model, 3 mixtures) on each device. These are 20/10-iter
-  <em>totals</em> (so they carry the fixed cost above); still, the shape, the defaults, and the
-  memory trade-off are clear. ◯ = each impl's optimum; ★ = amica's <code>auto</code> pick.</p>
-  <div class="grid2">
-    <div class="card"><figure class="cf"><figcaption>H100 · peak device memory</figcaption><svg viewBox="0 0 500 330" class="chart" role="img" aria-label="GPU memory"><text x="54" y="16" class="ct">GPU memory</text><text x="54" y="324" class="cx">chunk / block size (samples) →</text><text transform="translate(13,154.0) rotate(-90)" class="cy">peak VRAM (GB)</text><line x1="54" y1="278.0" x2="486" y2="278.0" class="grid"/><text x="48" y="281.0" class="cyt">0.00</text><line x1="54" y1="216.0" x2="486" y2="216.0" class="grid"/><text x="48" y="219.0" class="cyt">1.4</text><line x1="54" y1="154.0" x2="486" y2="154.0" class="grid"/><text x="48" y="157.0" class="cyt">2.9</text><line x1="54" y1="92.0" x2="486" y2="92.0" class="grid"/><text x="48" y="95.0" class="cyt">4.3</text><line x1="54" y1="30.0" x2="486" y2="30.0" class="grid"/><text x="48" y="33.0" class="cyt">5.7</text><line x1="68.6" y1="30" x2="68.6" y2="278" class="grid vg"/><text x="68.6" y="294" class="cxt">512</text><line x1="178.5" y1="30" x2="178.5" y2="278" class="grid vg"/><text x="178.5" y="294" class="cxt">4K</text><line x1="251.7" y1="30" x2="251.7" y2="278" class="grid vg"/><text x="251.7" y="294" class="cxt">16K</text><line x1="324.9" y1="30" x2="324.9" y2="278" class="grid vg"/><text x="324.9" y="294" class="cxt">64K</text><line x1="471.4" y1="30" x2="471.4" y2="278" class="grid vg"/><text x="471.4" y="294" class="cxt">full</text><path d="M178.5,253.2 L251.7,253.2 L324.9,248.4 L471.4,225.4" fill="none" stroke="#6366f1" stroke-width="2.4"/><circle cx="178.5" cy="253.2" r="3" fill="#6366f1"/><circle cx="251.7" cy="253.2" r="3" fill="#6366f1"/><circle cx="324.9" cy="248.4" r="3" fill="#6366f1"/><circle cx="471.4" cy="225.4" r="3" fill="#6366f1"/><circle cx="178.5" cy="253.2" r="6" fill="none" stroke="#6366f1" stroke-width="2"/><path d="M105.3,271.9 L178.5,270.2 L251.7,263.6 L324.9,237.1 L471.4,181.0" fill="none" stroke="#e11d48" stroke-width="2.4"/><circle cx="105.3" cy="271.9" r="3" fill="#e11d48"/><circle cx="178.5" cy="270.2" r="3" fill="#e11d48"/><circle cx="251.7" cy="263.6" r="3" fill="#e11d48"/><circle cx="324.9" cy="237.1" r="3" fill="#e11d48"/><circle cx="471.4" cy="181.0" r="3" fill="#e11d48"/><circle cx="105.3" cy="271.9" r="6" fill="none" stroke="#e11d48" stroke-width="2"/><path d="M105.3,264.1 L178.5,262.8 L251.7,246.7 L324.9,182.7 L471.4,56.6" fill="none" stroke="#0d9488" stroke-width="2.4"/><circle cx="105.3" cy="264.1" r="3" fill="#0d9488"/><circle cx="178.5" cy="262.8" r="3" fill="#0d9488"/><circle cx="251.7" cy="246.7" r="3" fill="#0d9488"/><circle cx="324.9" cy="182.7" r="3" fill="#0d9488"/><circle cx="471.4" cy="56.6" r="3" fill="#0d9488"/><circle cx="105.3" cy="264.1" r="6" fill="none" stroke="#0d9488" stroke-width="2"/><path d="M68.6,271.9 L178.5,269.3 L251.7,259.7 L324.9,220.6 L471.4,127.0" fill="none" stroke="#d97706" stroke-width="2.4"/><circle cx="68.6" cy="271.9" r="3" fill="#d97706"/><circle cx="178.5" cy="269.3" r="3" fill="#d97706"/><circle cx="251.7" cy="259.7" r="3" fill="#d97706"/><circle cx="324.9" cy="220.6" r="3" fill="#d97706"/><circle cx="471.4" cy="127.0" r="3" fill="#d97706"/><circle cx="68.6" cy="271.9" r="6" fill="none" stroke="#d97706" stroke-width="2"/></svg></figure></div>
-    <div class="card"><figure class="cf"><figcaption>8 cores · the optimum flips vs GPU</figcaption><svg viewBox="0 0 500 330" class="chart" role="img" aria-label="CPU total time (10 iters)"><text x="54" y="16" class="ct">CPU total time (10 iters)</text><text x="54" y="324" class="cx">chunk / block size (samples) →</text><text transform="translate(13,154.0) rotate(-90)" class="cy">10-iter total (s, log)</text><line x1="54" y1="236.0" x2="486" y2="236.0" class="grid"/><text x="48" y="239.0" class="cyt">5.0</text><line x1="54" y1="198.1" x2="486" y2="198.1" class="grid"/><text x="48" y="201.1" class="cyt">10</text><line x1="54" y1="160.2" x2="486" y2="160.2" class="grid"/><text x="48" y="163.2" class="cyt">20</text><line x1="54" y1="110.1" x2="486" y2="110.1" class="grid"/><text x="48" y="113.1" class="cyt">50</text><line x1="54" y1="72.1" x2="486" y2="72.1" class="grid"/><text x="48" y="75.1" class="cyt">100</text><line x1="54" y1="34.2" x2="486" y2="34.2" class="grid"/><text x="48" y="37.2" class="cyt">200</text><line x1="68.6" y1="30" x2="68.6" y2="278" class="grid vg"/><text x="68.6" y="294" class="cxt">512</text><line x1="178.5" y1="30" x2="178.5" y2="278" class="grid vg"/><text x="178.5" y="294" class="cxt">4K</text><line x1="251.7" y1="30" x2="251.7" y2="278" class="grid vg"/><text x="251.7" y="294" class="cxt">16K</text><line x1="324.9" y1="30" x2="324.9" y2="278" class="grid vg"/><text x="324.9" y="294" class="cxt">64K</text><line x1="471.4" y1="30" x2="471.4" y2="278" class="grid vg"/><text x="471.4" y="294" class="cxt">full</text><path d="M178.5,265.8 L251.7,260.4 L324.9,244.2 L471.4,198.6" fill="none" stroke="#6366f1" stroke-width="2.4"/><circle cx="178.5" cy="265.8" r="3" fill="#6366f1"/><circle cx="251.7" cy="260.4" r="3" fill="#6366f1"/><circle cx="324.9" cy="244.2" r="3" fill="#6366f1"/><circle cx="471.4" cy="198.6" r="3" fill="#6366f1"/><circle cx="178.5" cy="265.8" r="6" fill="none" stroke="#6366f1" stroke-width="2"/><path d="M178.5,64.5 L251.7,67.5 L324.9,111.8 L471.4,117.9" fill="none" stroke="#e11d48" stroke-width="2.4"/><circle cx="178.5" cy="64.5" r="3" fill="#e11d48"/><circle cx="251.7" cy="67.5" r="3" fill="#e11d48"/><circle cx="324.9" cy="111.8" r="3" fill="#e11d48"/><circle cx="471.4" cy="117.9" r="3" fill="#e11d48"/><circle cx="471.4" cy="117.9" r="6" fill="none" stroke="#e11d48" stroke-width="2"/><path d="M178.5,137.8 L251.7,186.3 L324.9,179.7 L471.4,182.9" fill="none" stroke="#0d9488" stroke-width="2.4"/><circle cx="178.5" cy="137.8" r="3" fill="#0d9488"/><circle cx="251.7" cy="186.3" r="3" fill="#0d9488"/><circle cx="324.9" cy="179.7" r="3" fill="#0d9488"/><circle cx="471.4" cy="182.9" r="3" fill="#0d9488"/><circle cx="251.7" cy="186.3" r="6" fill="none" stroke="#0d9488" stroke-width="2"/><path d="M68.6,44.4 L178.5,128.6 L251.7,163.0 L324.9,164.1 L471.4,161.8" fill="none" stroke="#d97706" stroke-width="2.4"/><circle cx="68.6" cy="44.4" r="3" fill="#d97706"/><circle cx="178.5" cy="128.6" r="3" fill="#d97706"/><circle cx="251.7" cy="163.0" r="3" fill="#d97706"/><circle cx="324.9" cy="164.1" r="3" fill="#d97706"/><circle cx="471.4" cy="161.8" r="3" fill="#d97706"/><circle cx="324.9" cy="164.1" r="6" fill="none" stroke="#d97706" stroke-width="2"/><path d="M178.5,250.1 L180.3,254.5 L185.1,254.9 L181.5,258.1 L182.6,262.8 L178.5,260.2 L174.4,262.8 L175.5,258.1 L171.8,254.9 L176.6,254.5 Z" fill="#6366f1" stroke="#fff" stroke-width="0.6"/></svg></figure></div>
-  </div>
-  <div class="legend"><span class="lg"><i style="background:#6366f1"></i>amica-python (JAX) <code>chunk_size</code></span><span class="lg"><i style="background:#e11d48"></i>scott-huberty <code>batch_size</code></span><span class="lg"><i style="background:#0d9488"></i>pyamica <code>chunk_t</code></span><span class="lg"><i style="background:#d97706"></i>pAMICA (sccn) <code>block_size</code></span><span class="lg"><b class="star">★</b> amica <code>auto</code> &nbsp; <b class="ring">◯</b> each impl's optimum</span></div>
-  <ul class="tk" style="margin-top:22px">
-    <li><b>The optimum flips by device.</b> scott is <em>fastest at full-batch on CPU</em> (43 s) but
-    slowest at full-batch on GPU. A single recommended chunk is wrong — it's a per-library <em>and</em>
-    per-device curve.</li>
-    <li><b>Memory is the real trade the flatness hides.</b> On GPU, time barely moves 4096→full while
-    VRAM triples — so you can shrink the block to fit a memory budget at low speed cost. pAMICA's
-    full-batch optimum costs 19 GB on the real workload; amica reaches its speed in ~1 GB.</li>
-    <li><b>amica's genuine edge is the full-batch corner:</b> it doesn't collapse at full like
-    pyamica (0.5→ VRAM 5.09 GB) or scott — a fused single pass at 1.21 GB, not a recording-length
-    temporary storm.</li>
+  <h2>Real GPU curves — fit time &amp; memory</h2>
+  <p class="sub">Every implementation swept across its batching knob on real ds004505 (25-subject
+  median, 100 iterations, H100, latest main). ◯ = each impl's optimum; shaded band = min–max across
+  subjects (the wide small-chunk tails are compile/scheduling variance).</p>
+  <div class="grid2"><div class="card"><figure class="cf"><figcaption>real ds004505 · H100 · 100 iters · 25-subject median · band = min–max</figcaption><svg viewBox="0 0 520 340" class="chart" role="img" aria-label="GPU · fit time vs chunk"><text x="56" y="16" class="ct">GPU · fit time vs chunk</text><text x="56" y="334" class="cx">chunk / block size (samples) →</text><text transform="translate(14,160.0) rotate(-90)" class="cy">fit time (s, log)</text><line x1="56" y1="263.5" x2="506" y2="263.5" class="grid"/><text x="50" y="266.5" class="cyt">5</text><line x1="56" y1="223.1" x2="506" y2="223.1" class="grid"/><text x="50" y="226.1" class="cyt">10</text><line x1="56" y1="182.8" x2="506" y2="182.8" class="grid"/><text x="50" y="185.8" class="cyt">20</text><line x1="56" y1="129.5" x2="506" y2="129.5" class="grid"/><text x="50" y="132.5" class="cyt">50</text><line x1="56" y1="89.1" x2="506" y2="89.1" class="grid"/><text x="50" y="92.1" class="cyt">100</text><line x1="56" y1="48.8" x2="506" y2="48.8" class="grid"/><text x="50" y="51.8" class="cyt">200</text><line x1="72.7" y1="32" x2="72.7" y2="288" class="grid vg"/><text x="72.7" y="304" class="cxt">1K</text><line x1="156.0" y1="32" x2="156.0" y2="288" class="grid vg"/><text x="156.0" y="304" class="cxt">4K</text><line x1="239.3" y1="32" x2="239.3" y2="288" class="grid vg"/><text x="239.3" y="304" class="cxt">16K</text><line x1="322.7" y1="32" x2="322.7" y2="288" class="grid vg"/><text x="322.7" y="304" class="cxt">64K</text><line x1="489.3" y1="32" x2="489.3" y2="288" class="grid vg"/><text x="489.3" y="304" class="cxt">full</text><polygon points="72.7,150.7 156.0,159.4 239.3,138.2 322.7,220.3 489.3,158.2 489.3,275.0 322.7,263.5 239.3,252.9 156.0,228.6 72.7,180.5" fill="#6366f1" opacity="0.09"/><path d="M72.7,160.8 L156.0,217.6 L239.3,245.6 L322.7,256.9 L489.3,261.2" fill="none" stroke="#6366f1" stroke-width="2.4"/><circle cx="72.7" cy="160.8" r="3" fill="#6366f1"/><circle cx="156.0" cy="217.6" r="3" fill="#6366f1"/><circle cx="239.3" cy="245.6" r="3" fill="#6366f1"/><circle cx="322.7" cy="256.9" r="3" fill="#6366f1"/><circle cx="489.3" cy="261.2" r="3" fill="#6366f1"/><circle cx="489.3" cy="261.2" r="6" fill="none" stroke="#6366f1" stroke-width="2"/><polygon points="72.7,58.1 156.0,129.7 239.3,141.6 322.7,151.1 489.3,152.8 489.3,243.9 322.7,234.7 239.3,214.5 156.0,160.8 72.7,89.6" fill="#d97706" opacity="0.09"/><path d="M72.7,69.7 L156.0,147.1 L239.3,202.3 L322.7,214.5 L489.3,228.0" fill="none" stroke="#d97706" stroke-width="2.4"/><circle cx="72.7" cy="69.7" r="3" fill="#d97706"/><circle cx="156.0" cy="147.1" r="3" fill="#d97706"/><circle cx="239.3" cy="202.3" r="3" fill="#d97706"/><circle cx="322.7" cy="214.5" r="3" fill="#d97706"/><circle cx="489.3" cy="228.0" r="3" fill="#d97706"/><circle cx="489.3" cy="228.0" r="6" fill="none" stroke="#d97706" stroke-width="2"/><polygon points="72.7,89.8 156.0,167.1 239.3,196.5 322.7,202.3 489.3,212.0 489.3,243.9 322.7,233.3 239.3,226.7 156.0,199.5 72.7,120.3" fill="#0d9488" opacity="0.09"/><path d="M72.7,101.2 L156.0,179.7 L239.3,209.2 L322.7,214.0 L489.3,224.9" fill="none" stroke="#0d9488" stroke-width="2.4"/><circle cx="72.7" cy="101.2" r="3" fill="#0d9488"/><circle cx="156.0" cy="179.7" r="3" fill="#0d9488"/><circle cx="239.3" cy="209.2" r="3" fill="#0d9488"/><circle cx="322.7" cy="214.0" r="3" fill="#0d9488"/><circle cx="489.3" cy="224.9" r="3" fill="#0d9488"/><circle cx="489.3" cy="224.9" r="6" fill="none" stroke="#0d9488" stroke-width="2"/><polygon points="72.7,45.0 156.0,107.9 239.3,98.1 322.7,192.9 322.7,240.6 239.3,206.5 156.0,147.3 72.7,76.9" fill="#e11d48" opacity="0.09"/><path d="M72.7,57.4 L156.0,135.3 L239.3,198.0 L322.7,222.5" fill="none" stroke="#e11d48" stroke-width="2.4"/><circle cx="72.7" cy="57.4" r="3" fill="#e11d48"/><circle cx="156.0" cy="135.3" r="3" fill="#e11d48"/><circle cx="239.3" cy="198.0" r="3" fill="#e11d48"/><circle cx="322.7" cy="222.5" r="3" fill="#e11d48"/><circle cx="322.7" cy="222.5" r="6" fill="none" stroke="#e11d48" stroke-width="2"/><text x="489.3" y="45" class="oom">scott ✕ OOM</text></svg></figure></div><div class="card"><figure class="cf"><figcaption>real ds004505 · H100 · median peak VRAM · full-batch is the trap</figcaption><svg viewBox="0 0 520 340" class="chart" role="img" aria-label="GPU · memory vs chunk"><text x="56" y="16" class="ct">GPU · memory vs chunk</text><text x="56" y="334" class="cx">chunk / block size (samples) →</text><text transform="translate(14,160.0) rotate(-90)" class="cy">peak VRAM (GB)</text><line x1="56" y1="288.0" x2="506" y2="288.0" class="grid"/><text x="50" y="291.0" class="cyt">0.0</text><line x1="56" y1="224.0" x2="506" y2="224.0" class="grid"/><text x="50" y="227.0" class="cyt">8</text><line x1="56" y1="160.0" x2="506" y2="160.0" class="grid"/><text x="50" y="163.0" class="cyt">16</text><line x1="56" y1="96.0" x2="506" y2="96.0" class="grid"/><text x="50" y="99.0" class="cyt">24</text><line x1="56" y1="32.0" x2="506" y2="32.0" class="grid"/><text x="50" y="35.0" class="cyt">32</text><line x1="72.7" y1="32" x2="72.7" y2="288" class="grid vg"/><text x="72.7" y="304" class="cxt">1K</text><line x1="156.0" y1="32" x2="156.0" y2="288" class="grid vg"/><text x="156.0" y="304" class="cxt">4K</text><line x1="239.3" y1="32" x2="239.3" y2="288" class="grid vg"/><text x="239.3" y="304" class="cxt">16K</text><line x1="322.7" y1="32" x2="322.7" y2="288" class="grid vg"/><text x="322.7" y="304" class="cxt">64K</text><line x1="489.3" y1="32" x2="489.3" y2="288" class="grid vg"/><text x="489.3" y="304" class="cxt">full</text><path d="M72.7,270.3 L156.0,270.3 L239.3,270.3 L322.7,258.3 L489.3,222.3" fill="none" stroke="#6366f1" stroke-width="2.4"/><circle cx="72.7" cy="270.3" r="3" fill="#6366f1"/><circle cx="156.0" cy="270.3" r="3" fill="#6366f1"/><circle cx="239.3" cy="270.3" r="3" fill="#6366f1"/><circle cx="322.7" cy="258.3" r="3" fill="#6366f1"/><circle cx="489.3" cy="222.3" r="3" fill="#6366f1"/><circle cx="72.7" cy="270.3" r="6" fill="none" stroke="#6366f1" stroke-width="2"/><path d="M72.7,283.3 L156.0,282.8 L239.3,281.1 L322.7,273.9 L489.3,132.5" fill="none" stroke="#d97706" stroke-width="2.4"/><circle cx="72.7" cy="283.3" r="3" fill="#d97706"/><circle cx="156.0" cy="282.8" r="3" fill="#d97706"/><circle cx="239.3" cy="281.1" r="3" fill="#d97706"/><circle cx="322.7" cy="273.9" r="3" fill="#d97706"/><circle cx="489.3" cy="132.5" r="3" fill="#d97706"/><circle cx="72.7" cy="283.3" r="6" fill="none" stroke="#d97706" stroke-width="2"/><path d="M72.7,274.6 L156.0,274.6 L239.3,274.6 L322.7,263.2 L489.3,59.4" fill="none" stroke="#0d9488" stroke-width="2.4"/><circle cx="72.7" cy="274.6" r="3" fill="#0d9488"/><circle cx="156.0" cy="274.6" r="3" fill="#0d9488"/><circle cx="239.3" cy="274.6" r="3" fill="#0d9488"/><circle cx="322.7" cy="263.2" r="3" fill="#0d9488"/><circle cx="489.3" cy="59.4" r="3" fill="#0d9488"/><circle cx="72.7" cy="274.6" r="6" fill="none" stroke="#0d9488" stroke-width="2"/><path d="M72.7,283.3 L156.0,283.0 L239.3,281.8 L322.7,276.9" fill="none" stroke="#e11d48" stroke-width="2.4"/><circle cx="72.7" cy="283.3" r="3" fill="#e11d48"/><circle cx="156.0" cy="283.0" r="3" fill="#e11d48"/><circle cx="239.3" cy="281.8" r="3" fill="#e11d48"/><circle cx="322.7" cy="276.9" r="3" fill="#e11d48"/><circle cx="72.7" cy="283.3" r="6" fill="none" stroke="#e11d48" stroke-width="2"/></svg></figure></div></div>
+  <div class="legend"><span class="lg"><i style="background:#6366f1"></i>amica-python (JAX) <code>chunk_size</code> <span class="cm">@df18b5e</span></span><span class="lg"><i style="background:#d97706"></i>pAMICA (sccn) <code>block_size</code> <span class="cm">@0c4da39</span></span><span class="lg"><i style="background:#0d9488"></i>pyamica <code>chunk_t</code> <span class="cm">@a8a4d7e</span></span><span class="lg"><i style="background:#e11d48"></i>scott-huberty <code>batch_size</code> <span class="cm">@e15e158</span></span><span class="lg">◯ each impl's optimum</span></div>
+  <ul class="tk" style="margin-top:20px">
+    <li><b>amica-python is fastest at every chunk</b> — and its curve is a normal, steep U on real
+    data (29→5 s), <em>not</em> flat (see methodology below).</li>
+    <li><b>Defaults are footguns.</b> Small blocks are catastrophic (scott/pAMICA 140–170 s at 1024);
+    the optimum is per-library and only found by sweeping.</li>
+    <li><b>Full-batch is a memory trap:</b> pyamica <b>28 GB</b> / pAMICA <b>19 GB</b>, and
+    scott-huberty <b>OOMs</b> — while amica reaches its best time in ~8 GB (≈2 GB when chunked).</li>
   </ul>
 </section>
 
 <section>
   <h2>Fair comparison — each at its own optimum</h2>
-  <p class="sub">The authoritative ranking. Real ds004505: 64 components, 100 iterations, per-subject
-  median over 25 subjects on one H100, every library at <em>its</em> best chunk. (The synthetic
-  steady numbers show chunk <em>sensitivity</em>, not this ranking — real convergence + the Newton
-  phase dominate here.)</p>
-  <table>
-    <thead><tr><th>Implementation</th><th>Batching</th><th>Fit time</th><th>vs amica</th><th>Peak VRAM</th></tr></thead>
-    <tbody><tr class="hi"><td><span class="dot" style="background:#6366f1"></span>amica-python (JAX)</td><td><code>auto chunk</code></td><td class="num">5.5s</td><td class="num">1.0×</td><td class="num">—</td></tr><tr><td><span class="dot" style="background:#d97706"></span>pAMICA (sccn)</td><td><code>full-batch</code></td><td class="num">9.2s</td><td class="num">1.7×</td><td class="num">19.2 GB</td></tr><tr><td><span class="dot" style="background:#0d9488"></span>pyamica</td><td><code>16384</code></td><td class="num">12.8s</td><td class="num">2.3×</td><td class="num">—</td></tr><tr><td><span class="dot" style="background:#e11d48"></span>scott-huberty</td><td><code>16384</code></td><td class="num">45.7s</td><td class="num">8.3×</td><td class="num">—</td></tr></tbody>
-  </table>
-  <p class="note">amica leads, but the honest gap to pAMICA is <b>1.7×</b>, not 47×. amica wins here
-  because its fixed compile cost amortizes over 100 iterations while its per-iteration compute is
-  competitive — the same fixed cost that made it <em>lose</em> the 20-iter synthetic.</p>
+  <p class="sub">The authoritative ranking: real ds004505, 25-subject median, every library at
+  <em>its</em> best chunk on the H100.</p>
+  <table><thead><tr><th>Implementation</th><th>Batching</th><th>Fit time</th><th>vs amica</th><th>Peak VRAM</th></tr></thead><tbody><tr class="hi"><td><span class="dot" style="background:#6366f1"></span>amica-python (JAX)</td><td><code>full-batch</code></td><td class="num">5.2s</td><td class="num">1.0×</td><td class="num">8.1 GB</td></tr><tr><td><span class="dot" style="background:#d97706"></span>pAMICA (sccn)</td><td><code>full-batch</code></td><td class="num">9.2s</td><td class="num">1.8×</td><td class="num">19.3 GB</td></tr><tr><td><span class="dot" style="background:#0d9488"></span>pyamica</td><td><code>full-batch</code></td><td class="num">9.7s</td><td class="num">1.9×</td><td class="num">28.3 GB</td></tr><tr><td><span class="dot" style="background:#e11d48"></span>scott-huberty</td><td><code>65536</code></td><td class="num">10.1s</td><td class="num">1.9×</td><td class="num">1.4 GB</td></tr></tbody></table>
+  <p class="note">amica leads by <b>1.8×</b> over pAMICA at optima — not the tens-of-× a default
+  comparison implies. amica also pays the least memory for its speed.</p>
 </section>
 
 <section>
-  <h2>What amica-python actually offers (honestly)</h2>
-  <ul class="tk">
-    <li><b>Fused in-graph chunking.</b> Its blocked E-step is a <code>lax.fori_loop</code> inside one
-    compiled step (<code>_amica_step_fused</code>), so <em>host dispatch count</em> doesn't grow as the
-    block shrinks — it never pays the Python-per-block penalty the eager paths do. (This is dispatch
-    structure, not tile-invariant kernels: device work still scales, hence the steep steady curve.)</li>
-    <li><b>Memory-efficient full-batch</b> (1.21 GB vs pyamica 5.09 GB) and a correct <code>auto</code>
-    pick per device (full-batch on GPU, ~4096 on CPU).</li>
-    <li><b>Fastest on the real workload</b> once iterations amortize the fixed compile cost.</li>
-    <li><b>Not</b> chunk-robust, <b>not</b> the fastest on tiny/synthetic runs, and its CPU curve is
-    a normal ~3× spread. The flat curve was an artifact — this list is what survives scrutiny.</li>
-  </ul>
-  <div class="quote">"The flattest curve is also the only one whose 20-iter cells each compile a
-  different program, and whose authors already refuse to prefer small GPU blocks because small blocks
-  would cost kernel launches." — adversarial panel (Grok-4.6)</div>
+  <h2>CPU — memory is clean, timing is an upper bound</h2>
+  <p class="sub">CPU peak memory (real ds004505, 8 cores, 5-subject median), including the Fortran
+  amica17 reference as the CPU-only ground truth.</p>
+  <div class="grid2"><div class="card"><figure class="cf"><figcaption>real ds004505 · 8 cores · 5-subject median · Fortran reference is leanest</figcaption><svg viewBox="0 0 520 340" class="chart" role="img" aria-label="CPU · memory vs chunk"><text x="56" y="16" class="ct">CPU · memory vs chunk</text><text x="56" y="334" class="cx">chunk / block size (samples) →</text><text transform="translate(14,160.0) rotate(-90)" class="cy">peak RSS (GB)</text><line x1="56" y1="288.0" x2="506" y2="288.0" class="grid"/><text x="50" y="291.0" class="cyt">0.0</text><line x1="56" y1="224.0" x2="506" y2="224.0" class="grid"/><text x="50" y="227.0" class="cyt">8</text><line x1="56" y1="160.0" x2="506" y2="160.0" class="grid"/><text x="50" y="163.0" class="cyt">15</text><line x1="56" y1="96.0" x2="506" y2="96.0" class="grid"/><text x="50" y="99.0" class="cyt">23</text><line x1="56" y1="32.0" x2="506" y2="32.0" class="grid"/><text x="50" y="35.0" class="cyt">30</text><line x1="72.7" y1="32" x2="72.7" y2="288" class="grid vg"/><text x="72.7" y="304" class="cxt">1K</text><line x1="156.0" y1="32" x2="156.0" y2="288" class="grid vg"/><text x="156.0" y="304" class="cxt">4K</text><line x1="239.3" y1="32" x2="239.3" y2="288" class="grid vg"/><text x="239.3" y="304" class="cxt">16K</text><line x1="322.7" y1="32" x2="322.7" y2="288" class="grid vg"/><text x="322.7" y="304" class="cxt">64K</text><line x1="489.3" y1="32" x2="489.3" y2="288" class="grid vg"/><text x="489.3" y="304" class="cxt">full</text><path d="M72.7,269.3 L156.0,268.9 L239.3,269.3 L322.7,257.1 L489.3,114.8" fill="none" stroke="#6366f1" stroke-width="2.4"/><circle cx="72.7" cy="269.3" r="3" fill="#6366f1"/><circle cx="156.0" cy="268.9" r="3" fill="#6366f1"/><circle cx="239.3" cy="269.3" r="3" fill="#6366f1"/><circle cx="322.7" cy="257.1" r="3" fill="#6366f1"/><circle cx="489.3" cy="114.8" r="3" fill="#6366f1"/><circle cx="72.7" cy="269.3" r="6" fill="none" stroke="#6366f1" stroke-width="2"/><path d="M72.7,274.7 L156.0,273.4 L239.3,268.2 L322.7,265.9 L489.3,123.6" fill="none" stroke="#d97706" stroke-width="2.4"/><circle cx="72.7" cy="274.7" r="3" fill="#d97706"/><circle cx="156.0" cy="273.4" r="3" fill="#d97706"/><circle cx="239.3" cy="268.2" r="3" fill="#d97706"/><circle cx="322.7" cy="265.9" r="3" fill="#d97706"/><circle cx="489.3" cy="123.6" r="3" fill="#d97706"/><circle cx="72.7" cy="274.7" r="6" fill="none" stroke="#d97706" stroke-width="2"/><path d="M156.0,271.7 L239.3,264.9 L322.7,256.0 L489.3,59.4" fill="none" stroke="#0d9488" stroke-width="2.4"/><circle cx="156.0" cy="271.7" r="3" fill="#0d9488"/><circle cx="239.3" cy="264.9" r="3" fill="#0d9488"/><circle cx="322.7" cy="256.0" r="3" fill="#0d9488"/><circle cx="489.3" cy="59.4" r="3" fill="#0d9488"/><circle cx="156.0" cy="271.7" r="6" fill="none" stroke="#0d9488" stroke-width="2"/><path d="M72.7,270.7 L156.0,270.7 L239.3,270.7 L322.7,268.6" fill="none" stroke="#e11d48" stroke-width="2.4"/><circle cx="72.7" cy="270.7" r="3" fill="#e11d48"/><circle cx="156.0" cy="270.7" r="3" fill="#e11d48"/><circle cx="239.3" cy="270.7" r="3" fill="#e11d48"/><circle cx="322.7" cy="268.6" r="3" fill="#e11d48"/><circle cx="72.7" cy="270.7" r="6" fill="none" stroke="#e11d48" stroke-width="2"/><path d="M72.7,282.0 L156.0,281.7 L239.3,280.8 L322.7,276.9 L489.3,204.2" fill="none" stroke="#7c3aed" stroke-width="2.4"/><circle cx="72.7" cy="282.0" r="3" fill="#7c3aed"/><circle cx="156.0" cy="281.7" r="3" fill="#7c3aed"/><circle cx="239.3" cy="280.8" r="3" fill="#7c3aed"/><circle cx="322.7" cy="276.9" r="3" fill="#7c3aed"/><circle cx="489.3" cy="204.2" r="3" fill="#7c3aed"/><circle cx="72.7" cy="282.0" r="6" fill="none" stroke="#7c3aed" stroke-width="2"/></svg></figure></div>
+  <div class="card" style="display:flex;align-items:center"><div style="padding:8px 10px">
+    <ul class="tk" style="margin:0"><li><b>Fortran is the leanest</b> everywhere (0.7 GB at small blocks, 10 GB at full).</li>
+    <li><b>Full-batch is a memory trap on CPU too</b> (amica 21 GB, pyamica 27 GB).</li>
+    <li>Memory is set by allocation, not timing, so it is <b>robust to node contention</b> — unlike the CPU fit-times.</li></ul></div></div></div>
+  <div class="legend"><span class="lg"><i style="background:#6366f1"></i>amica-python (JAX) <code>chunk_size</code> <span class="cm">@df18b5e</span></span><span class="lg"><i style="background:#d97706"></i>pAMICA (sccn) <code>block_size</code> <span class="cm">@0c4da39</span></span><span class="lg"><i style="background:#0d9488"></i>pyamica <code>chunk_t</code> <span class="cm">@a8a4d7e</span></span><span class="lg"><i style="background:#e11d48"></i>scott-huberty <code>batch_size</code> <span class="cm">@e15e158</span></span><span class="lg"><i style="background:#7c3aed"></i>Fortran amica17 <code>block_size</code> <span class="cm">@665b577</span></span><span class="lg">◯ each impl's optimum</span></div>
+  <div class="warn-box" style="margin-top:18px"><b>⚠️ CPU fit-times are not shown as a curve — they are contention-contaminated upper bounds.</b>
+  The CPU cells ran packed on shared <code>bycore</code> nodes; AMICA fits are memory-bandwidth-bound,
+  so co-located cells starved each other and the fit-times came back non-monotonic (e.g. pyamica@4096 =
+  2187 s next to @16384 = 1039 s). The <em>ordering</em> and <em>optima</em> hold, but absolute CPU
+  seconds are inflated. A fair-share-neutral throttled rerun (job array, <code>%4</code> concurrency) is
+  in progress to produce clean CPU absolutes. Full analysis + noise estimate: <code>NOTES_measurement.md</code>.</div>
+</section>
+
+<section>
+  <h2>Methodology — why the synthetic "flat curve" was a mirage</h2>
+  <p class="sub">An earlier synthetic microbenchmark (random data, 20 iters) showed amica with a
+  suspiciously flat GPU curve. An independent panel (GPT-5.6 + Grok-4.6) and a steady-state
+  re-measurement traced it to a <b>JIT-compile artifact</b>, not robustness.</p>
+  <p>With <code>chunk_size</code> a JIT static argument, each of amica's fused-scan cells compiled a
+  different program; a fresh-process 20-iter wall clock folds a ~2.5 s compile into every point, which
+  flattens a short run. Splitting compile from steady-state ms/iter (<code>(T₄₀−T₁₀)/30</code>) reveals
+  a normal <b>~19× steady-state spread</b> — amica is <em>not</em> chunk-robust. The real 100-iteration
+  workload above confirms it: a steep, ordinary U-curve. What amica genuinely has is a fused in-graph
+  blocked E-step (no Python-per-block penalty), memory-efficient full-batch, a correct <code>auto</code>
+  pick per device, and the fastest real-workload time — not knob-insensitivity.</p>
+  <div class="quote">"Flattest ⇒ most robust is a self-serving reading of a short, compile-contaminated
+  GPU sweep." — adversarial panel synthesis</div>
 </section>
 
 <section>
   <h2>Release vs main</h2>
-  <p class="sub">Each library's tagged release vs latest <code>main</code>, controlled (same account,
-  same hardware).</p>
-  <p>For amica the release→main diff is 7 commits; only <code>2cd81e4</code> ("Make CPU fits faster and
-  much smaller") is perf-relevant and it touches the <b>CPU</b> E-step only — so <b>GPU release≈main</b>
-  (measured identical, full-batch 2.6–2.7 s). On CPU, a single synthetic run does <em>not</em> clearly
-  reproduce a main speedup (auto 3.4 s vs release 2.3 s is within CPU node noise); a paired repeat is
-  needed before claiming a CPU delta. Competitor <code>main</code> builds move only through the same
-  batching knob — pAMICA <code>main</code> is still 12.7 s at 512 on GPU (166 s on CPU). Bumping to
-  main rescues no one's default.</p>
+  <p class="sub">All curves above are latest <code>main</code>. Release→main is performance-neutral on
+  GPU (measured identical); amica's one perf-relevant commit (<code>2cd81e4</code>, "make CPU fits
+  faster and smaller") touches the CPU E-step only, and its effect is within CPU node-contention noise
+  in this pass — the throttled rerun will resolve it. Competitor <code>main</code> builds move only
+  through the same batching knob; bumping to main rescues no one's default (pAMICA <code>main</code> is
+  still 140 s at 512).</p>
 </section>
 
 <footer>
   <div class="kick" style="color:var(--mut)">Provenance &amp; reproduction</div>
   <dl class="prov">
-    <dt>Dataset</dt><dd>ds004505 · 25 subjects · 64 PCA components</dd>
+    <dt>Dataset</dt><dd>ds004505 · 25 subjects (GPU) / 5 (CPU) · 64 PCA components</dd>
     <dt>GPU</dt><dd>NVIDIA H100 80GB · SciNet Trillium (def-kjerbi)</dd>
-    <dt>CPU</dt><dd>8 cores · Alliance fir (rrg-kjerbi_cpu)</dd>
-    <dt>Commits</dt><dd>amica df18b5e (rel 92003b4) · scott e15e1588 · pyamica a8a4d7e · pAMICA 0c4da39</dd>
-    <dt>Synthetic</dt><dd>64×200k GPU/20it · 64×100k CPU/10it · steady = (T₄₀−T₁₀)/30</dd>
-    <dt>Real</dt><dd>64 comp · 100 it · per-subject median (n=25)</dd>
-    <dt>Runners</dt><dd>results/xperf_chunksize/sweeps/ · env-knob in runners/run_*.py</dd>
+    <dt>CPU</dt><dd>8 cores · Alliance fir (rrg-kjerbi_cpu, bycore)</dd>
+    <dt>Commits</dt><dd>amica df18b5e · scott e15e158 · pyamica a8a4d7e · pAMICA 0c4da39 · Fortran 665b577</dd>
+    <dt>Workload</dt><dd>64 comp · 100 iters · per-subject median</dd>
+    <dt>Runners</dt><dd>results/xperf_chunksize/sweeps/ + submit_cell_cpu.sh (atomic cells, cached input)</dd>
     <dt>Panel</dt><dd>panel/ (GPT-5.6 + Grok-4.6 + SYNTHESIS)</dd>
-    <dt>Note</dt><dd>neuromechanist = sccn/pAMICA (torch NG backend)</dd>
+    <dt>Caveats</dt><dd>NOTES_measurement.md (CPU contention + noise estimate)</dd>
   </dl>
-  <p class="note" style="margin-top:16px">Synthetic curves show chunk <em>sensitivity</em> and optimum
-  location; the real ds004505 table is authoritative for absolute performance. Steady-state ms/iter is
-  pre-Newton (newt_start=50) — it isolates the chunk-sensitive E-step, not the full real-fit mix.</p>
+  <p class="note" style="margin-top:16px">Trust the shapes, the ordering, and each implementation's
+  optimum. GPU absolutes are 25-subject medians; CPU <em>memory</em> is clean; CPU <em>fit-times</em>
+  are upper bounds pending the throttled rerun.</p>
 </footer>
 </div>
