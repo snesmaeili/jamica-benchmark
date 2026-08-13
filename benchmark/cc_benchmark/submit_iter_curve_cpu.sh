@@ -88,19 +88,19 @@ echo "amica-blocked commit: $(git -C "$AMICA_SRC" rev-parse --short HEAD 2>/dev/
 
 # Walltime justification, from the archived 100- and 600-iteration runs on this
 # exact problem (per-iteration cost = (t600 - t100) / 500):
-#   jamica          2.73 s/iter -> ~1.7 h for 100+400+700+1000
-#   jamica_chunked  2.92 s/iter -> ~1.8 h   (expected lower now)
+#   amica_python_jax          2.73 s/iter -> ~1.7 h for 100+400+700+1000
+#   amica_python_jax_chunked  2.92 s/iter -> ~1.8 h   (expected lower now)
 #   pamica_torch              3.33 s/iter -> ~2.0 h
 #   scott_huberty_torch       3.84 s/iter -> ~2.3 h
 #   fortran_amica17           5.96 s/iter -> ~3.6 h
 #   pyamica_torch             7.47 s/iter -> ~4.6 h   <- sets the 6 h request
-ALL_IMPLS=(jamica jamica_chunked pamica_torch \
+ALL_IMPLS=(amica_python_jax amica_python_jax_chunked pamica_torch \
            scott_huberty_torch pyamica_torch fortran_amica17)
 KEEP="${ALL_IMPLS[$SLURM_ARRAY_TASK_ID]}"
 
 # The orchestrator runs every implementation per invocation, so isolating one
 # per array task means skipping the complement.
-SKIP="jamica_numpy"
+SKIP="amica_python_numpy"
 for impl in "${ALL_IMPLS[@]}"; do
     [ "$impl" = "$KEEP" ] && continue
     [ "$impl" = "fortran_amica17" ] && continue     # gated by --include-fortran, not --skip

@@ -1,8 +1,8 @@
 """Implementation perf comparison across Python AMICA backends.
 
 Runs five configurations side-by-side on a shared PCA-projected input:
-  - jamica (Sina, JAX; formerly amica-python)
-  - jamica (Sina, NumPy fallback via AMICA_NO_JAX=1)
+  - amica-python (Sina, JAX)
+  - amica-python (Sina, NumPy fallback via AMICA_NO_JAX=1)
   - pyamica (DerAndereJohannes, PyTorch)
   - amica-python (Scott Huberty, PyTorch sklearn-style)
   - pyAMICA (neuromechanist, pure NumPy)
@@ -103,15 +103,7 @@ def preprocess_bids_subject(
     Every dataset is resampled to the same rate by default, since a fixture whose
     sample count varies with the source file is not a matched workload.
     """
-    # Sina's preprocessing helper. Package renamed amica_python -> amica -> jamica;
-    # try the current name first, fall back for older cluster venvs.
-    try:
-        from jamica.benchmark import runner as amica_runner  # type: ignore
-    except ImportError:
-        try:
-            from amica.benchmark import runner as amica_runner  # type: ignore
-        except ImportError:
-            from amica_python.benchmark import runner as amica_runner  # type: ignore
+    from amica_python.benchmark import runner as amica_runner  # type: ignore
     from sklearn.decomposition import PCA
 
     raw, metadata = amica_runner.load_data(
@@ -275,7 +267,7 @@ def main() -> None:
     parser.add_argument("--skip", nargs="*", default=[],
                         help="implementations to skip (e.g. --skip pyamica_torch scott_huberty_torch)")
     parser.add_argument("--amica-device", choices=["cpu", "gpu"], default="cpu",
-                        help="Device for the jamica run. 'gpu' sets JAX_PLATFORMS=cuda "
+                        help="Device for the amica_python_jax run. 'gpu' sets JAX_PLATFORMS=cuda "
                              "for that runner so it actually uses the allocated GPU (the competitors "
                              "are torch/numpy and always run on CPU). Default 'cpu' keeps a "
                              "same-hardware comparison.")
@@ -303,9 +295,9 @@ def main() -> None:
                              "cross-check incl. the CUDA-context floor the allocator counters omit). "
                              "Requires pynvml; silently None if absent. Valid only on a dedicated GPU.")
     parser.add_argument("--amica-chunk-size", default="auto",
-                        help="chunk_size for the jamica_chunked run (the frugal/GPU config): "
+                        help="chunk_size for the amica_python_jax_chunked run (the frugal/GPU config): "
                              "'auto' (VRAM/RAM-aware) or an integer. Default 'auto'. The full-batch "
-                             "jamica run always uses chunk_size=None.")
+                             "amica_python_jax run always uses chunk_size=None.")
     parser.add_argument("--dataset",
                         choices=["mne_sample", "ds004505", "ds004504", "ds004621"],
                         default="mne_sample",
@@ -452,9 +444,9 @@ def main() -> None:
     _torch_env = _torch_env or None
 
     runs = [
-        ("jamica",         VENV_AMICA,        RUNNERS_DIR / "run_jamica.py",   _amica_fb_env),
-        ("jamica_chunked", VENV_AMICA,        RUNNERS_DIR / "run_jamica.py",   _amica_chunked_env),
-        ("jamica_numpy",       VENV_AMICA,        RUNNERS_DIR / "run_jamica.py",   {"AMICA_NO_JAX": "1"}),
+        ("amica_python_jax",         VENV_AMICA,        RUNNERS_DIR / "run_amica_python.py",   _amica_fb_env),
+        ("amica_python_jax_chunked", VENV_AMICA,        RUNNERS_DIR / "run_amica_python.py",   _amica_chunked_env),
+        ("amica_python_numpy",       VENV_AMICA,        RUNNERS_DIR / "run_amica_python.py",   {"AMICA_NO_JAX": "1"}),
         ("pyamica_torch",            VENV_COMPETITORS,  RUNNERS_DIR / "run_pyamica.py",        _torch_env),
         ("scott_huberty_torch",      VENV_COMPETITORS,  RUNNERS_DIR / "run_scott_huberty.py",  _torch_env),
         ("pamica_torch",             VENV_PAMICA,       RUNNERS_DIR / "run_pamica.py",         _torch_env),

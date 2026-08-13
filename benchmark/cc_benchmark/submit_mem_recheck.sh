@@ -91,6 +91,6 @@ mkdir -p "$AMICA_COMPARATOR_RESULTS"
 # 1.99 s full batch at 785k samples, scaling with sample count) the pair comes
 # to roughly 12 minutes plus preprocessing. 90 minutes is generous.
 echo "=== memory re-check: ds004505 sub-0${SUBJECT}, 64 components, 60 iterations ==="
-python ../comparator/implementation_perf.py     --dataset ds004505     --subject "$SUBJECT"     --input-level "${AMICA_INPUT_LEVEL:-bids}"     --n-components 64     --max-iter 60     --amica-device cpu --competitor-device cpu     --amica-chunk-size auto     --out-tag "mem_recheck/sub-0${SUBJECT}"     --skip jamica_numpy pyamica_torch scott_huberty_torch pamica_torch
+python ../comparator/implementation_perf.py     --dataset ds004505     --subject "$SUBJECT"     --input-level "${AMICA_INPUT_LEVEL:-bids}"     --n-components 64     --max-iter 60     --amica-device cpu --competitor-device cpu     --amica-chunk-size auto     --out-tag "mem_recheck/sub-0${SUBJECT}"     --skip amica_python_numpy pyamica_torch scott_huberty_torch pamica_torch
 
 echo "=== DONE sub-0${SUBJECT}. Results under $AMICA_COMPARATOR_RESULTS/ ==="

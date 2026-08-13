@@ -32,7 +32,7 @@ MSTYLE = {
     "FastICA": (style.FASTICA, "^", False, "FastICA"),
 }
 MEM_LABEL = {
-    "jamica": "amica (full)", "jamica_chunked": "amica (chunked)",
+    "amica_python_jax": "amica (full)", "amica_python_jax_chunked": "amica (chunked)",
     "scott_huberty_torch": "Scott (torch)", "pyamica_torch": "pyamica", "fortran_amica17": "Fortran 1.7",
 }
 

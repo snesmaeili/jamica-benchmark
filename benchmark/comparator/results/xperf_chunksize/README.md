@@ -9,8 +9,8 @@ and **main**, plus a **steady-state (compile-excluded)** re-measurement.
    (pAMICA `block_size=512` is the worst: 12× off its GPU optimum, 9.4× off its CPU optimum).
 2. The optimum **flips by device** (e.g. scott-huberty is fastest at full-batch on CPU, slowest at
    full-batch on GPU).
-3. jamica's *apparent* flat GPU curve is **~entirely a JIT-compile artifact** of short (20-iter)
-   runs. In steady-state ms/iter the curve is a ~19× monotonic spread like everyone else. What jamica
+3. amica-python's *apparent* flat GPU curve is **~entirely a JIT-compile artifact** of short (20-iter)
+   runs. In steady-state ms/iter the curve is a ~19× monotonic spread like everyone else. What amica
    actually has is a large fixed compile/setup cost + the fastest steady-state per-iteration, so it
    trails on tiny runs and leads once iterations amortize the compile (the 20-iter-synthetic-loses →
    100-iter-real-wins crossover). See the panel review below.
@@ -18,7 +18,7 @@ and **main**, plus a **steady-state (compile-excluded)** re-measurement.
 ## Versions (pinned commits)
 | impl | package | release | main |
 |---|---|---|---|
-| jamica | `snesmaeili/jamica` | `92003b4` | `df18b5e` (incl. `2cd81e4` CPU E-step rework) |
+| amica-python | `snesmaeili/amica` | `92003b4` | `df18b5e` (incl. `2cd81e4` CPU E-step rework) |
 | scott-huberty | `scott-huberty/amica-python` (imports as `amica`) | — | `e15e1588` |
 | pyamica | `DerAndereJohannes/pyamica` | — | `a8a4d7e0` |
 | pAMICA | `sccn/pAMICA` (a.k.a. neuromechanist; imports as `pamica`) | — | `0c4da39e` |
@@ -32,7 +32,7 @@ GPU release≈main. **CPU numbers from a `92003b4` build are pre-`2cd81e4`.**
   `StdEnv/2023 python/3.11 scipy-stack/2026a cuda/12.6 cudnn`. JAX `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
 - **CPU:** 8 cores, Alliance **fir** (`rrg-kjerbi_cpu`, 48G). Modules `StdEnv/2023 python/3.11
   scipy-stack/2026a` (pAMICA needs `python/3.12`).
-- **venvs** under `/scratch/yorguin/amica-benchmark-repro/`: `.venv_fir_gpu` (jamica, JAX),
+- **venvs** under `/scratch/yorguin/amica-benchmark-repro/`: `.venv_fir_gpu` (amica, JAX),
   `.venv_competitors[_main]` (scott+pyamica, torch), `.venv_pamica[_main]` (pAMICA, torch py3.12).
   amica *main* is imported via `PYTHONPATH=/scratch/yorguin/amica_main_src:$PYTHONPATH` over
   `.venv_fir_gpu` (append, not replace — replacing drops scipy-stack's numpy).
@@ -78,12 +78,8 @@ compile-masking artifact of the 20-iter window; both prescribed the steady-state
 in `gpu_steady_*`.
 
 ## Real-workload each-at-optimum (ds004505, 25-subj median, 100 iters, H100)
-jamica 5.5s · pAMICA 9.2s (full-batch, 19 GB VRAM) · pyamica 12.8s (16384) · scott 45.7s (16384).
+amica 5.5s · pAMICA 9.2s (full-batch, 19 GB VRAM) · pyamica 12.8s (16384) · scott 45.7s (16384).
 Run through the orchestrator (`implementation_perf.py`) with each impl's best chunk set via env
 (`AMICA_CHUNK_SIZE`, `AMICA_PAMICA_BLOCK_SIZE`, `AMICA_PYAMICA_CHUNK`, `AMICA_SCOTT_BATCH`). The
 env-override for the three competitor runners is upstreamed in `../../runners/` (see git log);
-`run_jamica.py` already honored `AMICA_CHUNK_SIZE`.
-
-## Naming (amica-python → jamica)
-
-Sina's JAX implementation was renamed **amica-python → amica → jamica** (`snesmaeili/jamica`, PyPI `jamica`, import `jamica`). On 2026-08-13 this repo's impl keys were migrated `amica_python_jax`→`jamica`, `amica_python_jax_chunked`→`jamica_chunked`, `amica_python_numpy`→`jamica_numpy` across the harness **and the committed measures**; the runner is now `run_jamica.py` and imports `jamica` (with `amica`/`amica_python` fallbacks for old venvs). Intentionally **not** changed: `scott-huberty/amica-python` (a different package), the Fortran `amica17` reference, and cluster filesystem paths like `/scratch/.../amica-python` and `amica-benchmark-repro` (real directories). The raw per-run JSONs on the (ephemeral) cluster scratch retain their run-time key `amica_python_jax*`; no fits were re-run.
+`run_amica_python.py` already honored `AMICA_CHUNK_SIZE`.

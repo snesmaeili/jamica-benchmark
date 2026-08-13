@@ -14,9 +14,9 @@
 # GPU job has CUDA/cuDNN exactly as the paper runs did.
 #
 # Three series, distinct --out-tag dirs so the amica CPU and GPU series (both
-# write jamica_*.json) do not collide:
-#   fused_amica_cpu    def-kjerbi_cpu  (auto part.)        JAX cpu    only jamica
-#   fused_amica_gpu    def-kjerbi_gpu  gpubase_bygpu_b1    JAX cuda   only jamica
+# write amica_python_jax_*.json) do not collide:
+#   fused_amica_cpu    def-kjerbi_cpu  (auto part.)        JAX cpu    only amica_python_jax
+#   fused_amica_gpu    def-kjerbi_gpu  gpubase_bygpu_b1    JAX cuda   only amica_python_jax
 #   fused_pyamica_cpu  def-kjerbi_cpu  (auto part.)        torch cpu  only pyamica_torch
 #
 # Run ON fir (login-safe; only calls sbatch):
@@ -52,7 +52,7 @@ TAG=cmp_fused/amica_cpu/ds004505_sub-\$(printf '%02d' \$SID)
 JAX_PLATFORMS=cpu BIDS_ROOT_DS4505=$BIDS AMICA_PYTHON_VENV=$VF COMPETITORS_VENV=$VC \\
   $VF -u scripts/comparator/implementation_perf.py \\
     $COMMON --subject \$SID --amica-device cpu --out-tag \$TAG \\
-    --skip jamica_numpy pyamica_torch scott_huberty_torch neuromechanist_numpy
+    --skip amica_python_numpy pyamica_torch scott_huberty_torch neuromechanist_numpy
 EOF
 
 # ---------- 2) AMICA fused, GPU (H100) ----------
@@ -76,7 +76,7 @@ TAG=cmp_fused/amica_gpu/ds004505_sub-\$(printf '%02d' \$SID)
 JAX_PLATFORMS=cuda BIDS_ROOT_DS4505=$BIDS AMICA_PYTHON_VENV=$VF COMPETITORS_VENV=$VC \\
   $VF -u scripts/comparator/implementation_perf.py \\
     $COMMON --subject \$SID --amica-device gpu --out-tag \$TAG \\
-    --skip jamica_numpy pyamica_torch scott_huberty_torch neuromechanist_numpy
+    --skip amica_python_numpy pyamica_torch scott_huberty_torch neuromechanist_numpy
 EOF
 
 # ---------- 3) pyamica-torch, CPU (fresh; controls node variance) ----------
@@ -98,7 +98,7 @@ TAG=cmp_fused/pyamica_cpu/ds004505_sub-\$(printf '%02d' \$SID)
 JAX_PLATFORMS=cpu BIDS_ROOT_DS4505=$BIDS AMICA_PYTHON_VENV=$VF COMPETITORS_VENV=$VC \\
   $VF -u scripts/comparator/implementation_perf.py \\
     $COMMON --subject \$SID --amica-device cpu --out-tag \$TAG \\
-    --skip jamica jamica_numpy scott_huberty_torch neuromechanist_numpy
+    --skip amica_python_jax amica_python_numpy scott_huberty_torch neuromechanist_numpy
 EOF
 
 echo "===== submitted; current queue ====="

@@ -1,6 +1,6 @@
-"""Runner for jamica (Sina's JAX AMICA, formerly amica-python; NumPy when AMICA_NO_JAX=1).
+"""Runner for amica-python (Sina's, JAX or NumPy depending on AMICA_NO_JAX).
 
-Reads (n_components, n_samples) from --input. jamica expects
+Reads (n_components, n_samples) from --input. Sina's amica-python expects
 data in (n_channels=n_components, n_samples) shape since the orchestrator
 already PCA-projected.
 """
@@ -39,24 +39,22 @@ def main() -> None:
     else:
         chunk_size = None
     if no_jax:
-        impl = "jamica_numpy"
+        impl = "amica_python_numpy"
     elif chunk_size is not None:
-        impl = "jamica_chunked"
+        impl = "amica_python_jax_chunked"
     else:
-        impl = "jamica"
+        impl = "amica_python_jax"
 
-    # Sina's package was renamed amica_python -> amica -> jamica. Cluster venvs
-    # from editable installs predate the rename, so we prefer the current name and
-    # keep the old ones working: both an existing cluster environment and a fresh
-    # `pip install jamica` are measurable, and we never accidentally measure an
-    # archived checkout instead of what anyone can install today.
+    # The package was renamed amica_python -> amica. Only the cluster venvs still
+    # carry the old name, from editable installs that predate the rename, so
+    # importing it unconditionally meant this runner could measure the archived
+    # checkout and not the package anyone can install today. Prefer the current
+    # name and keep the old one working, so both an existing cluster environment
+    # and a fresh `pip install amica` are measurable.
     try:
-        from jamica import Amica, AmicaConfig
-    except ImportError:  # pragma: no cover - older envs before the jamica rename
-        try:
-            from amica import Amica, AmicaConfig
-        except ImportError:
-            from amica_python import Amica, AmicaConfig
+        from amica import Amica, AmicaConfig
+    except ImportError:  # pragma: no cover - exercised by the legacy venvs
+        from amica_python import Amica, AmicaConfig
 
     # Report the device JAX actually placed work on (not a hardcoded label).
     device = "cpu"

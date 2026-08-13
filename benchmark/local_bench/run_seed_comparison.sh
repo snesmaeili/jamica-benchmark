@@ -29,7 +29,7 @@ cd "$BENCH_REPO"
     --n-components "$N_COMPONENTS" \
     --max-iter "${MAX_ITER:-100}" \
     --seeds "${SEEDS:-0,1,2,3,4}" \
-    --skip jamica_numpy \
+    --skip amica_python_numpy \
     --out-tag "$TAG"
 
 echo

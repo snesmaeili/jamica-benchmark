@@ -31,7 +31,7 @@ REPO_ROOT="$(cd "$SLURM_SUBMIT_DIR/../.." && pwd)"
   echo "WARN: $REPO_ROOT/.venv_competitors missing — run setup_competitors.sh; the competitor impls will be skipped/error."
 
 # CPU results in their own subdir (GPU job uses .../comparator/gpu) so the shared
-# jamica_chunked JSON never collides between the two jobs.
+# amica_python_jax_chunked JSON never collides between the two jobs.
 export AMICA_COMPARATOR_RESULTS="${AMICA_COMPARATOR_RESULTS:-${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/comparator/cpu}"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
@@ -60,7 +60,7 @@ python ../comparator/implementation_perf.py \
     --amica-device cpu --competitor-device cpu \
     --amica-chunk-size "${AMICA_MEM_CHUNK:-auto}" \
     $FORTRAN_OPT $TAG_OPT \
-    --skip jamica_numpy
+    --skip amica_python_numpy
 
 echo "=== DONE. Results under $AMICA_COMPARATOR_RESULTS/ . Aggregate + figure locally: ==="
 echo "  python ../comparator/aggregate_pilot.py --root '$AMICA_COMPARATOR_RESULTS' --impls all"

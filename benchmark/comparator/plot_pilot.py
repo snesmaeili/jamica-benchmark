@@ -71,8 +71,8 @@ def main() -> None:
     print(f"loaded bench_df from {bench_csv} ({len(bench_df)} rows)")
     # Give the comparator methods distinct, stable colors so bars are
     # distinguishable (METHOD_COLORS only knows the AMICA-Python display names).
-    pf.METHOD_COLORS.setdefault("jamica", "#1F4E79")
-    pf.METHOD_COLORS.setdefault("jamica_chunked", "#5B9BD5")
+    pf.METHOD_COLORS.setdefault("amica_python_jax", "#1F4E79")
+    pf.METHOD_COLORS.setdefault("amica_python_jax_chunked", "#5B9BD5")
     pf.METHOD_COLORS.setdefault("scott_huberty_torch", "#D77A00")
     pf.METHOD_COLORS.setdefault("pyamica_torch", "#2A9D8F")
     pf.METHOD_COLORS.setdefault("neuromechanist_numpy", "#7B3294")
