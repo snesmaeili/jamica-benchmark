@@ -296,7 +296,7 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
     <dt>GPU</dt><dd>NVIDIA H100 80GB · SciNet Trillium (def-kjerbi)</dd>
     <dt>CPU</dt><dd>8 cores · Alliance fir (rrg-kjerbi_cpu, bycore)</dd>
     <dt>Commits</dt><dd>jamica df18b5e · scott e15e158 · pyamica a8a4d7e · pAMICA 0c4da39 · Fortran 665b577</dd>
-    <dt>Workload</dt><dd>64 comp · 100 iters · per-subject median</dd>
+    <dt>Workload</dt><dd>64 comp · 100 iters · GPU 25-subj median · CPU best-of-5</dd>
     <dt>Runners</dt><dd>results/xperf_chunksize/sweeps/ + submit_cell_cpu.sh (atomic cells, cached input)</dd>
     <dt>Caveats</dt><dd>NOTES_measurement.md (CPU contention + noise estimate)</dd>
   </dl>
@@ -326,6 +326,10 @@ for im in IMPLS:
     for c, (t, v) in sorted(GPU[im].items()):
         _rows.append(("gpu_fit_s_median", im, KNOB[im], _cn(c), t, "s", "real ds004505 25-subj median, H100"))
         _rows.append(("gpu_vram_gb_median", im, KNOB[im], _cn(c), v, "GB", ""))
+# explicit GPU failure records (so OOM claims are checkable, not just an absent row)
+for im, cc in GPU_OOM.items():
+    _rows.append(("gpu_fit_s_median", im, KNOB[im], _cn(FULL if cc == "full" else cc), "OOM", "",
+                  "full-batch out-of-memory on H100 80GB (~30s failure)"))
     for c, (lo, hi) in sorted(GPU_BAND[im].items()):
         _rows.append(("gpu_fit_s_min", im, KNOB[im], _cn(c), lo, "s", "min across 25 subj"))
         _rows.append(("gpu_fit_s_max", im, KNOB[im], _cn(c), hi, "s", "max across 25 subj"))
