@@ -102,6 +102,10 @@ def main() -> None:
         doscaling=cfg.get("doscaling", True),
         seed=cfg.get("seed", 0),
         dtype=torch.float64,
+        # Optional chunk-size override for the chunk-size study (unset -> pamica's
+        # own default). Forwarded to AMICATorchNG. See results/xperf_chunksize/.
+        **({"block_size": int(os.environ["AMICA_PAMICA_BLOCK_SIZE"])}
+           if os.environ.get("AMICA_PAMICA_BLOCK_SIZE") else {}),
     )
     elapsed = time.perf_counter() - t0
 

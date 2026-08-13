@@ -56,6 +56,10 @@ def main() -> None:
         dtype=torch.float64,
         device=device,
         fix_init=True,
+        # Optional chunk-size override for the chunk-size study (unset -> pyamica's
+        # default full batch). See results/xperf_chunksize/.
+        **({"chunk_t": int(os.environ["AMICA_PYAMICA_CHUNK"])}
+           if os.environ.get("AMICA_PYAMICA_CHUNK") else {}),
     )
 
     _use_nvml = os.environ.get("AMICA_NVML_CROSSCHECK", "0") == "1" and device == "cuda"

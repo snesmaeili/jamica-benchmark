@@ -1,5 +1,14 @@
 # Cross-implementation performance benchmark — ds004505
 
+> **⚠️ Superseded (2026-08-12).** The release-vs-main conclusions here were refined by
+> the chunk-size study in [`../xperf_chunksize/`](../xperf_chunksize/README.md), which
+> shows the cross-implementation gaps are dominated by each library's batching knob
+> (`chunk_size`/`block_size`/`chunk_t`/`batch_size`), not by release↔main — and that
+> amica's apparent "flat curve" was a JIT-compile artifact, not robustness. **Read that
+> study first** for the fair each-at-optimum comparison (amica 5.5 s · pAMICA 9.2 s ·
+> pyamica 12.8 s · scott 45.7 s) and the steady-state correction. The numbers below
+> remain valid for the single-config, default-batching run they describe.
+
 Timing + peak-memory measures for six AMICA implementations (including the new
 SCCN **pAMICA**) fitting the same EEG data on CPU and GPU. This directory holds
 the **measures only** — the raw ICA outputs (unmixing matrices, sources, fitted
@@ -93,10 +102,18 @@ Reproduce from the repo alone:
 
 ## Provenance & caveats
 
-- Implementations: `amica @92003b4` · `pAMICA v0.3.1 (0e6b7f5)` ·
-  `scott amica-python 0.1.1 (cad98a6c)` · `pyamica (a8a4d7e0)` ·
-  `Fortran amica17` built from vendored source (sha `665b5771…`, parity-validated
-  ΔLL 7e-8). Torch 2.12/2.13, numpy 2.4.2, jax 0.10.2 — all pinned in `pins.toml`.
+- Implementations: `amica @92003b4` (snesmaeili/amica, branch `perf/cpu-profiling`) ·
+  `pAMICA v0.3.1 (0e6b7f5)` · `scott amica-python 0.1.1 (cad98a6c)` ·
+  `pyamica (a8a4d7e0)` · `Fortran amica17` built from vendored source
+  (sha `665b5771…`, parity-validated ΔLL 7e-8). Torch 2.12/2.13, numpy 2.4.2,
+  jax 0.10.2 — all pinned in `pins.toml`.
+- **Note on `pAMICA` / `neuromechanist`:** the current SCCN implementation is
+  **`sccn/pAMICA`** (package `pamica`, the `pamica_torch` cell). The benchmark's
+  separate `neuromechanist_numpy` cell (opt-in, not in this run) is **not a
+  distinct project** — it is a *historical NumPy snapshot of the same
+  `sccn/pAMICA` repo* at commit `526aa32` (formerly hosted at
+  `neuromechanist/pyAMICA` before the transfer to SCCN). So "neuromechanist" and
+  "pAMICA" are two points in one SCCN codebase's history, not two competitors.
 - **Single seed, 100 iterations, 25 subjects.** Enough to separate pAMICA from the
   field by orders of magnitude; the amica-vs-scott GPU tie needs multiple seeds to
   resolve either way.

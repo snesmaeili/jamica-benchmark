@@ -49,6 +49,10 @@ def main() -> None:
         newt_start=50,
         random_state=cfg.get("seed", 0),
         verbose=0,
+        # Optional chunk-size override for the chunk-size study (unset -> scott's
+        # default full batch). See results/xperf_chunksize/.
+        **({"batch_size": int(os.environ["AMICA_SCOTT_BATCH"])}
+           if os.environ.get("AMICA_SCOTT_BATCH") else {}),
     )
 
     _use_nvml = os.environ.get("AMICA_NVML_CROSSCHECK", "0") == "1" and device == "cuda"
