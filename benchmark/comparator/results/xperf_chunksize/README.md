@@ -6,9 +6,10 @@ and **main**, plus a **steady-state (compile-excluded)** re-measurement.
 
 ## What this answers
 1. Each implementation exposes a batching knob that moves fit time up to ~17× and peak memory up to ~30×; defaults are footguns
-   (pAMICA `block_size=512` is the worst: 12× off its GPU optimum, 9.4× off its CPU optimum).
-2. The optimum **flips by device** (e.g. scott-huberty is fastest at full-batch on CPU, slowest at
-   full-batch on GPU).
+   (pAMICA `block_size=512` is the worst; its nearest measured point, 1024, is already ~15× off its GPU
+   optimum — 512 itself was not re-measured on the 25-subject sweep, so we don't quote an exact 512 ratio).
+2. The optimum **flips by device** (small/mid chunks win on CPU, large/full on GPU — e.g. amica-python
+   (scott-huberty) is fastest at a 65K chunk on GPU, a ~4K chunk on CPU, and OOMs at full-batch on GPU).
 3. jamica's *apparent* flat GPU curve is **~entirely a JIT-compile artifact** of short (20-iter)
    runs. In steady-state ms/iter the curve is a ~19× monotonic spread like everyone else. What jamica
    actually has is a large fixed compile/setup cost + the fastest steady-state per-iteration, so it
