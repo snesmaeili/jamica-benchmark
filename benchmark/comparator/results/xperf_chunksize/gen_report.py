@@ -312,5 +312,12 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
 </footer>
 </div>"""
 HERE=os.path.dirname(os.path.abspath(__file__))
+# content version (no <!doctype>/<head>/<body> — the Artifact publish step adds those)
 open(os.path.join(HERE,"xperf_chunk_report.html"),"w").write(HTML)
-print("wrote real-data report", len(HTML), "bytes")
+# standalone version — full document, opens directly in any browser
+_title = HTML.split("<title>",1)[1].split("</title>",1)[0] if "<title>" in HTML else "AMICA chunk-size report"
+STANDALONE = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+              '<meta name="viewport" content="width=device-width, initial-scale=1">'
+              f'<title>{_title}</title></head><body>\n{HTML}\n</body></html>\n')
+open(os.path.join(HERE,"xperf_chunk_report_standalone.html"),"w").write(STANDALONE)
+print("wrote real-data report", len(HTML), "bytes (+ standalone", len(STANDALONE), "bytes)")
