@@ -9,6 +9,16 @@ gpu_fit_s_median,jamica,chunk_size,65536,5.6,s,"real ds004505 25-subj median, H1
 gpu_vram_gb_median,jamica,chunk_size,65536,3.68,GB,
 gpu_fit_s_median,jamica,chunk_size,full,5.2,s,"real ds004505 25-subj median, H100"
 gpu_vram_gb_median,jamica,chunk_size,full,8.14,GB,
+gpu_fit_s_min,jamica,chunk_size,1024,20.8,s,min across 25 subj
+gpu_fit_s_max,jamica,chunk_size,1024,34.7,s,max across 25 subj
+gpu_fit_s_min,jamica,chunk_size,4096,9.1,s,min across 25 subj
+gpu_fit_s_max,jamica,chunk_size,4096,29.9,s,max across 25 subj
+gpu_fit_s_min,jamica,chunk_size,16384,6.0,s,min across 25 subj
+gpu_fit_s_max,jamica,chunk_size,16384,43.0,s,max across 25 subj
+gpu_fit_s_min,jamica,chunk_size,65536,5.0,s,min across 25 subj
+gpu_fit_s_max,jamica,chunk_size,65536,10.5,s,max across 25 subj
+gpu_fit_s_min,jamica,chunk_size,full,4.1,s,min across 25 subj
+gpu_fit_s_max,jamica,chunk_size,full,30.5,s,max across 25 subj
 gpu_fit_s_median,pamica,block_size,1024,139.6,s,"real ds004505 25-subj median, H100"
 gpu_vram_gb_median,pamica,block_size,1024,0.58,GB,
 gpu_fit_s_median,pamica,block_size,4096,36.9,s,"real ds004505 25-subj median, H100"
@@ -19,6 +29,16 @@ gpu_fit_s_median,pamica,block_size,65536,11.6,s,"real ds004505 25-subj median, H
 gpu_vram_gb_median,pamica,block_size,65536,1.75,GB,
 gpu_fit_s_median,pamica,block_size,full,9.2,s,"real ds004505 25-subj median, H100"
 gpu_vram_gb_median,pamica,block_size,full,19.25,GB,
+gpu_fit_s_min,pamica,block_size,1024,99.2,s,min across 25 subj
+gpu_fit_s_max,pamica,block_size,1024,170.4,s,max across 25 subj
+gpu_fit_s_min,pamica,block_size,4096,29.2,s,min across 25 subj
+gpu_fit_s_max,pamica,block_size,4096,49.8,s,max across 25 subj
+gpu_fit_s_min,pamica,block_size,16384,11.6,s,min across 25 subj
+gpu_fit_s_max,pamica,block_size,16384,40.6,s,max across 25 subj
+gpu_fit_s_min,pamica,block_size,65536,8.2,s,min across 25 subj
+gpu_fit_s_max,pamica,block_size,65536,34.5,s,max across 25 subj
+gpu_fit_s_min,pamica,block_size,full,7.0,s,min across 25 subj
+gpu_fit_s_max,pamica,block_size,full,33.5,s,max across 25 subj
 gpu_fit_s_median,pyamica,chunk_t,1024,81.3,s,"real ds004505 25-subj median, H100"
 gpu_vram_gb_median,pyamica,chunk_t,1024,1.66,GB,
 gpu_fit_s_median,pyamica,chunk_t,4096,21.1,s,"real ds004505 25-subj median, H100"
@@ -29,6 +49,16 @@ gpu_fit_s_median,pyamica,chunk_t,65536,11.7,s,"real ds004505 25-subj median, H10
 gpu_vram_gb_median,pyamica,chunk_t,65536,3.07,GB,
 gpu_fit_s_median,pyamica,chunk_t,full,9.7,s,"real ds004505 25-subj median, H100"
 gpu_vram_gb_median,pyamica,chunk_t,full,28.3,GB,
+gpu_fit_s_min,pyamica,chunk_t,1024,58.5,s,min across 25 subj
+gpu_fit_s_max,pyamica,chunk_t,1024,98.8,s,max across 25 subj
+gpu_fit_s_min,pyamica,chunk_t,4096,15.0,s,min across 25 subj
+gpu_fit_s_max,pyamica,chunk_t,4096,26.2,s,max across 25 subj
+gpu_fit_s_min,pyamica,chunk_t,16384,9.4,s,min across 25 subj
+gpu_fit_s_max,pyamica,chunk_t,16384,15.8,s,max across 25 subj
+gpu_fit_s_min,pyamica,chunk_t,65536,8.4,s,min across 25 subj
+gpu_fit_s_max,pyamica,chunk_t,65536,14.3,s,max across 25 subj
+gpu_fit_s_min,pyamica,chunk_t,full,7.0,s,min across 25 subj
+gpu_fit_s_max,pyamica,chunk_t,full,12.1,s,max across 25 subj
 gpu_fit_s_median,scott,batch_size,1024,172.4,s,"real ds004505 25-subj median, H100"
 gpu_vram_gb_median,scott,batch_size,1024,0.58,GB,
 gpu_fit_s_median,scott,batch_size,4096,45.2,s,"real ds004505 25-subj median, H100"
@@ -37,7 +67,6 @@ gpu_fit_s_median,scott,batch_size,16384,15.4,s,"real ds004505 25-subj median, H1
 gpu_vram_gb_median,scott,batch_size,16384,0.77,GB,
 gpu_fit_s_median,scott,batch_size,65536,10.1,s,"real ds004505 25-subj median, H100"
 gpu_vram_gb_median,scott,batch_size,65536,1.38,GB,
-gpu_fit_s_median,scott,batch_size,full,OOM,,full-batch out-of-memory on H100 80GB (~30s failure)
 gpu_fit_s_min,scott,batch_size,1024,123.3,s,min across 25 subj
 gpu_fit_s_max,scott,batch_size,1024,213.5,s,max across 25 subj
 gpu_fit_s_min,scott,batch_size,4096,36.8,s,min across 25 subj
@@ -46,6 +75,7 @@ gpu_fit_s_min,scott,batch_size,16384,13.3,s,min across 25 subj
 gpu_fit_s_max,scott,batch_size,16384,85.7,s,max across 25 subj
 gpu_fit_s_min,scott,batch_size,65536,7.4,s,min across 25 subj
 gpu_fit_s_max,scott,batch_size,65536,16.8,s,max across 25 subj
+gpu_fit_s_median,scott,batch_size,full,OOM,,full-batch out-of-memory on H100 80GB (~30s failure)
 cpu_rss_gb_median,jamica,chunk_size,1024,2.23,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,jamica,chunk_size,4096,2.27,GB,"real ds004505 5-subj median, 8 cores"
 cpu_rss_gb_median,jamica,chunk_size,16384,2.23,GB,"real ds004505 5-subj median, 8 cores"

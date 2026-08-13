@@ -326,13 +326,13 @@ for im in IMPLS:
     for c, (t, v) in sorted(GPU[im].items()):
         _rows.append(("gpu_fit_s_median", im, KNOB[im], _cn(c), t, "s", "real ds004505 25-subj median, H100"))
         _rows.append(("gpu_vram_gb_median", im, KNOB[im], _cn(c), v, "GB", ""))
+    for c, (lo, hi) in sorted(GPU_BAND[im].items()):
+        _rows.append(("gpu_fit_s_min", im, KNOB[im], _cn(c), lo, "s", "min across 25 subj"))
+        _rows.append(("gpu_fit_s_max", im, KNOB[im], _cn(c), hi, "s", "max across 25 subj"))
 # explicit GPU failure records (so OOM claims are checkable, not just an absent row)
 for im, cc in GPU_OOM.items():
     _rows.append(("gpu_fit_s_median", im, KNOB[im], _cn(FULL if cc == "full" else cc), "OOM", "",
                   "full-batch out-of-memory on H100 80GB (~30s failure)"))
-    for c, (lo, hi) in sorted(GPU_BAND[im].items()):
-        _rows.append(("gpu_fit_s_min", im, KNOB[im], _cn(c), lo, "s", "min across 25 subj"))
-        _rows.append(("gpu_fit_s_max", im, KNOB[im], _cn(c), hi, "s", "max across 25 subj"))
 for im in CPU_IMPLS:
     for c, v in sorted(CPU_RSS[im].items()):
         _rows.append(("cpu_rss_gb_median", im, KNOB[im], _cn(c), v, "GB", "real ds004505 5-subj median, 8 cores"))
