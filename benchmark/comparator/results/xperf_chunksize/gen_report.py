@@ -47,6 +47,9 @@ CPU_FIT = {
  "scott":   {1024:292.5,4096:242.3,16384:272.1,65536:345.6},
  "fortran": {1024:848.2,4096:893.5,16384:774.4,65536:935.8,FULL:971.3},
 }
+# Why a CPU cell has no number (not just "missing"):
+CPU_FIT_MISS = {("pyamica",1024):("&gt;1h","bad"),   # exceeded the 3600s runner timeout (pathological small-block)
+                ("scott",FULL):("OOM","bad")}         # full-batch out-of-memory (~30s failure)
 # Real each-at-own-optimum on GPU (25-subj median), fit + vram
 REAL_OPT = [("amica","full-batch",5.2,8.1),("pamica","full-batch",9.2,19.3),
             ("pyamica","full-batch",9.7,28.3),("scott","65536",10.1,1.4)]
@@ -129,7 +132,15 @@ def pamrows():
 def cpufitrows():
     r=""
     for im in CPU_IMPLS:
-        cells="".join(f'<td class="num">{CPU_FIT[im].get(c,None) and f"{CPU_FIT[im][c]:.0f}s" or "—"}</td>' for c in XT)
+        cells=""
+        for c in XT:
+            if c in CPU_FIT[im]:
+                cells+=f'<td class="num">{CPU_FIT[im][c]:.0f}s</td>'
+            elif (im,c) in CPU_FIT_MISS:
+                lab,cls=CPU_FIT_MISS[(im,c)]
+                cells+=f'<td class="num"><span class="badge {cls}">{lab}</span></td>'
+            else:
+                cells+='<td class="num">—</td>'
         r+=f'<tr><td><span class="dot" style="background:{COLOR[im]}"></span>{LABEL.get(im,"Fortran amica17")}</td>{cells}</tr>'
     return r
 
@@ -254,7 +265,7 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   Shown as a table, not a curve: the numbers are non-monotonic (contention), so a smooth line would misrepresent them.
   The clean throttled rerun replaces these.</p>
   <table><thead><tr><th>Implementation</th><th>1K</th><th>4K</th><th>16K</th><th>65K</th><th>full</th></tr></thead><tbody>{cpufitrows()}</tbody></table>
-  <p class="note">"—" = cell missing or failed (e.g. Fortran diverges at <code>block=1024</code>·100 iters; scott/pyamica full-batch OOM on some subjects). Even as upper bounds these confirm CPU is ~20–40× the H100 and Fortran (serial reference) is the slowest — but trust the <em>ordering</em>, not the seconds.</p>
+  <p class="note"><b>&gt;1h</b> = exceeded the harness's 3600 s per-runner timeout — pyamica's small-block CPU path is pathological (chunk_t=1024 ≈ 767 chunks/iter × 100 iters of eager per-chunk dispatch). <b>OOM</b> = full-batch out-of-memory (scott, ~30 s failure, same as its GPU OOM). Even as upper bounds these confirm CPU is ~20–40× the H100 and the Fortran serial reference is the slowest — but trust the <em>ordering</em>, not the seconds.</p>
 </section>
 
 <section>
