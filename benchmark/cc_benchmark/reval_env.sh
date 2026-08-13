@@ -19,7 +19,7 @@
 #
 # Nothing is pip-installed editable, so PYTHONPATH is authoritative and no
 # meta-path finder can silently redirect an import. (A shared venv's editable
-# finder is exactly how /scratch/$USER/amica-python/.venv_fir ended up
+# finder is exactly how /scratch/$USER/jamica/.venv_fir ended up
 # resolving amica_python to an unrelated feature-branch checkout.)
 #
 # Verified on compute node fc30669, job 53256186: numpy 2.4.2, scipy 1.17.0,

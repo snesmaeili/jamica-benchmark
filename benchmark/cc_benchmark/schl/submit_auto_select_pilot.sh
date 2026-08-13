@@ -25,7 +25,7 @@ set -euo pipefail
 # rsync local for inspection (never analyse on fir).
 
 REPO="${AMICA_REPO:-/scratch/sesma/amica-autoselect}"          # amica-python @ feat/auto-select
-VENV="${AMICA_VENV:-/scratch/sesma/amica-python/.venv_fir}"
+VENV="${AMICA_VENV:-/scratch/sesma/jamica/.venv_fir}"
 SCHL="${SCHL_DIR:-/scratch/sesma/amica-capsule/benchmark/cc_benchmark/schl}"
 export BIDS_ROOT_DS4505="${BIDS_ROOT_DS4505:-/project/rrg-kjerbi/datasets/openneuro/ds004505/raw_bids}"
 OUT="/scratch/sesma/schl_pilot"; mkdir -p "$OUT"

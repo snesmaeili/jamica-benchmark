@@ -24,7 +24,7 @@ elif [ "$jb" -le 5 ]; then JOB="surr_$((jb - 1))"
 else                       JOB="ho_$((jb - 6))"; fi
 
 REPO="${AMICA_REPO:-/scratch/sesma/amica-autoselect}"
-VENV="${AMICA_VENV:-/scratch/sesma/amica-python/.venv_fir}"
+VENV="${AMICA_VENV:-/scratch/sesma/jamica/.venv_fir}"
 SCHL="${SCHL_DIR:-/scratch/sesma/amica-capsule/benchmark/cc_benchmark/schl}"
 export BIDS_ROOT_DS4505="${BIDS_ROOT_DS4505:-/project/rrg-kjerbi/datasets/openneuro/ds004505/raw_bids}"
 OUT="/scratch/sesma/schl_diag/cells"; mkdir -p "$OUT"

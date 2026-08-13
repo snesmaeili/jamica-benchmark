@@ -33,7 +33,7 @@ from pathlib import Path
 
 import numpy as np
 
-# Allow running from repo root: parents[2] is amica-python-benchmark/
+# Allow running from repo root: parents[2] is jamica-benchmark/
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))

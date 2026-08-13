@@ -50,14 +50,14 @@ source fir_env.sh               # modules (incl. cuda/cudnn) + .venv_fir + env.l
 # `jamica` too, so a global PYTHONPATH shadows it with ours and its runner dies
 # with "cannot import name 'AMICA' from jamica".
 export AMICA_SRC="${AMICA_SRC:-/scratch/$USER/amica-blocked}"
-export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/amica-python/.venv_fir/bin/python}"
+export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/jamica/.venv_fir/bin/python}"
 
 # The orchestrator defaults the competitors venv to <benchmark repo>/.venv_competitors,
 # which does not exist on fir -- it lives under the amica-python tree. Left
 # unset, every competitor run dies instantly with "venv python missing" and the
 # task still exits 0, so the array looks like it succeeded while producing
 # nothing. The pAMICA venv, by contrast, IS where the default expects it.
-export COMPETITORS_VENV="${COMPETITORS_VENV:-/scratch/$USER/amica-python/.venv_competitors/bin/python}"
+export COMPETITORS_VENV="${COMPETITORS_VENV:-/scratch/$USER/jamica/.venv_competitors/bin/python}"
 export PAMICA_VENV="${PAMICA_VENV:-/scratch/$USER/jamica-benchmark/.venv_pamica/bin/python}"
 for _v in "$AMICA_PYTHON_VENV" "$COMPETITORS_VENV" "$PAMICA_VENV"; do
     [ -x "$_v" ] || { echo "FATAL: no interpreter at $_v" >&2; exit 1; }

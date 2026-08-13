@@ -46,9 +46,9 @@ RUNNERS_DIR = ROOT / "scripts" / "comparison" / "runners"
 # Venv pythons. Override either via env vars for portability between machines:
 #   AMICA_PYTHON_VENV       — path to amica-python's venv python
 #   COMPETITORS_VENV        — path to competitors venv python (pyamica + scott)
-# Default: assume a sibling-repo layout where amica-python and amica-python-benchmark
+# Default: assume a sibling-repo layout where jamica and jamica-benchmark
 # live next to each other (the workspace convention under repos/).
-_default_amica_venv = ROOT.parent / "amica-python" / ".venv311" / "Scripts" / "python.exe"
+_default_amica_venv = ROOT.parent / "jamica" / ".venv311" / "Scripts" / "python.exe"
 VENV_AMICA = Path(os.environ.get("AMICA_PYTHON_VENV", str(_default_amica_venv)))
 VENV_COMPETITORS = Path(os.environ.get("COMPETITORS_VENV",
                                         str(ROOT / ".venv-competitors" / "Scripts" / "python.exe")))

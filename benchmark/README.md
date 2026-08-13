@@ -19,7 +19,7 @@ reproducibility and reference.
 - Paths and accounts inside these scripts are specific to the authors' cluster and
   must be adapted before reuse.
 - Large result artifacts are **not** committed here (they live in the separate
-  `amica-python-benchmark` repository / release artifacts).
+  `jamica-benchmark` repository / release artifacts).
 - The reusable metrics live in the package itself under
   [`amica_python/benchmark/`](../amica_python/benchmark/) (e.g. `metrics.py`,
   `stationarity.py`, `dipolarity.py`); the scripts here orchestrate runs and
