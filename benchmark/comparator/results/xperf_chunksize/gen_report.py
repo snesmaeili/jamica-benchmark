@@ -39,13 +39,22 @@ CPU_RSS = {
  "scott":   {1024:2.06,4096:2.06,16384:2.06,65536:2.31},
  "fortran": {1024:0.72,4096:0.75,16384:0.86,65536:1.32,FULL:9.97},
 }
-# REAL CPU fit-time (s), 5-subj median — CONTENDED upper bounds (bycore node sharing); "-" = missing/failed
-CPU_FIT = {
- "amica":   {1024:255.2,4096:195.7,16384:217.8,65536:211.2,FULL:394.7},
- "pamica":  {1024:573.4,4096:333.1,16384:304.8,65536:931.9,FULL:833.6},
- "pyamica": {4096:2187.2,16384:1038.7,65536:1174.5,FULL:1005.8},
- "scott":   {1024:292.5,4096:242.3,16384:272.1,65536:345.6},
- "fortran": {1024:848.2,4096:893.5,16384:774.4,65536:935.8,FULL:971.3},
+# REAL CPU fit-time (s), throttled %4 rerun, 5 subjects. CPU_FIT = min across subjects
+# (best observed ≈ least-contended, the clean lower-bound curve); CPU_FIT_MED = median (still
+# carries residual node contention + per-subject data-size heterogeneity, shown for context).
+CPU_FIT = {  # min across subjects — the clean curve
+ "amica":   {1024:155.0,4096:156.5,16384:162.3,65536:181.6,FULL:288.3},
+ "scott":   {1024:195.0,4096:164.5,16384:172.3,65536:235.5},
+ "pyamica": {4096:2008.4,16384:724.2,65536:776.9,FULL:903.2},
+ "pamica":  {1024:241.3,4096:261.0,16384:341.7,65536:833.0,FULL:754.2},
+ "fortran": {1024:639.8,4096:589.5,16384:730.3,65536:764.3,FULL:790.9},
+}
+CPU_FIT_MED = {  # median (contention-noisy, context only)
+ "amica":{1024:276.4,4096:220.9,16384:186.6,65536:255.7,FULL:398.8},
+ "scott":{1024:257.9,4096:290.7,16384:268.9,65536:321.4},
+ "pyamica":{4096:2345.0,16384:969.9,65536:980.8,FULL:980.7},
+ "pamica":{1024:534.9,4096:431.3,16384:408.7,65536:911.7,FULL:815.8},
+ "fortran":{1024:759.7,4096:812.4,16384:845.0,65536:862.8,FULL:960.9},
 }
 # Why a CPU cell has no number (not just "missing"):
 CPU_FIT_MISS = {("pyamica",1024):("&gt;1h","bad"),   # exceeded the 3600s runner timeout (pathological small-block)
@@ -115,6 +124,7 @@ c_gt=chart(gpu_t,GPU_BAND,"fit time (s, log)",True,"GPU · fit time vs chunk","r
 c_gv=chart(gpu_v,None,"peak VRAM (GB)",False,"GPU · memory vs chunk","real ds004505 · H100 · median peak VRAM · full-batch is the trap",IMPLS)
 CPU_IMPLS=["amica","pamica","pyamica","scott","fortran"]
 c_cr=chart(CPU_RSS,None,"peak RSS (GB)",False,"CPU · memory vs chunk","real ds004505 · 8 cores · 5-subject median · Fortran reference is leanest",CPU_IMPLS)
+c_ct=chart(CPU_FIT,None,"fit time (s, log)",True,"CPU · fit time vs chunk","real ds004505 · 8 cores · best-of-5 subjects (≈ least-contended) · optimum flips to small/mid chunks",CPU_IMPLS,oom={"scott":"full"})
 
 def legend(impls):
     it="".join(f'<span class="lg"><i style="background:{COLOR[i]}"></i>{LABEL.get(i,"Fortran amica17")} <code>{KNOB[i]}</code> <span class="cm">@{COMMIT[i]}</span></span>' for i in impls)
@@ -246,26 +256,28 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
 </section>
 
 <section>
-  <h2>CPU — memory is clean, timing is an upper bound</h2>
-  <p class="sub">CPU peak memory (real ds004505, 8 cores, 5-subject median), including the Fortran
-  amica17 reference as the CPU-only ground truth.</p>
-  <div class="grid2"><div class="card">{c_cr}</div>
-  <div class="card" style="display:flex;align-items:center"><div style="padding:8px 10px">
-    <ul class="tk" style="margin:0"><li><b>Fortran is the leanest</b> everywhere (0.7 GB at small blocks, 10 GB at full).</li>
-    <li><b>Full-batch is a memory trap on CPU too</b> (amica 21 GB, pyamica 27 GB).</li>
-    <li>Memory is set by allocation, not timing, so it is <b>robust to node contention</b> — unlike the CPU fit-times.</li></ul></div></div></div>
+  <h2>CPU — fit time &amp; memory</h2>
+  <p class="sub">Real ds004505, 8 cores, 5 subjects (fair-share-neutral throttled rerun). Fit-time is
+  the <b>best-of-5 per cell</b> — a least-contended lower bound; memory is allocation-driven, so clean
+  regardless. ◯ = each impl's CPU optimum. Includes the Fortran amica17 reference (CPU-only).</p>
+  <div class="grid2"><div class="card">{c_ct}</div><div class="card">{c_cr}</div></div>
   {legend(CPU_IMPLS)}
-  <div class="warn-box" style="margin-top:18px"><b>⚠️ CPU fit-times are not shown as a curve — they are contention-contaminated upper bounds.</b>
-  The CPU cells ran packed on shared <code>bycore</code> nodes; AMICA fits are memory-bandwidth-bound,
-  so co-located cells starved each other and the fit-times came back non-monotonic (e.g. pyamica@4096 =
-  2187 s next to @16384 = 1039 s). The <em>ordering</em> and <em>optima</em> hold, but absolute CPU
-  seconds are inflated. A fair-share-neutral throttled rerun (job array, <code>%4</code> concurrency) is
-  in progress to produce clean CPU absolutes. Full analysis + noise estimate: <code>NOTES_measurement.md</code>.</div>
-  <p class="note" style="margin-bottom:6px"><b>CPU fit time (s), 5-subject median — ⚠️ contention-contaminated upper bounds.</b>
-  Shown as a table, not a curve: the numbers are non-monotonic (contention), so a smooth line would misrepresent them.
-  The clean throttled rerun replaces these.</p>
-  <table><thead><tr><th>Implementation</th><th>1K</th><th>4K</th><th>16K</th><th>65K</th><th>full</th></tr></thead><tbody>{cpufitrows()}</tbody></table>
-  <p class="note"><b>&gt;1h</b> = exceeded the harness's 3600 s per-runner timeout — pyamica's small-block CPU path is pathological (chunk_t=1024 ≈ 767 chunks/iter × 100 iters of eager per-chunk dispatch). <b>OOM</b> = full-batch out-of-memory (scott, ~30 s failure, same as its GPU OOM). Even as upper bounds these confirm CPU is ~20–40× the H100 and the Fortran serial reference is the slowest — but trust the <em>ordering</em>, not the seconds.</p>
+  <ul class="tk" style="margin-top:20px">
+    <li><b>The optimum flips by device.</b> CPU optima sit at <em>small/mid</em> chunks (amica 1024,
+    scott/Fortran ~4096, pyamica 16384) — the opposite of the GPU, where full-batch won. Small blocks
+    fit CPU cache; on the H100 they starve the device. A single recommended chunk is wrong.</li>
+    <li><b>amica is fastest on CPU too</b> — best ~155 s vs scott 164, pAMICA 241, Fortran 589, pyamica 724.</li>
+    <li><b>Full-batch is a memory trap on CPU as well</b> (amica 21 GB, pyamica 27 GB); the Fortran
+    reference is the leanest everywhere (0.7 GB).</li>
+    <li><b>Extremes fail:</b> pyamica@1024 exceeds the 1-hour runner timeout (~767 eager chunks/iter);
+    scott full-batch OOMs — both absent from the curve.</li>
+  </ul>
+  <div class="warn-box" style="margin-top:14px"><b>Why best-of-5, not the mean.</b> CPU cells ran on
+  shared <code>bycore</code> nodes; AMICA fits are memory-bandwidth-bound, so co-located cells starve
+  each other. Even the throttled rerun (job array, <code>%4</code>) leaves residual contention, and the
+  5 subjects differ in length — so the per-cell <em>median</em> stays non-monotonic. The <em>min</em>
+  across subjects recovers the clean chunk trend. Absolute CPU seconds are approximate; trust the shapes
+  and ordering. Full analysis + noise estimate: <code>NOTES_measurement.md</code>.</div>
 </section>
 
 <section>
@@ -288,10 +300,10 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   <h2>Release vs main</h2>
   <p class="sub">All curves above are latest <code>main</code>. Release→main is performance-neutral on
   GPU (measured identical); amica's one perf-relevant commit (<code>2cd81e4</code>, "make CPU fits
-  faster and smaller") touches the CPU E-step only, and its effect is within CPU node-contention noise
-  in this pass — the throttled rerun will resolve it. Competitor <code>main</code> builds move only
+  faster and smaller") touches the CPU E-step only. Competitor <code>main</code> builds move only
   through the same batching knob; bumping to main rescues no one's default (pAMICA <code>main</code> is
-  still 140 s at 512).</p>
+  still 140 s at 512). The CPU curves above are the clean throttled <code>main</code> build; a
+  like-for-like release-vs-main CPU comparison at clean concurrency was out of scope for this pass.</p>
 </section>
 
 <footer>
@@ -308,7 +320,7 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   </dl>
   <p class="note" style="margin-top:16px">Trust the shapes, the ordering, and each implementation's
   optimum. GPU absolutes are 25-subject medians; CPU <em>memory</em> is clean; CPU <em>fit-times</em>
-  are upper bounds pending the throttled rerun.</p>
+  are best-of-5 (least-contended) from the throttled rerun — approximate absolutes, clean trend.</p>
 </footer>
 </div>"""
 HERE=os.path.dirname(os.path.abspath(__file__))

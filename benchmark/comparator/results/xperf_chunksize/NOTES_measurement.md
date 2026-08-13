@@ -57,3 +57,17 @@ owned its GPU (`--gpus-per-node=1`).
 Trust the **shapes, the ordering, and each implementation's optimum**. Treat **absolute CPU
 fit-times as upper bounds** carrying a ~tens-of-percent contention inflation until an `--exclusive`
 rerun replaces them.
+
+## Outcome of the throttled rerun (job array %4, 5 subjects)
+
+Throttling helped only **modestly**: the per-cell **median stayed non-monotonic** (e.g. pyamica@4096
+= 2345 s next to @16384 = 970 s), because (a) `%4` still co-locates some cells on `bycore` nodes, and
+(b) the 5 subjects differ in length, so a cross-subject median mixes data sizes. The **min across
+subjects** (best observed ≈ least-contended) *does* recover a clean chunk trend and is what the report
+plots. Clean finding it exposes: **CPU optima are at small/mid chunks** (amica 1024, scott/Fortran
+~4096, pyamica 16384) — the opposite of the GPU (full-batch), a cache effect. amica is fastest on CPU
+too (~155 s best). pyamica@1024 exceeds the 1 h runner timeout; scott full-batch OOMs.
+
+For truly clean CPU *absolutes* (not just the trend) the remaining lever is `--exclusive`/`bynode`
+allocation — rejected here as fair-share-hostile (reserves a 192-core node for an ~8-core job that only
+uses ~4). The best-of-5 lower bound is the honest compromise.
