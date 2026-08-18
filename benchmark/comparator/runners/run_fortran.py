@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import os
 import re
+import resource
 import subprocess
 import sys
 import tempfile
@@ -33,7 +34,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _fortran_io as fio
-from _common import load_data, parse_runner_args, write_result
+from _common import load_data, parse_runner_args, write_result, cgroup_peak_gb
 
 _DEFAULT_BIN = "amica17"  # portable default: set AMICA17_BIN to an absolute path, or have amica17 on PATH
 
@@ -66,7 +67,11 @@ def main() -> None:
         files=str(data_dir / "data.fdt"),
         outdir=str(out_dir) + "/",
         n_channels=n_comp, n_samples=n_samples,
-        block_size=min(int(n_samples), 100000),
+        # block_size override for the chunk-size study (clamped to n_samples so a
+        # large sentinel means full-batch); default matches the parity recipe.
+        block_size=(min(int(os.environ["AMICA_FORTRAN_BLOCK"]), int(n_samples))
+                    if os.environ.get("AMICA_FORTRAN_BLOCK")
+                    else min(int(n_samples), 100000)),
         # Run amica17's standard sphere/mean/PCA path (the validated parity config). On the
         # already-projected, unit-variance input, PCA(pcakeep=n_comp) is just a rotation. NOTE:
         # do_sphere=0/doPCA=0 makes amica17 exit at init with 0 iterations.
@@ -82,17 +87,22 @@ def main() -> None:
         use_min_dll=0, use_grad_norm=0,   # run full max_iter (no early stop)
     )
 
-    cmd = [gnu_time, "-v", mpirun, "-np", "1", amica_bin, str(workdir / "amica.param")]
+    use_gnu_time = os.path.exists(gnu_time)
+    cmd = ([gnu_time, "-v"] if use_gnu_time else []) + [mpirun, "-np", "1", amica_bin, str(workdir / "amica.param")]
     run_env = dict(os.environ, OMP_NUM_THREADS="1")  # match parity recipe (param max_threads=1)
     t0 = time.perf_counter()
     cp = subprocess.run(cmd, capture_output=True, text=True, env=run_env)
     elapsed = time.perf_counter() - t0
 
-    maxrss_kb = _parse_maxrss_kb(cp.stderr)
-    if maxrss_kb is None:
+    if use_gnu_time:
+        maxrss_kb = _parse_maxrss_kb(cp.stderr)
+    else:
+        # No GNU /usr/bin/time (e.g. Narval): peak RSS of the child tree via getrusage (KiB on Linux).
+        maxrss_kb = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss or None
+    if cp.returncode != 0 or maxrss_kb is None:
         write_result(args.output, {
             "implementation": "fortran_amica17",
-            "error": "no_maxrss (GNU /usr/bin/time -v unavailable or run failed)",
+            "error": "nonzero_exit" if cp.returncode != 0 else "no_maxrss",
             "returncode": cp.returncode,
             "cmd": " ".join(cmd),
             "stderr": (cp.stderr or "")[-2000:],
@@ -121,6 +131,7 @@ def main() -> None:
         # Fortran allocates up front with ~zero import baseline -> delta ~= absolute peak.
         "baseline_rss_gb": 0.0,
         "delta_rss_gb": float(peak_gb),
+        "cgroup_peak_gb": cgroup_peak_gb(),
         "peak_vram_gb": None,
         "nvml_peak_vram_gb": None,
         "ll_final": float(ll[-1]) if ll else float("nan"),
