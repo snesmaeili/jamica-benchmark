@@ -33,7 +33,7 @@ import psutil
 RESULT_KEYS = (
     "implementation", "n_components", "n_samples", "max_iter",
     "fit_time_s", "peak_rss_gb", "baseline_rss_gb", "delta_rss_gb",
-    "peak_vram_gb", "nvml_peak_vram_gb",
+    "peak_vram_gb", "nvml_peak_vram_gb", "nvml_post_init_gb",
     "ll_final", "ll_history", "W",
     "device", "dtype", "n_iter",
     # Written automatically by write_result(); see stack_provenance().
@@ -232,6 +232,42 @@ def delta_rss_gb(baseline: float) -> float:
     return peak_rss_gb() - baseline
 
 
+def cgroup_peak_gb() -> "float | None":
+    """Best-effort PEAK memory of this job's cgroup (GiB), across the whole process tree.
+
+    ru_maxrss is per-process and folds in the interpreter/import floor; the Slurm job cgroup's
+    memory peak is a cleaner "memory this cell needed" figure (still includes any preprocessing in
+    the cell, but that's the real footprint). cgroup v2: memory.peak; v1: memory.max_usage_in_bytes.
+    Returns None if the cgroup files aren't readable (e.g. off-cluster).
+    """
+    try:
+        rel = ""
+        try:
+            with open("/proc/self/cgroup") as f:
+                # v2 line looks like "0::/slurm/uid_.../job_.../step_.../task_0"
+                for line in f:
+                    parts = line.strip().split(":")
+                    if parts[0] == "0":
+                        rel = parts[-1]
+                        break
+        except Exception:
+            pass
+        candidates = []
+        if rel:
+            candidates.append(f"/sys/fs/cgroup{rel}/memory.peak")
+        candidates += ["/sys/fs/cgroup/memory.peak",                       # v2 (own cgroup)
+                       "/sys/fs/cgroup/memory/memory.max_usage_in_bytes"]  # v1 fallback
+        for path in candidates:
+            try:
+                with open(path) as fh:
+                    return int(fh.read().strip()) / 1024 ** 3
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
+
+
 def start_nvml_sampler(enabled: bool, gpu_index: int = 0, interval_s: float = 0.05):
     """Start a background sampler of whole-GPU 'used' VRAM via NVML; return a handle.
 
@@ -279,6 +315,32 @@ def stop_nvml_sampler(handle) -> float | None:
         handle["thread"].join(timeout=1.0)
         handle["nvml"].nvmlShutdown()
         return float(handle["peak"])
+    except Exception:
+        return None
+
+
+def nvml_used_gb(enabled: bool, gpu_index: int = 0) -> "float | None":
+    """One-shot read of whole-GPU 'used' VRAM (GiB) via NVML.
+
+    Framework-neutral point read, used to bracket the post-init memory FLOOR: call it
+    once right after the framework + CUDA context are initialised (a trivial GPU op has
+    run) but BEFORE the model/data are allocated. The gap between this floor and the
+    sampler's peak is everything the framework's own allocator counter also misses
+    (reserved pool, lazily-loaded cuBLAS/cuDNN, compiled executables) plus the live
+    tensors. Self-contained init/shutdown so it is safe to call before start_nvml_sampler.
+    Returns None if disabled or pynvml/GPU unavailable.
+    """
+    if not enabled:
+        return None
+    try:
+        import pynvml
+        pynvml.nvmlInit()
+        try:
+            used = pynvml.nvmlDeviceGetMemoryInfo(
+                pynvml.nvmlDeviceGetHandleByIndex(gpu_index)).used
+            return float(used) / 1024 ** 3
+        finally:
+            pynvml.nvmlShutdown()
     except Exception:
         return None
 

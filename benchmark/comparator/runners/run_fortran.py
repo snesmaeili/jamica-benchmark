@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import resource
 import shutil
 import subprocess
 import sys
@@ -150,7 +151,9 @@ def main() -> None:
             files=str(data_dir / "data.fdt"),
             outdir=str(out_dir) + "/",
             n_channels=n_comp, n_samples=n_samples,
-            block_size=min(int(n_samples), 100000),
+            block_size=(min(int(os.environ["AMICA_FORTRAN_BLOCK"]), int(n_samples))
+                        if os.environ.get("AMICA_FORTRAN_BLOCK")
+                        else min(int(n_samples), 100000)),
             # Run amica17's standard sphere/mean/PCA path (the validated parity config). On the
             # already-projected, unit-variance input, PCA(pcakeep=n_comp) is just a rotation. NOTE:
             # do_sphere=0/doPCA=0 makes amica17 exit at init with 0 iterations.
@@ -166,7 +169,8 @@ def main() -> None:
             use_min_dll=0, use_grad_norm=0,   # run full max_iter (no early stop)
         )
 
-        cmd = [gnu_time, "-v", mpirun, "-np", "1", amica_bin, str(workdir / "amica.param")]
+        use_gnu_time = os.path.exists(gnu_time)
+        cmd = ([gnu_time, "-v"] if use_gnu_time else []) + [mpirun, "-np", "1", amica_bin, str(workdir / "amica.param")]
         run_env = dict(os.environ, OMP_NUM_THREADS="1")  # match parity recipe (param max_threads=1)
         t0 = time.perf_counter()
         cp = subprocess.run(cmd, capture_output=True, text=True, env=run_env)
@@ -198,9 +202,10 @@ def main() -> None:
         _error(f"nonzero_exit (returncode={cp.returncode})")
         return
 
-    maxrss_kb = _parse_maxrss_kb(cp.stderr)
+    maxrss_kb = (_parse_maxrss_kb(cp.stderr) if use_gnu_time
+                 else (resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss or None))
     if maxrss_kb is None:
-        _error("no_maxrss (GNU /usr/bin/time -v unavailable or run failed)")
+        _error("no_maxrss (neither GNU /usr/bin/time -v nor getrusage returned a value)")
         return
     peak_gb = maxrss_kb / 1024 ** 2  # KiB -> GiB
 
