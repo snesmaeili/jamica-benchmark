@@ -390,6 +390,97 @@ def _json_safe_array(value):
     return arr.tolist()
 
 
+def _amica_provenance() -> dict:
+    """Build/env identity of the measured `amica` package, for the `_run` block.
+
+    The native runner imports the *installed* `amica` (not the vendored
+    `amica_python/` copy), and `AMICA_SRC` can redirect it to an arbitrary source
+    checkout via PYTHONPATH — so record which build actually produced the row:
+      * `amica` version + commit — from `AMICA_SRC`'s `git rev-parse HEAD` when
+        that env var is set (that is what PYTHONPATH resolves to), else the
+        installed distribution's PEP 610 `direct_url.json` commit.
+      * jax/jaxlib/numpy/mne versions (importlib.metadata, no import needed).
+    Mirrors benchmark/comparator/runners/_common.py:stack_provenance().
+    """
+    from importlib import metadata as _im
+
+    stack: dict = {}
+    for name in ("jax", "jaxlib", "numpy", "scipy", "mne"):
+        try:
+            stack[name] = _im.version(name)
+        except Exception:
+            pass
+    amica: dict = {}
+    try:
+        amica["version"] = _im.version("amica")
+    except Exception:
+        pass
+    # commit_source makes it explicit which build the commit describes: when
+    # AMICA_SRC is set the measured code is that checkout (on PYTHONPATH), so its
+    # git HEAD wins — but only if `git rev-parse` actually succeeds; a silent
+    # fallback to the installed dist's commit while running source is exactly the
+    # mislabel we are trying to avoid. NB: `version` is still the installed dist's
+    # (AMICA_SRC has no reliable version), so version and commit can describe
+    # different builds — commit_source flags that.
+    commit = None
+    commit_source = None
+    src = os.environ.get("AMICA_SRC")
+    if src:
+        amica["src"] = src  # record that AMICA_SRC was in effect, even if git fails
+        try:
+            import subprocess
+            out = subprocess.run(
+                ["git", "-C", src, "rev-parse", "HEAD"],
+                capture_output=True, text=True,
+            )
+            if out.returncode == 0 and out.stdout.strip():
+                commit, commit_source = out.stdout.strip(), "amica_src"
+            else:
+                amica["src_git_error"] = (
+                    (out.stderr or "").strip()[:200] or f"rev-parse rc={out.returncode}")
+        except Exception as exc:
+            amica["src_git_error"] = str(exc)[:200]
+    try:
+        raw = _im.distribution("amica").read_text("direct_url.json")
+        if raw:
+            info = json.loads(raw)
+            url = info.get("url")
+            if url:
+                amica["url"] = url[4:] if url.startswith("git+") else url
+            # Only adopt the installed dist's commit when AMICA_SRC is NOT in
+            # effect. Under AMICA_SRC the measured code is the checkout; if its
+            # git lookup failed, leave commit null (src_git_error explains why)
+            # rather than stamping the installed wheel's commit as if measured.
+            if not commit and not src:
+                c = (info.get("vcs_info") or {}).get("commit_id")
+                if c:
+                    commit, commit_source = c, "direct_url"
+    except Exception:
+        pass
+    if commit:
+        amica["commit"] = commit
+        amica["commit_source"] = commit_source
+    return {
+        "python": platform.python_version(),
+        "executable": sys.executable,
+        "packages": {"amica": amica} if amica else {},
+        "stack": stack,
+    }
+
+
+def _harness_commit() -> str | None:
+    """Full SHA of the benchmark-harness checkout that produced this row."""
+    try:
+        import subprocess
+        out = subprocess.run(
+            ["git", "-C", str(Path(__file__).resolve().parent), "rev-parse", "HEAD"],
+            capture_output=True, text=True,
+        )
+        return out.stdout.strip() if out.returncode == 0 and out.stdout.strip() else None
+    except Exception:
+        return None
+
+
 def build_v3_document(
     *,
     raw,
@@ -460,16 +551,26 @@ def build_v3_document(
         if key in input_metadata:
             data[key] = input_metadata[key]
 
+    run_block = {
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "hostname": platform.node(),
+        "slurm_job_id": os.environ.get("SLURM_JOB_ID", "local"),
+        "slurm_array_task_id": os.environ.get("SLURM_ARRAY_TASK_ID"),
+        "pipeline_script": Path(__file__).name,
+        "python_version": platform.python_version(),
+        "harness_commit": _harness_commit(),
+    }
+    # Stamp the amica build ONLY on an actual amica document. build_v3_document is
+    # reused by the MNE comparators (comparators.py) for Picard/FastICA/Infomax
+    # rows; stamping amica provenance there would make the aggregator label those
+    # rows with the amica package's version/commit. Their own library_versions
+    # (mne/sklearn/picard) already ride in the method payload.
+    if method_metrics.get("method") == "amica":
+        run_block["provenance"] = _amica_provenance()
+
     return {
         "_schema_version": "3.0",
-        "_run": {
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "hostname": platform.node(),
-            "slurm_job_id": os.environ.get("SLURM_JOB_ID", "local"),
-            "slurm_array_task_id": os.environ.get("SLURM_ARRAY_TASK_ID"),
-            "pipeline_script": Path(__file__).name,
-            "python_version": platform.python_version(),
-        },
+        "_run": run_block,
         "_data": data,
         "amica": method_result,
     }
@@ -1116,9 +1217,15 @@ def run_benchmark(raw, backend="jax", device="cpu", n_iter=500, *,
         "actual_n_iter": n_iter_actual,
         "max_iter": int(n_iter),
         "tol": None,
+        # chunk_size distinguishes full-batch (None) from chunked/auto runs of
+        # otherwise-identical config; the aggregator's content run_id reads it, so
+        # it MUST be in the payload or full-batch and chunked collide on one run_id.
+        "chunk_size": chunk_size,
         "fit_params": {
             "backend": backend,
             "device": device,
+            "chunk_size": chunk_size,
+            "dtype": dtype,
         },
         # AMICA stops when the iteration budget runs out, not on a tolerance.
         # `converged_before_cap` is True only if the underlying AmicaResult
