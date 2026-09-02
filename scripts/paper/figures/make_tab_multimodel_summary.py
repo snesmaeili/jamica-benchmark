@@ -236,7 +236,7 @@ Missing or flagged fits \\\\
 \\textit{{Notes.}}
 \\(\\Delta LL(M)\\) is the in-sample likelihood gain relative to \\(M=1\\), in
 nats per retained component per sample. \\(N_{{\\mathrm{{eff}}}}\\) is the
-perplexity of the estimated model weights, \\(\\exp(-\\sum_m g_m \\log g_m)\\).
+perplexity of the estimated model weights, \\(\\exp(-\\sum_m \\pi_m \\log \\pi_m)\\).
 Real and phase-surrogate fits used 16 retained PCs and a 2,000-iteration
 maximum. One phase-randomized surrogate was generated per listed
 participant; the synthetic stationary control used one archived seed.

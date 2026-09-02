@@ -81,7 +81,7 @@ def main() -> None:
 
     med = {k: st.median([r[k] for r in rows]) for k in
            ("dll3", "sir", "err", "neff", "stat3", "ratio")}
-    n_ok = sum(1 for r in rows if r["frac"] > 0.95 and r["err"] < 1e-2)
+    n_ok = sum(1 for r in rows if r["frac"] >= 0.99 and r["err"] < 3e-4)
 
     out: list[str] = []
     add = out.append
@@ -112,7 +112,7 @@ def main() -> None:
         r"$N_{\mathrm{eff}}$ & \shortstack{$\Delta LL(3)$\\stationary} \\")
     add(r"\midrule")
     for r in rows:
-        flag = "" if (r["frac"] > 0.95 and r["err"] < 1e-2) else r"$^{*}$"
+        flag = "" if (r["frac"] >= 0.99 and r["err"] < 3e-4) else r"$^{*}$"
         add(f"{r['seed']}{flag} & ${r['dll3']:.4f}$ & ${r['frac']:.3f}$ & "
             f"${r['sir']:.1f}$ & ${sci(r['err'])}$ & ${r['neff']:.2f}$ & "
             f"${r['stat3']:.4f}$ \\\\")
@@ -125,8 +125,8 @@ def main() -> None:
     add(r"")
     add(r"\vspace{2pt}")
     add(rf"{{\footnotesize $^{{*}}$ Recovery at the generating order failed for this "
-        rf"seed. {n_ok} of {len(rows)} seeds captured $>\!95\%$ of the $M=10$ gain at "
-        rf"$M=3$ with a matched map error below $10^{{-2}}$.}}")
+        rf"seed. {n_ok} of {len(rows)} seeds captured at least $99\%$ of the $M=10$ gain "
+        rf"at $M=3$ with a matched map error below $3{{\times}}10^{{-4}}$.}}")
     add(r"\end{table}")
 
     DEST.write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
