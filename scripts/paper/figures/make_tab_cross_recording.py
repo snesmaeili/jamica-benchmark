@@ -39,7 +39,7 @@ RECORDINGS = [
 ]
 
 DISPLAY = {
-    "amica_python_jax_chunked": r"\texttt{amica} (JAX, chunked)",
+    "amica_python_jax_chunked": r"\texttt{jamica} (JAX, chunked)",
     "scott_huberty_torch": r"AMICA-Python (PyTorch)",
     "pyamica_torch": r"\texttt{pyamica} (PyTorch)",
     "pamica_torch": r"\texttt{pAMICA} (PyTorch)",
@@ -110,7 +110,7 @@ def main() -> None:
     add(r"Table~\ref{tab:cross-implementation} (100 iterations, matched mixture")
     add(r"count, learning rate and Newton setting; each package at its own")
     add(r"algorithm constants). Agreement is the worst Hungarian-matched,")
-    add(r"sign-aligned unmixing-row correlation against the \texttt{amica} JAX-CPU")
+    add(r"sign-aligned unmixing-row correlation against the \texttt{jamica} JAX-CPU")
     add(r"run on the same recording. Recordings are ordered by the data-adequacy")
     add(r"factor \(k=T/C^{2}\), for \(T\) samples and \(C\) retained components.")
     add(r"\textbf{Agreement tracks \(k\) rather than the implementation}: every")
@@ -134,7 +134,7 @@ def main() -> None:
     # Brace counts differ between the halves: the f-string half doubles them,
     # the raw half does not. Closing \emph{ and the \multicolumn cell needs two.
     add(rf"\multicolumn{{{len(cols) + 1}}}{{l}}{{\emph{{Worst matched unmixing-row "
-        r"correlation vs \texttt{amica} JAX-CPU}}\\")
+        r"correlation vs \texttt{jamica} JAX-CPU}}\\")
     add(r"\addlinespace[1pt]")
     for impl in ORDER:
         cells = []

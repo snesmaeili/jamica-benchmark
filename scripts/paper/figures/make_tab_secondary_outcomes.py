@@ -42,16 +42,16 @@ COMPARATOR_DISPLAY = {"Picard": "Picard", "Infomax": "Extended Infomax",
 METRIC_BLOCKS = [
     ("mir_kbits_s",
      r"Complete MIR (kbits/s) --- \emph{primary, confirmatory}; "
-     r"positive favours \texttt{amica}"),
+     r"positive favours \texttt{jamica}"),
     ("remnant_pmi_percent",
      r"Remnant pairwise MI (percentage points) --- \emph{secondary, "
-     r"descriptive}; \textbf{negative} favours \texttt{amica}"),
+     r"descriptive}; \textbf{negative} favours \texttt{jamica}"),
     ("nd_5_percent",
      r"Near-dipolar fraction, $5\%$ residual variance (percentage points) --- "
-     r"\emph{secondary, descriptive}; positive favours \texttt{amica}"),
+     r"\emph{secondary, descriptive}; positive favours \texttt{jamica}"),
     ("nd_10_percent",
      r"Near-dipolar fraction, $10\%$ residual variance (percentage points) --- "
-     r"\emph{secondary, descriptive}; positive favours \texttt{amica}"),
+     r"\emph{secondary, descriptive}; positive favours \texttt{jamica}"),
 ]
 
 
@@ -81,12 +81,12 @@ def main() -> None:
     add(r"\caption{")
     add(r"\textbf{Complete real-EEG outcome estimates for every dataset and")
     add(r"comparator.} Paired within-participant differences,")
-    add(r"$\Delta = \texttt{amica} - \mathrm{comparator}$, with $95\%$")
+    add(r"$\Delta = \texttt{jamica} - \mathrm{comparator}$, with $95\%$")
     add(r"participant-level bootstrap confidence intervals, standardised paired")
     add(r"effects $d_z$, and the number of participants for whom the difference")
-    add(r"favoured \texttt{amica}. \textbf{The three outcomes do not share a")
+    add(r"favoured \texttt{jamica}. \textbf{The three outcomes do not share a")
     add(r"direction convention}: higher complete MIR and higher near-dipolar")
-    add(r"fractions favour \texttt{amica}, whereas \emph{lower} remnant pairwise")
+    add(r"fractions favour \texttt{jamica}, whereas \emph{lower} remnant pairwise")
     add(r"MI does. Only the nine complete-MIR contrasts were prespecified as")
     add(r"confirmatory; the secondary rows are reported for completeness and")
     add(r"their adjusted $p$-values are descriptive, adjusted within each metric")
@@ -101,7 +101,7 @@ def main() -> None:
     add(r"\begin{tabular}{llccccc}")
     add(r"\toprule")
     add(r"Dataset & Comparator & $\Delta$ [95\% CI] & $d_z$ [95\% CI] & "
-        r"\shortstack{Favouring\\\texttt{amica}, $n/N$} & "
+        r"\shortstack{Favouring\\\texttt{jamica}, $n/N$} & "
         r"\shortstack{$p$ unadjusted\\$t$; Wilcoxon} & $p_{\mathrm{adj}}$ \\")
 
     for metric, heading in METRIC_BLOCKS:

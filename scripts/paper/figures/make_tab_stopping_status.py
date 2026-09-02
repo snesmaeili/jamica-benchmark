@@ -38,11 +38,11 @@ DATASET_DISPLAY = {
 # Rule wording is taken verbatim from the archived convergence-sensitivity
 # record so the table cannot describe a criterion the runs did not use.
 RULES = {
-    "AMICA-Python (JAX-GPU)": (r"\texttt{amica} (JAX-GPU)",
+    "AMICA-Python (JAX-GPU)": (r"\texttt{jamica} (JAX-GPU)",
         r"\texttt{min\_dll} with consecutive-increment rule", r"$10^{-9}$"),
-    "AMICA-Python (JAX-CPU)": (r"\texttt{amica} (JAX-CPU)",
+    "AMICA-Python (JAX-CPU)": (r"\texttt{jamica} (JAX-CPU)",
         r"\texttt{min\_dll} with consecutive-increment rule", r"$10^{-9}$"),
-    "AMICA-Python (NumPy-CPU)": (r"\texttt{amica} (NumPy-CPU)",
+    "AMICA-Python (NumPy-CPU)": (r"\texttt{jamica} (NumPy-CPU)",
         r"\texttt{min\_dll} with consecutive-increment rule", r"$10^{-9}$"),
     "Picard": ("Picard", "gradient tolerance", r"$10^{-6}$"),
     "Infomax": ("Extended Infomax",
@@ -88,13 +88,13 @@ def main() -> None:
     add(r"\textbf{Stopping status for every estimator and dataset.} ``Reached")
     add(r"cap'' counts fits that stopped because the iteration budget was")
     add(r"exhausted rather than because the configured criterion was satisfied.")
-    add(r"\texttt{amica} and the comparators were run under different budgets")
+    add(r"\texttt{jamica} and the comparators were run under different budgets")
     add(r"(3,000 and 5,000 iterations respectively), so the counts describe each")
     add(r"estimator against its own configuration and are not a convergence")
     add(r"ranking. Extended Infomax reached its cap in most runs of every")
     add(r"dataset, whereas Picard and FastICA satisfied their criteria well")
     add(r"before it. Reported decompositions are therefore fixed-budget results")
-    add(r"for \texttt{amica} and extended Infomax, and criterion-terminated")
+    add(r"for \texttt{jamica} and extended Infomax, and criterion-terminated")
     add(r"results for Picard and FastICA.")
     add(r"}")
     add(r"\label{tab:stopping-status}")

@@ -43,8 +43,8 @@ GPU_ROOT = _WS / "results/comparator/cluster/gpu/itercurve_gpu"
 HEADLINE_ITER = 1000
 
 DISPLAY = {
-    "amica_python_jax": r"\texttt{amica} (JAX, full batch)",
-    "amica_python_jax_chunked": r"\texttt{amica} (JAX, chunked)",
+    "amica_python_jax": r"\texttt{jamica} (JAX, full batch)",
+    "amica_python_jax_chunked": r"\texttt{jamica} (JAX, chunked)",
     "scott_huberty_torch": r"AMICA-Python (PyTorch)",
     "pyamica_torch": r"\texttt{pyamica} (PyTorch)",
     "pamica_torch": r"\texttt{pAMICA} (PyTorch)",
@@ -217,7 +217,7 @@ def main() -> None:
     add(r"\begin{table}[htbp]")
     add(r"\centering")
     add(r"\caption{")
-    add(r"\textbf{Cross-implementation cost and agreement at a converged iteration")
+    add(r"\textbf{Cross-implementation cost and agreement at a 1{,}000-iteration")
     add(r"budget.}")
     add(rf"Every implementation fitted the same PCA-projected Table tennis sub-01")
     add(rf"array (${cpu_c}\times{cpu_t:,}$".replace(",", "{,}") + r") to 100, 400, 700 and")
@@ -233,9 +233,9 @@ def main() -> None:
     add(r"component count, sample count, iteration budget and hardware are")
     add(r"identical within a block, so no row is advantaged by problem size.")
     add(r"Within each device, rows are ordered by per-iteration cost and")
-    add(r"\texttt{amica} is set in bold wherever that ordering places it.")
+    add(r"\texttt{jamica} is set in bold wherever that ordering places it.")
     add(r"The two right-hand columns compare each decomposition with the")
-    add(r"\texttt{amica} JAX-CPU fit at the same budget, Hungarian-matched and")
+    add(r"\texttt{jamica} JAX-CPU fit at the same budget, Hungarian-matched and")
     add(r"sign-aligned.")
     add(r"\textbf{These are single runs, not repeated measurements}, and the")
     add(r"timing boundaries are not identical: the Python rows time the")
