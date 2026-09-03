@@ -2072,6 +2072,8 @@ def _figure4_integrity_stats(
     }
 
 
+# UNUSED. Superseded by make_figure4(); never called from main().
+# It also writes fig4_runtime_memory, so do not revive it without renaming.
 def _make_figure4_runtime_legacy() -> dict:
     set_style()
     bench = pd.read_csv(BENCH_505)
@@ -2927,7 +2929,7 @@ def make_figure4() -> dict:
     )
 
     display = {
-        "AMICA-Python (JAX-GPU)": "amica JAX-GPU",
+        "AMICA-Python (JAX-GPU)": "jamica JAX-GPU",
         "Picard": "Picard",
         "Infomax": "Ext. Infomax",
         "FastICA": "FastICA",
@@ -2946,7 +2948,7 @@ def make_figure4() -> dict:
     ax_a.text(
         0,
         1.015,
-        "H100 amica vs CPU solvers; stopping rules differ",
+        "H100 jamica vs CPU solvers; stopping rules differ",
         transform=ax_a.transAxes,
         fontsize=5.7,
         color=GREY,
@@ -3015,11 +3017,11 @@ def make_figure4() -> dict:
         "pAMICA 0.3.1",
     ]
     label_b = {
-        "amica JAX-GPU (chunked)": "amica JAX-GPU\n(chunked)",
-        "amica JAX-CPU": "amica JAX-CPU",
-        "Scott–Huberty amica-python 0.1.1": "Scott–Huberty\n0.1.1 CPU",
+        "amica JAX-GPU (chunked)": "jamica JAX-GPU\n(chunked)",
+        "amica JAX-CPU": "jamica JAX-CPU",
+        "Scott–Huberty amica-python 0.1.1": "AMICA-Python\n0.1.1 CPU",
         "Fortran AMICA 1.7": "Fortran AMICA\n1.7 CPU",
-        "PyAMICA 0.3.0": "PyAMICA\n0.3.0 CPU",
+        "PyAMICA 0.3.0": "pyamica\n0.3.0 CPU",
         "pAMICA 0.3.1": "pAMICA\n0.3.1 CPU",
     }
     color_b = {
@@ -3115,13 +3117,15 @@ def make_figure4() -> dict:
         bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.84, "pad": 0.8},
     )
     ax_c.set_xlim(0.74, 1.41)
-    ax_c.set_ylim(5.5, 20.8)
+    # Start at zero: the chunked series this panel reports sits at 2.4-4.1 GiB
+    # and the old 5.5 GiB floor clipped it out of view entirely.
+    ax_c.set_ylim(0.0, 20.8)
     ax_c.set_xlabel(r"Samples, $T$ ($\times10^6$)", fontsize=7.1)
     ax_c.set_ylabel("Peak process RSS (GiB)", fontsize=7.1)
     ax_c.legend(frameon=False, fontsize=6.2, loc="upper left", handlelength=1.6)
     finish_axes(ax_c, "both")
 
-    save_figure(fig, "fig4_computational_performance", png_dpi=600)
+    save_figure(fig, "fig4_runtime_memory", png_dpi=600)
 
     fixed_export = fixed_workload.drop(columns=["source_path"])
     paired_export = paired_memory.drop(
