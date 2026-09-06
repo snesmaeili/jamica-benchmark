@@ -140,13 +140,13 @@ if [ "$REINSTALL" = true ]; then
     # extras that do not exist here; pip warns and installs the base
     # dependencies only, leaving the venv without jax and without the
     # algorithm. Every job sourcing this file then failed on its first import.
-    if [ "$AMICA_GPU_JOB" = true ]; then
-        echo "GPU job detected, installing with [jax-gpu] extra..."
-        pip install -e "$REPO_ROOT[jax-gpu]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-    else
-        echo "CPU job detected, installing with [jax-cpu] extra..."
-        pip install -e "$REPO_ROOT[jax-cpu]"
-    fi
+    # One venv serves the CPU and the GPU jobs, so it always carries the CUDA
+    # plugin. A venv first built by a CPU job otherwise hands every later GPU job
+    # a CPU-only jaxlib: jax.devices() is [CpuDevice] on a node holding an H100
+    # and the fit runs to its wall clock on CPU without ever erroring. On a CPU
+    # node the plugin is inert (the runner pins JAX_PLATFORM_NAME=cpu).
+    echo "Installing the harness with the [jax-gpu] extra (CUDA plugin; inert on CPU nodes)..."
+    pip install -e "$REPO_ROOT[jax-gpu]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
     # Install additional benchmarking dependencies. Compute nodes on fir do
     # reach PyPI (verified HTTP/2 200 to pypi.org from fc30669), so this does
@@ -195,6 +195,21 @@ fi
 # repo has no jamica/ directory), so the release wheel in the venv stays the
 # algorithm under test.
 export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+
+# A GPU job must not run on a CPU-only venv (see the install block above). Fail
+# rather than rebuild: several array tasks starting together would otherwise
+# race to delete and recreate the same venv.
+if [ "$AMICA_GPU_JOB" = true ] && ! python -c "import jax_cuda12_plugin" >/dev/null 2>&1; then
+    echo "fir_env: FATAL — GPU job, but $VENV_PATH has no CUDA plugin (jax_cuda12_plugin); a fit here would silently run on CPU." >&2
+    echo "         Rebuild it: remove $VENV_PATH and resubmit the smoke job (fir), or SWEEP_GPU=1 bash sweep/build_sweep_venv.sh (Trillium-GPU)." >&2
+    [ "$_amica_had_u" = 1 ] && set -u
+    return 1 2>/dev/null || exit 1
+fi
+
+# MNE's sample dataset (the smoke and chunking fixtures) is cached on scratch,
+# not in the quota-limited home directory.
+export MNE_DATA="${MNE_DATA:-/scratch/$USER/mne_data}"
+mkdir -p "$MNE_DATA"
 
 # Assert the installed jamica release == pins.toml on EVERY job — fresh OR reused
 # venv — so any fir-sourcing paper run (v3 / comparators / heldout / scaling /

@@ -12,7 +12,9 @@
 #
 # Every sbatch script afterwards just does `source ../fir_env.sh`, which finds the
 # venv complete and only runs check_env.py verify.
-set -euo pipefail
+# `set -u` only after the module block: the Alliance profile reads SKIP_CC_CVMFS
+# while unset and Lmod reads variables a fresh shell does not define.
+set -eo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"      # benchmark/cc_benchmark/sweep
 CC="$(cd "$HERE/.." && pwd)"                              # benchmark/cc_benchmark
 REPO_ROOT="$(cd "$CC/../.." && pwd)"
@@ -31,9 +33,13 @@ if [ "${SWEEP_GPU:-0}" = "1" ]; then
     module load "${AMICA_CUDA_MODULE:-cuda/12.6}"
     module load "${AMICA_CUDNN_MODULE:-cudnn}" || echo "WARN: no cudnn module; jax ships its own cuDNN wheel" >&2
 fi
+set -u
 
 complete() {
-    [ -x "$VENV/bin/python" ] && "$VENV/bin/python" -m pip show -q jamica jax jaxlib mne mne-bids scikit-learn >/dev/null 2>&1
+    [ -x "$VENV/bin/python" ] || return 1
+    "$VENV/bin/python" -m pip show -q jamica jax jaxlib mne mne-bids scikit-learn >/dev/null 2>&1 || return 1
+    # a GPU cluster's venv must also hold the CUDA plugin, or the fits run on CPU
+    [ "${SWEEP_GPU:-0}" != "1" ] || "$VENV/bin/python" -m pip show -q jax-cuda12-plugin >/dev/null 2>&1
 }
 
 if complete; then
