@@ -51,6 +51,8 @@ Thumbs.db
 
 # Environment
 .env
+# per-user / per-site cluster configuration (copied from env.template)
+benchmark/cc_benchmark/env.local
 *.egg-info/
 
 # JAX cache

@@ -50,7 +50,7 @@ echo "=== provenance ==="
 hostname
 python -c "import sys; print('python', sys.version.split()[0])"
 python -c "import numpy, scipy, mne; print('numpy', numpy.__version__, '| scipy', scipy.__version__, '| mne', mne.__version__)"
-python -c "import jamica; print('amica  ->', amica.__file__)"
+python -c "import jamica; print('jamica ->', jamica.__version__, jamica.__file__)"
 echo "harness commit: $(git -C "$REPO" rev-parse HEAD)"
 echo "release commit: $(git -C "${AMICA_RELEASE:-/scratch/$USER/amica_release}" rev-parse HEAD)"
 echo

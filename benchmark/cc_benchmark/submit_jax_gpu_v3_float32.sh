@@ -11,15 +11,15 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --output=/scratch/sesma/amica_scaling_logs/%x-%A_%a.out
-#SBATCH --error=/scratch/sesma/amica_scaling_logs/%x-%A_%a.err
+#SBATCH --output=%x-%A_%a.out
+#SBATCH --error=%x-%A_%a.err
 set -o pipefail
 
-REPO=/scratch/sesma/amica-python
+REPO="$(cd "$SLURM_SUBMIT_DIR/../.." && pwd)"   # submitted from benchmark/cc_benchmark/
 cd "$REPO/benchmark/cc_benchmark"
 module purge
 source "$REPO/benchmark/cc_benchmark/fir_env.sh" || exit 1
-export AMICA_RESULTS_DIR=/scratch/sesma/amica_float32_v3
+export AMICA_RESULTS_DIR="${FLOAT32_RESULTS_DIR:-/scratch/$USER/jamica_v030/float32_v3}"
 export AMICA_COMPUTE_DIPOLES=0          # MIR/runtime/VRAM are the float32 question, not dipolarity
 mkdir -p "$AMICA_RESULTS_DIR"
 

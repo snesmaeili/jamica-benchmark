@@ -35,28 +35,20 @@ set -o pipefail
 cd "$SLURM_SUBMIT_DIR"          # benchmark/cc_benchmark/
 source fir_env.sh || exit 1               # modules (incl. cuda/cudnn) + .venv_fir + env.local
 
-# --- point the jamica runner at the current package -------------------------
-# The cluster's checkout predates both the package rename (amica_python ->
-# jamica) and the E-step blocking this job exists to measure: /scratch/$USER/
-# amica-python is the old repo on an old branch, and its venv has amica_python
-# installed editable from a third checkout entirely. Reinstalling would mean
-# pip on a login node, or rebuilding a working venv to run one benchmark.
-# implementation_perf.run_subprocess copies os.environ into every runner, so a
-# fresh clone on PYTHONPATH reaches them without touching the venv.
-#
-#   git clone -b perf/cpu-profiling git@github.com:snesmaeili/jamica.git /scratch/$USER/amica-blocked
-# AMICA_SRC is read by implementation_perf.py and applied to OUR runner only.
-# It must not go on PYTHONPATH globally: scott-huberty's package is imported as
-# `jamica` too, so a global PYTHONPATH shadows it with ours and its runner dies
-# with "cannot import name 'AMICA' from jamica".
-export AMICA_SRC="${AMICA_SRC:-/scratch/$USER/amica-blocked}"
-export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-/scratch/$USER/jamica/.venv_fir/bin/python}"
+# --- which jamica is measured -------------------------------------------------
+# Default: the `jamica` release installed in this checkout's .venv_fir by
+# fir_env.sh (pinned in pins.toml, [[venv]] fir). Set AMICA_SRC to a source
+# checkout to measure that instead: implementation_perf.py puts it on PYTHONPATH
+# for OUR runner only. It must not go on PYTHONPATH globally -- scott-huberty's
+# package is a different project (imported as `amica`), and a global path would
+# shadow whatever shares a module name with the checkout.
+REPO_ROOT="${REPO_ROOT:-$(cd "$SLURM_SUBMIT_DIR/../.." && pwd)}"
+export AMICA_PYTHON_VENV="${AMICA_PYTHON_VENV:-$REPO_ROOT/.venv_fir/bin/python}"
 
-# The orchestrator defaults the competitors venv to <benchmark repo>/.venv_competitors,
-# which does not exist on fir -- it lives under the amica-python tree. Left
-# unset, every competitor run dies instantly with "venv python missing" and the
-# task still exits 0, so the array looks like it succeeded while producing
-# nothing. The pAMICA venv, by contrast, IS where the default expects it.
+# The competitor venvs were built by setup_competitors.sh / setup_pamica.sh under
+# the older clones on fir; override per site. Left unset, every competitor run
+# dies instantly with "venv python missing" and the task still exits 0, so the
+# array looks like it succeeded while producing nothing.
 export COMPETITORS_VENV="${COMPETITORS_VENV:-/scratch/$USER/jamica/.venv_competitors/bin/python}"
 export PAMICA_VENV="${PAMICA_VENV:-/scratch/$USER/jamica-benchmark/.venv_pamica/bin/python}"
 for _v in "$AMICA_PYTHON_VENV" "$COMPETITORS_VENV" "$PAMICA_VENV"; do
@@ -65,53 +57,14 @@ done
 
 # installed == intended: assert each competitor venv holds the pinned commit
 # from pins.toml before the first fit. Catches silent upstream HEAD drift and a
-# clobbered install (e.g. the pyamica/pyAMICA name collision). Cheap; the amica
-# build itself is asserted by the AMICA_SRC check just below.
+# clobbered install (e.g. the pyamica/pyAMICA name collision).
 "$COMPETITORS_VENV" "$SLURM_SUBMIT_DIR/check_env.py" verify --venv competitors || exit 1
 "$PAMICA_VENV"      "$SLURM_SUBMIT_DIR/check_env.py" verify --venv pamica      || exit 1
 
-# Fail fast rather than benchmark the wrong code. The old checkout imports and
-# runs perfectly well; it would just quietly produce a curve for a different
-# implementation, which is the one failure mode this whole campaign cannot
-# survive. (Runs on the compute node -- importing jax is compute.)
-AMICA_SRC="$AMICA_SRC" PYTHONPATH="$AMICA_SRC" "$AMICA_PYTHON_VENV" - <<'PYCHECK' || exit 1
-import os, sys
-import jamica
-from jamica import AmicaConfig
-src = os.path.realpath(jamica.__file__)
-want = os.path.realpath(os.environ["AMICA_SRC"])
-if not src.startswith(want):
-    sys.exit(f"FATAL: imported jamica from {src}, expected under {want}")
-if AmicaConfig().chunk_size != "auto":
-    sys.exit("FATAL: this build predates E-step blocking (chunk_size default is not 'auto')")
-print(f"jamica OK: {src} | default chunk_size={AmicaConfig().chunk_size!r}")
-PYCHECK
-
-# installed == intended for the MEASURED amica: assert AMICA_SRC's HEAD is the
-# commit pinned in pins.toml, not merely "some E-step-blocked build" — a git pull
-# in that checkout otherwise silently changes what this campaign measures. Opt out
-# for dev iteration with AMICA_ALLOW_SRC_DRIFT=1.
-if [ "${AMICA_ALLOW_SRC_DRIFT:-0}" != "1" ]; then
-    _want_amica=$("$AMICA_PYTHON_VENV" "$SLURM_SUBMIT_DIR/check_env.py" pin --venv fir --name amica)
-    _got_amica=$(git -C "$AMICA_SRC" rev-parse HEAD 2>/dev/null)
-    if [ "$_got_amica" != "$_want_amica" ]; then
-        echo "FATAL: AMICA_SRC HEAD ${_got_amica:-<none>} != pinned amica ${_want_amica}" >&2
-        echo "       (set AMICA_ALLOW_SRC_DRIFT=1 to run a non-pinned checkout on purpose)" >&2
-        exit 1
-    fi
-    if ! git -C "$AMICA_SRC" diff --quiet HEAD 2>/dev/null; then
-        echo "FATAL: AMICA_SRC has uncommitted changes (dirty worktree at pinned HEAD)" >&2
-        echo "       (set AMICA_ALLOW_SRC_DRIFT=1 to measure a dirty checkout on purpose)" >&2
-        exit 1
-    fi
-    echo "amica pin OK: AMICA_SRC HEAD == ${_want_amica} (clean)"
-fi
-
-# Record which commit produced these numbers. The package is reached through a
-# source checkout, so a `git pull` in that directory silently changes what a
-# later job measures; a SHA in the log makes that auditable after the fact
-# instead of reconstructable only from memory.
-echo "amica-blocked commit: $(git -C "$AMICA_SRC" rev-parse --short HEAD 2>/dev/null) $(git -C "$AMICA_SRC" log -1 --format=%s 2>/dev/null)"
+# The measured jamica: the pinned release imported from the venv, or AMICA_SRC at
+# the pinned commit (assert_jamica.sh). Fails fast rather than benchmark the
+# wrong code, and prints the identity into the job log.
+source "$SLURM_SUBMIT_DIR/assert_jamica.sh" || exit 1
 # ---------------------------------------------------------------------------
 
 ITERS=(100 400 700 1000)
@@ -122,7 +75,7 @@ IT="${ITERS[$SLURM_ARRAY_TASK_ID]}"
 # ~31 min at 1000 iterations. The other three are well under a minute per run at
 # any of these caps. 3 h is deliberate headroom, because the archived GPU
 # timings are exactly what this job exists to distrust.
-export AMICA_COMPARATOR_RESULTS="${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/itercurve/gpu"
+export AMICA_COMPARATOR_RESULTS="${AMICA_MEM_RESULTS:-${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}}/itercurve/gpu"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
 echo "=== GPU iteration curve: max_iter=$IT ==="

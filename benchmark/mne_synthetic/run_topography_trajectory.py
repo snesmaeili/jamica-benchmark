@@ -247,8 +247,8 @@ def main() -> int:
     snap_root = args.out_dir / "snapshots"
     snap_root.mkdir(exist_ok=True)
 
-    from amica_python import Amica, AmicaConfig
-    import amica_python as amica_pkg
+    from jamica import Amica, AmicaConfig
+    import jamica as amica_pkg
 
     print(f"[trajectory] package={getattr(amica_pkg, '__file__', '?')}")
     print(f"[trajectory] max_iter={args.max_iter} writestep={args.writestep}")

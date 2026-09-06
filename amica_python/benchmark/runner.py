@@ -420,7 +420,7 @@ def _json_safe_array(value):
 
 
 def _amica_provenance() -> dict:
-    """Build/env identity of the measured `amica` package, for the `_run` block.
+    """Build/env identity of the measured `jamica` package, for the `_run` block.
 
     The native runner imports the *installed* `amica` (not the vendored
     `amica_python/` copy), and `AMICA_SRC` can redirect it to an arbitrary source
@@ -440,10 +440,23 @@ def _amica_provenance() -> dict:
         except Exception:
             pass
     amica: dict = {}
-    try:
-        amica["version"] = _im.version("amica")
-    except Exception:
-        pass
+    # The package under test is `jamica` (PyPI, v0.2.0 onwards); `amica` is the
+    # pre-rename distribution name still present in the legacy cluster venvs.
+    dist_name = None
+    for _cand in ("jamica", "amica"):
+        try:
+            amica["version"] = _im.version(_cand)
+            dist_name = _cand
+            break
+        except Exception:
+            continue
+    if dist_name:
+        amica["name"] = dist_name
+        try:
+            import importlib as _il
+            amica["file"] = getattr(_il.import_module(dist_name), "__file__", None)
+        except Exception:
+            pass
     # commit_source makes it explicit which build the commit describes: when
     # AMICA_SRC is set the measured code is that checkout (on PYTHONPATH), so its
     # git HEAD wins — but only if `git rev-parse` actually succeeds; a silent
@@ -470,7 +483,7 @@ def _amica_provenance() -> dict:
         except Exception as exc:
             amica["src_git_error"] = str(exc)[:200]
     try:
-        raw = _im.distribution("amica").read_text("direct_url.json")
+        raw = _im.distribution(dist_name or "jamica").read_text("direct_url.json")
         if raw:
             info = json.loads(raw)
             url = info.get("url")
@@ -492,7 +505,7 @@ def _amica_provenance() -> dict:
     return {
         "python": platform.python_version(),
         "executable": sys.executable,
-        "packages": {"amica": amica} if amica else {},
+        "packages": {(dist_name or "jamica"): amica} if amica else {},
         "stack": stack,
     }
 

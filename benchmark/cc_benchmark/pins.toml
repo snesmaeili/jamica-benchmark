@@ -87,11 +87,13 @@ packages = [
   { name = "pamica", module = "pamica", url = "https://github.com/sccn/pAMICA.git", commit = "0e6b7f517271bc9a583ced35b3435cc689c7999c" },
 ]
 
-# .venv_fir (Python 3.11) — the reference `amica` (the package under test).
-# This is a BASELINE install so a fresh env has the package and the probe can
-# assert `import amica`. At run time AMICA_SRC (a source checkout on PYTHONPATH,
-# the E-step-blocked branch) overrides it for OUR runner only, and PR-1's
-# provenance block records the commit actually measured.
+# .venv_fir (Python 3.11) — `jamica`, the package under test, pinned to the
+# PyPI release the manuscript reports (v0.3.0 = tag 1d1b227a41, Zenodo
+# 10.5281/zenodo.22150363). fir_env.sh installs it into the venv and probes
+# `import jamica`; check_env.py verify asserts the installed version on every
+# job. At run time AMICA_SRC (a source checkout on PYTHONPATH) can still
+# override it for OUR runner only, and the provenance block records the build
+# actually measured.
 [[venv]]
 name = "fir"
 python = "3.11"
@@ -103,5 +105,5 @@ python = "3.11"
 modules = { scipy-stack = "2026a" }
 stack = { jax = "0.10.2", jaxlib = "0.10.2", numpy = "2.4.2", scipy = "1.17.0", mne = "1.12.1", mne-bids = "0.19.0" }
 packages = [
-  { name = "amica", module = "amica", url = "https://github.com/snesmaeili/amica.git", commit = "92003b459a376622ddb7c4a69351de6b40ac8759", branch = "perf/cpu-profiling" },
+  { name = "jamica", module = "jamica", version = "0.3.0", url = "https://github.com/snesmaeili/jamica.git", commit = "1d1b227a41eb536ca0fed126f44d903b43d1c83c", tag = "v0.3.0" },
 ]

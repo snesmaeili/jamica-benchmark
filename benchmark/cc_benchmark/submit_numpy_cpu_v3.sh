@@ -3,7 +3,7 @@
 #SBATCH --account=def-kjerbi_cpu
 #SBATCH --partition=cpubase_bycore_b2
 #SBATCH --array=1-25
-#SBATCH --time=10:00:00
+#SBATCH --time=12:00:00
 #SBATCH --mem=40G
 #SBATCH --cpus-per-task=4
 #SBATCH --output=%x-%A_%a.out

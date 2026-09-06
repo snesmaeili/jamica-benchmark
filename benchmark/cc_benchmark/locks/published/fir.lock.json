@@ -1,10 +1,10 @@
 {
   "venv": "fir",
   "reference": true,
-  "source": "Our reproducible reference; a fresh fir_env.sh build reproduces this from pins.toml. Base versions (the +computecanada local segment is site-resolved). amica here is the baseline install; AMICA_SRC overrides it at run time (asserted == pin by the submit scripts).",
+  "source": "Reference lock for the jamica v0.3.0 re-run campaign (campaign/v030-rerun). A fresh fir_env.sh build reproduces this from pins.toml: the scientific stack from the Alliance wheelhouse / scipy-stack/2026a (base versions; the +computecanada local segment is site-resolved) and jamica from PyPI at the pinned release. Replace the stack block with the as-built locks/fir.lock.json after the campaign's first job if any version differs.",
   "python": "3.11",
   "packages": {
-    "amica": {"version": "0.1.0", "commit": "92003b459a376622ddb7c4a69351de6b40ac8759"}
+    "jamica": {"version": "0.3.0", "commit": "1d1b227a41eb536ca0fed126f44d903b43d1c83c", "tag": "v0.3.0", "source": "pypi"}
   },
   "stack": {
     "jax": "0.10.2",

@@ -3,20 +3,20 @@
 # ~O(T)) and vs chunk_size at full T (expected bounded ~O(B), confirming the O(B*M*C*K) claim).
 # AMICA-JAX on CPU, ds004505 sub-01, 60 iter (past the newt_start=50 Newton allocation).
 #SBATCH --job-name=amica_scaling_cpu
-#SBATCH --account=def-kjerbi
+#SBATCH --account=def-kjerbi_cpu
 #SBATCH --time=02:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=40G
-#SBATCH --output=/scratch/sesma/amica_scaling_logs/%x-%j.out
-#SBATCH --error=/scratch/sesma/amica_scaling_logs/%x-%j.err
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
 set -o pipefail
 
-REPO=/scratch/sesma/amica-python
+REPO="$(cd "$SLURM_SUBMIT_DIR/../.." && pwd)"   # submitted from benchmark/cc_benchmark/
 cd "$REPO/benchmark/cc_benchmark"
 module purge
 source "$REPO/benchmark/cc_benchmark/fir_env.sh" || exit 1
-export AMICA_RESULTS_DIR=/scratch/sesma/amica_scaling/cpu
+export AMICA_RESULTS_DIR="${AMICA_SCALING_DIR:-/scratch/$USER/jamica_v030/scaling}/cpu"
 mkdir -p "$AMICA_RESULTS_DIR"
 
 run() {

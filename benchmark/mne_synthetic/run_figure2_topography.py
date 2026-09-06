@@ -192,7 +192,7 @@ def _run_amica(
     *,
     max_iter: int,
 ) -> tuple[np.ndarray, np.ndarray, dict, dict]:
-    from amica_python import Amica, AmicaConfig
+    from jamica import Amica, AmicaConfig
 
     config = AmicaConfig(
         max_iter=max_iter,
@@ -205,7 +205,7 @@ def _run_amica(
         do_reject=False,
     )
     solver = Amica(config, random_state=FIT_SEED)
-    with _collect_logger("amica_python.solver") as log_messages:
+    with _collect_logger("jamica.solver") as log_messages:
         started = time.perf_counter()
         result = solver.fit(x_white, init_weights=w0)
         runtime = time.perf_counter() - started

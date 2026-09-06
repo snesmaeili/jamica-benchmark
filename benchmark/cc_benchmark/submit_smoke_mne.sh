@@ -17,6 +17,9 @@ python run_one_subject.py --subject 1 --dataset mne --backend numpy --device cpu
 
 # Gate: assert a valid v3 result JSON was written, so `submit_all.sh --dependency=afterok`
 # only releases the 25-subject arrays if the pipeline genuinely works.
+# The result must also carry the pinned jamica release in its provenance block,
+# so the very first artifact of a campaign proves which build produced it.
+export AMICA_PINNED_VERSION="$(python check_env.py pin --venv fir --name jamica --field version)"
 python - <<'PY'
 import glob, json, os
 d = os.environ.get("AMICA_RESULTS_DIR", ".")
@@ -24,5 +27,9 @@ js = sorted(glob.glob(os.path.join(d, "benchmark_sub-*hp*.json")))
 assert js, f"SMOKE FAIL: no benchmark JSON written under {d}"
 doc = json.load(open(js[-1]))
 assert doc.get("_schema_version") == "3.0", f"SMOKE FAIL: schema {doc.get('_schema_version')!r}"
-print("SMOKE OK:", js[-1])
+pkgs = ((doc.get("_run") or {}).get("provenance") or {}).get("packages") or {}
+got = (pkgs.get("jamica") or {}).get("version")
+want = os.environ.get("AMICA_PINNED_VERSION")
+assert got == want, f"SMOKE FAIL: result provenance says jamica {got!r}, pins.toml pins {want!r}"
+print("SMOKE OK:", js[-1], "| jamica", got, pkgs.get("jamica", {}).get("file", ""))
 PY

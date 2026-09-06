@@ -1,23 +1,28 @@
 #!/bin/bash
 #SBATCH --job-name=amica17_ds4505_parity
-#SBATCH --account=def-kjerbi
+#SBATCH --account=def-kjerbi_cpu
 #SBATCH --time=01:30:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --output=/scratch/sesma/fortran_parity/ds4505_sub01_%j.out
-#SBATCH --error=/scratch/sesma/fortran_parity/ds4505_sub01_%j.err
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
 set -euo pipefail
 
-REPO=/scratch/sesma/amica-python
-BIN=/project/rrg-kjerbi/sesma/amica_fortran_reference/amica17     # archived, validated
-WORK=/scratch/sesma/fortran_parity/ds004505_sub01
+# Submit FROM amica_python/benchmark/parity/ (three levels below the repo root).
+SUBMIT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+REPO="$(cd "$SUBMIT_DIR/../../.." && pwd)"
+BIN="${AMICA17_BIN:-/project/rrg-kjerbi/sesma/amica_fortran_reference/amica17}"     # archived, validated
+WORK="${AMICA_PARITY_WORK:-/scratch/$USER/jamica_v030/fortran_parity/ds004505_sub01}"
 ENVSH="$REPO/benchmark/cc_benchmark/fir_env.sh"
 
 echo "############ PHASE 0: prep ds004505 sub-01 → PCA-64 (amica-python env) ############"
 module purge
 source "$ENVSH"
-python -c "import sys, mne, numpy; print('py', sys.executable, 'mne', mne.__version__)"
+# amica_python is the vendored harness at the repo root, not a pip-installed
+# package in .venv_fir, so put the repo root on the path for the `python -m` calls.
+export PYTHONPATH="$REPO:${PYTHONPATH:-}"
+python -c "import sys, mne, numpy, jamica; print('py', sys.executable, 'mne', mne.__version__, '| jamica', jamica.__version__, jamica.__file__)"
 mkdir -p "$WORK"
 python -m amica_python.benchmark.parity.run_fortran_parity prep \
     --workdir "$WORK" --dataset ds004505 --subject 1 --k-pca 64 \
@@ -38,6 +43,7 @@ tail -3 "$WORK/out/out.txt" || true
 echo "############ PHASE 2: amica-python compare (amica-python env) ############"
 module purge
 source "$ENVSH"
+export PYTHONPATH="$REPO:${PYTHONPATH:-}"
 cd "$WORK"
 python -m amica_python.benchmark.parity.run_fortran_parity compare --workdir "$WORK"
 cp -f "$WORK/parity.json" "$WORK/parity_ds004505_sub01.json" 2>/dev/null || true

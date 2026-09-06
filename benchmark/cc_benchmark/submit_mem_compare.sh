@@ -45,7 +45,7 @@ done
 
 # CPU results in their own subdir (GPU job uses .../comparator/gpu) so the shared
 # amica_python_jax_chunked JSON never collides between the two jobs.
-export AMICA_COMPARATOR_RESULTS="${AMICA_COMPARATOR_RESULTS:-${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/comparator/cpu}"
+export AMICA_COMPARATOR_RESULTS="${AMICA_COMPARATOR_RESULTS:-${AMICA_MEM_RESULTS:-${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}}/comparator/cpu}"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
 # Fortran AMICA 1.7 is OPTIONAL — included only if you built amica17 and exported

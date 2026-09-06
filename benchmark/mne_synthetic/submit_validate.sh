@@ -23,7 +23,7 @@ echo "=== Step 1: import sanity check ==="
 python -c "import nibabel; print('  nibabel:', nibabel.__version__)"
 python -c "import picard; print('  python-picard imported OK')"
 python -c "import mne; print('  mne:', mne.__version__)"
-python -c "import amica_python; print('  amica_python imported OK')"
+python -c "import jamica; print('  jamica', jamica.__version__, 'imported OK from', jamica.__file__)"
 python -c "import jax; print('  jax:', jax.__version__); print('  devices:', jax.devices())"
 
 echo ""

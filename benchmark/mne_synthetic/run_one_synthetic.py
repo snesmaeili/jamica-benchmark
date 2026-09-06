@@ -51,9 +51,9 @@ def fit_amica(raw, *, backend: str, device: str, n_components: int,
     os.environ["AMICA_NO_JAX"] = "1" if backend == "numpy" else "0"
     os.environ["JAX_PLATFORM_NAME"] = "gpu" if device == "gpu" else "cpu"
     import importlib
-    import amica_python.backend
-    importlib.reload(amica_python.backend)
-    from amica_python import fit_ica
+    import jamica.backend
+    importlib.reload(jamica.backend)
+    from jamica import fit_ica
 
     t0 = time.perf_counter()
     ica = fit_ica(raw, n_components=int(n_components), max_iter=int(max_iter),

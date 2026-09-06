@@ -43,9 +43,10 @@ RESULT_KEYS = (
 # Distributions whose *identity* (version + VCS commit) we care about — the
 # implementations under comparison. Only those actually installed in the runner's
 # venv end up in the block, so this one list is safe to probe from every runner.
-# (scott-huberty and Sina's amica both install under the "amica" dist name, but
-# they live in separate venvs, so whichever is present is the right one.)
-_PROVENANCE_DISTS = ("pamica", "pyamica", "amica", "amica_python", "pyAMICA")
+# (Sina's package is `jamica` from v0.2.0; before the rename it and scott-huberty's
+# amica-python both installed under the "amica" dist name. They live in separate
+# venvs, so whichever is present is the right one.)
+_PROVENANCE_DISTS = ("jamica", "pamica", "pyamica", "amica", "amica_python", "pyAMICA")
 # Numerical stack: recorded so pamica-vs-pyamica time/memory deltas can be
 # decomposed from torch/jax/numpy version deltas (the two venvs carry different
 # torch builds). importlib.metadata.version() reports the installed version
@@ -102,7 +103,7 @@ def _apply_amica_src(packages: dict) -> None:
     src = os.environ.get("AMICA_SRC")
     if not src:
         return
-    key = next((k for k in packages if _canonical_dist_key(k) == "amica"), None)
+    key = next((k for k in packages if _canonical_dist_key(k) in ("jamica", "amica")), None)
     if key is None:
         return
     entry = packages[key]

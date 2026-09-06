@@ -10,15 +10,15 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --output=/scratch/sesma/amica_scaling_logs/%x-%j.out
-#SBATCH --error=/scratch/sesma/amica_scaling_logs/%x-%j.err
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
 set -o pipefail
 
-REPO=/scratch/sesma/amica-python
+REPO="$(cd "$SLURM_SUBMIT_DIR/../.." && pwd)"   # submitted from benchmark/cc_benchmark/
 cd "$REPO/benchmark/cc_benchmark"
 module purge
 source "$REPO/benchmark/cc_benchmark/fir_env.sh" || exit 1
-export AMICA_RESULTS_DIR=/scratch/sesma/amica_scaling/gpu
+export AMICA_RESULTS_DIR="${AMICA_SCALING_DIR:-/scratch/$USER/jamica_v030/scaling}/gpu"
 mkdir -p "$AMICA_RESULTS_DIR"
 
 run() {  # $1 = tag (subdir); rest = extra runner args

@@ -52,6 +52,7 @@ SLURM_ENV = (
 )
 
 PACKAGES = (
+    "jamica",
     "amica",
     "amica-python",
     "jax",

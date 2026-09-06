@@ -14,7 +14,7 @@ mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME" "$PIP_CACHE_DIR"
 module purge
 module load StdEnv/2023 || true
 module load python/3.11
-module load scipy-stack
+module load scipy-stack/2026a   # same pin as cc_benchmark/fir_env.sh (numpy 2.4.2 / scipy 1.17.0)
 
 # CUDA only needed for jax_gpu jobs but loading is harmless on CPU
 module load cuda/12.6
@@ -48,6 +48,9 @@ if [ ! -d "$VENV_PATH" ]; then
     exit 1
 fi
 source "$VENV_PATH/bin/activate"
+# The harness (amica_python/) is vendored at the repo root, not pip-installed
+# (pyproject: packages = []); see cc_benchmark/fir_env.sh. Append, never replace.
+export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
 # --- Ensure extra deps (nibabel for parcellation surface geometry, python-picard
 # for mne.preprocessing.ICA(method='picard')). Only install on compute nodes;

@@ -44,7 +44,7 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>&1 | head -1
 "$REPO_ROOT/.venv_competitors/bin/python" -c "import torch; print('competitors torch', torch.__version__, 'cuda', torch.cuda.is_available())" 2>&1 | tail -1
 
 # GPU results in their own subdir (CPU job uses .../comparator/cpu).
-export AMICA_COMPARATOR_RESULTS="${AMICA_COMPARATOR_RESULTS:-${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}/comparator/gpu}"
+export AMICA_COMPARATOR_RESULTS="${AMICA_COMPARATOR_RESULTS:-${AMICA_MEM_RESULTS:-${AMICA_RESULTS_DIR:-/scratch/$USER/amica_mem}}/comparator/gpu}"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
 # Optional NVML whole-GPU cross-check (needs pynvml in BOTH venvs); off by default.
