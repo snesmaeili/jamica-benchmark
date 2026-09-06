@@ -6,8 +6,12 @@ cross-implementation table and runtime figures comes from the scripts below.
 
 What gets compared: `jamica` (JAX, this package, full-batch and blocked),
 AMICA-Python (PyTorch), `pyamica`, `pAMICA`, and Fortran AMICA 1.7 where a
-binary is available. All of them fit the *same* PCA-projected array, from the
-same seed, for the same iteration budget, in one invocation.
+binary is available. All of them fit the *same* PCA-projected array, for the
+same iteration budget, in one invocation. Most receive the same seed; **`pyamica`
+and Fortran AMICA ignore it and use a fixed initialization** (they record
+`seed_respected: false`), so a seed sweep shows zero spread for those two — that
+is fixed init, not robustness. Each result also carries an `effective_config`
+block with the exact hyperparameters that runner used.
 
 ## Install
 
@@ -15,18 +19,26 @@ The implementations cannot share one environment — `pAMICA` needs Python ≥3.
 and a newer torch than the older packages were built against — so there are
 two or three:
 
-```bash
-# the package under test, as an editable install so local changes are measured
-git clone git@github.com:snesmaeili/jamica.git
-cd jamica && python -m venv .venv-dev && .venv-dev/bin/pip install -e ".[dev]"
+Do NOT `pip install pyamica pamica jamica torch` unpinned: the competitor URLs float
+to upstream HEAD, and scott-huberty's `amica-python` imports as `amica`, the name
+Sina's package used before it became `jamica` (v0.2.0 onwards). Use the pinned setup
+scripts, which install every implementation from `benchmark/cc_benchmark/pins.toml`
+(competitors by full commit SHA, the package under test by PyPI release) and then
+assert installed == intended:
 
-# the competitors
-python3.12 -m venv ~/amica-venvs/comp
-~/amica-venvs/comp/bin/pip install pyamica pamica jamica torch psutil scipy
+```bash
+cd benchmark/cc_benchmark
+bash setup_competitors.sh      # .venv_competitors: pyamica + scott-huberty (py3.11)
+bash setup_pamica.sh           # .venv_pamica:      sccn/pAMICA v0.3.1     (py3.12)
+bash setup_neuromechanist.sh   # .venv_neuromechanist: the pyAMICA snapshot (optional)
+# the package under test (`jamica`, pinned to a PyPI release in pins.toml) is
+# installed into the fir venv by fir_env.sh; AMICA_SRC can override it with a checkout.
 ```
 
-`benchmark/cc_benchmark/setup_competitors.sh` and `setup_pamica.sh` do this on
-a cluster, inside an allocation rather than on a login node.
+Run these on the **login node**: they are a one-time environment build (git+pip
+needs internet, which compute nodes lack), which is the supported use of pip on a
+login node — not inside a job allocation. The actual benchmark *fits* run in an
+allocation; only the env build is a login-node step.
 
 ## Datasets
 

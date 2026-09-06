@@ -19,8 +19,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import platform
+import re
 import sys
 import time
+from importlib import metadata as importlib_metadata
 from pathlib import Path
 
 import numpy as np
@@ -29,10 +33,146 @@ import psutil
 RESULT_KEYS = (
     "implementation", "n_components", "n_samples", "max_iter",
     "fit_time_s", "peak_rss_gb", "baseline_rss_gb", "delta_rss_gb",
-    "peak_vram_gb", "nvml_peak_vram_gb",
+    "peak_vram_gb", "nvml_peak_vram_gb", "nvml_post_init_gb",
     "ll_final", "ll_history", "W",
     "device", "dtype", "n_iter",
+    # Written automatically by write_result(); see stack_provenance().
+    "provenance",
 )
+
+# Distributions whose *identity* (version + VCS commit) we care about — the
+# implementations under comparison. Only those actually installed in the runner's
+# venv end up in the block, so this one list is safe to probe from every runner.
+# (scott-huberty and Sina's amica both install under the "amica" dist name, but
+# they live in separate venvs, so whichever is present is the right one.)
+_PROVENANCE_DISTS = ("pamica", "pyamica", "amica", "amica_python", "pyAMICA")
+# Numerical stack: recorded so pamica-vs-pyamica time/memory deltas can be
+# decomposed from torch/jax/numpy version deltas (the two venvs carry different
+# torch builds). importlib.metadata.version() reports the installed version
+# without importing the (heavy) package, so probing jax from the torch venv is
+# cheap and simply absent.
+_PROVENANCE_STACK = ("torch", "jax", "jaxlib", "numpy", "scipy", "mne")
+
+
+def _canonical_dist_key(name: str) -> str:
+    """PEP 503 normalized name: lowercase, runs of [-_.] collapsed to one '-'.
+
+    So "pyamica", "pyAMICA", "py_amica" and "py.amica" all map to "pyamica" —
+    the same rule pip uses to decide two dists are the same project.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def _dist_vcs(name: str) -> dict:
+    """PEP 610 source identity for a dist installed from git: {url, commit}.
+
+    pip records a `git+…` install's origin in the distribution's
+    `direct_url.json`: the source `url` (e.g. the github.com/owner/repo link,
+    which disambiguates which project a bare import name like `amica` came from)
+    and the resolved `vcs_info.commit_id`. A PyPI/wheel install has neither.
+    Returns only the keys that are present (empty dict for a non-VCS install).
+    """
+    try:
+        raw = importlib_metadata.distribution(name).read_text("direct_url.json")
+        if not raw:
+            return {}
+        info = json.loads(raw)
+        out: dict = {}
+        url = info.get("url")
+        if url:
+            # Strip pip's "git+" scheme prefix so the value reads as the plain
+            # repository URL (the resolved rev lives in vcs_info, recorded below).
+            out["url"] = url[4:] if url.startswith("git+") else url
+        commit = (info.get("vcs_info") or {}).get("commit_id")
+        if commit:
+            out["commit"] = commit
+        return out
+    except Exception:
+        return {}
+
+
+def _apply_amica_src(packages: dict) -> None:
+    """If AMICA_SRC is set, the measured `amica` is that source checkout on
+    PYTHONPATH — NOT the installed wheel importlib.metadata reports. Override the
+    amica entry's commit with the checkout's git HEAD (returncode-gated), mirroring
+    amica_python/benchmark/runner.py:_amica_provenance, so a comparator
+    amica_python_* result records the build it actually ran. No-op for every other
+    runner (no `amica` distribution entry).
+    """
+    src = os.environ.get("AMICA_SRC")
+    if not src:
+        return
+    key = next((k for k in packages if _canonical_dist_key(k) == "amica"), None)
+    if key is None:
+        return
+    entry = packages[key]
+    entry["src"] = src  # record AMICA_SRC was in effect even if git fails
+    try:
+        import subprocess
+        out = subprocess.run(["git", "-C", src, "rev-parse", "HEAD"],
+                             capture_output=True, text=True)
+        if out.returncode == 0 and out.stdout.strip():
+            entry["commit"] = out.stdout.strip()
+            entry["commit_source"] = "amica_src"
+        else:
+            entry["src_git_error"] = (out.stderr or "").strip()[:200] or f"rc={out.returncode}"
+    except Exception as exc:
+        entry["src_git_error"] = str(exc)[:200]
+
+
+def stack_provenance(*dist_names: str) -> dict:
+    """Self-describing build/env block for a result JSON.
+
+    For each installed distribution in `dist_names` (default: every competitor
+    implementation) records its `importlib.metadata.version()` and, for git
+    installs, the PEP 610 `direct_url.json` commit SHA. Also records the Python
+    version, interpreter path, and the numerical-stack versions
+    (torch/jax/jaxlib/numpy/scipy/mne) that are installed. Wired into
+    write_result() so every runner emits it uniformly and for free.
+
+    Distributions are keyed by their canonical metadata name and de-duplicated:
+    importlib.metadata normalizes names (PEP 503), so probing both "pyamica" and
+    "pyAMICA" would otherwise report the same installed dist twice.
+    """
+    names = dist_names or _PROVENANCE_DISTS
+    packages: dict = {}
+    seen: set = set()
+    for name in names:
+        # The whole per-name body is guarded: provenance must never be able to
+        # crash a result write that would otherwise have succeeded, even on a
+        # distribution with malformed/missing metadata.
+        try:
+            dist = importlib_metadata.distribution(name)
+            canonical = (dist.metadata["Name"] or name)
+            norm = _canonical_dist_key(canonical)
+            if norm in seen:
+                continue  # same dist reached via a differently-cased probe name
+            seen.add(norm)
+            entry: dict = {"version": dist.version}
+            entry.update(_dist_vcs(name))  # url + commit, when git-installed
+            packages[canonical] = entry
+        except Exception:
+            continue  # not installed, or unreadable metadata
+    _apply_amica_src(packages)  # measured amica == AMICA_SRC checkout, not the wheel
+    stack: dict = {}
+    for name in _PROVENANCE_STACK:
+        try:
+            stack[name] = importlib_metadata.version(name)
+        except Exception:
+            pass  # not importable in this venv
+    block: dict = {
+        "python": platform.python_version(),
+        "executable": sys.executable,
+        "packages": packages,
+        "stack": stack,
+    }
+    # Record when a pin-enforcement opt-out was in effect, so a non-pinned run is
+    # distinguishable from a pinned one in the artifact itself (not just the log).
+    flags = {k: os.environ[k] for k in ("AMICA_ALLOW_SRC_DRIFT", "AMICA_SKIP_PIN_CHECK")
+             if os.environ.get(k)}
+    if flags:
+        block["env_flags"] = flags
+    return block
 
 
 def parse_runner_args() -> tuple[argparse.Namespace, dict]:
@@ -92,6 +232,42 @@ def delta_rss_gb(baseline: float) -> float:
     return peak_rss_gb() - baseline
 
 
+def cgroup_peak_gb() -> "float | None":
+    """Best-effort PEAK memory of this job's cgroup (GiB), across the whole process tree.
+
+    ru_maxrss is per-process and folds in the interpreter/import floor; the Slurm job cgroup's
+    memory peak is a cleaner "memory this cell needed" figure (still includes any preprocessing in
+    the cell, but that's the real footprint). cgroup v2: memory.peak; v1: memory.max_usage_in_bytes.
+    Returns None if the cgroup files aren't readable (e.g. off-cluster).
+    """
+    try:
+        rel = ""
+        try:
+            with open("/proc/self/cgroup") as f:
+                # v2 line looks like "0::/slurm/uid_.../job_.../step_.../task_0"
+                for line in f:
+                    parts = line.strip().split(":")
+                    if parts[0] == "0":
+                        rel = parts[-1]
+                        break
+        except Exception:
+            pass
+        candidates = []
+        if rel:
+            candidates.append(f"/sys/fs/cgroup{rel}/memory.peak")
+        candidates += ["/sys/fs/cgroup/memory.peak",                       # v2 (own cgroup)
+                       "/sys/fs/cgroup/memory/memory.max_usage_in_bytes"]  # v1 fallback
+        for path in candidates:
+            try:
+                with open(path) as fh:
+                    return int(fh.read().strip()) / 1024 ** 3
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
+
+
 def start_nvml_sampler(enabled: bool, gpu_index: int = 0, interval_s: float = 0.05):
     """Start a background sampler of whole-GPU 'used' VRAM via NVML; return a handle.
 
@@ -143,7 +319,37 @@ def stop_nvml_sampler(handle) -> float | None:
         return None
 
 
+def nvml_used_gb(enabled: bool, gpu_index: int = 0) -> "float | None":
+    """One-shot read of whole-GPU 'used' VRAM (GiB) via NVML.
+
+    Framework-neutral point read, used to bracket the post-init memory FLOOR: call it
+    once right after the framework + CUDA context are initialised (a trivial GPU op has
+    run) but BEFORE the model/data are allocated. The gap between this floor and the
+    sampler's peak is everything the framework's own allocator counter also misses
+    (reserved pool, lazily-loaded cuBLAS/cuDNN, compiled executables) plus the live
+    tensors. Self-contained init/shutdown so it is safe to call before start_nvml_sampler.
+    Returns None if disabled or pynvml/GPU unavailable.
+    """
+    if not enabled:
+        return None
+    try:
+        import pynvml
+        pynvml.nvmlInit()
+        try:
+            used = pynvml.nvmlDeviceGetMemoryInfo(
+                pynvml.nvmlDeviceGetHandleByIndex(gpu_index)).used
+            return float(used) / 1024 ** 3
+        finally:
+            pynvml.nvmlShutdown()
+    except Exception:
+        return None
+
+
 def write_result(output_path: str, result: dict) -> None:
+    # Version-stamp every result at this single choke point so all six runners
+    # emit a uniform, auditable provenance block for free. setdefault() lets a
+    # runner override it deliberately, but nothing does today.
+    result.setdefault("provenance", stack_provenance())
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(result, f, indent=2)

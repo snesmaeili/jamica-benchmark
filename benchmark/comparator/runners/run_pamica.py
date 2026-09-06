@@ -55,9 +55,11 @@ from _common import (
     baseline_rss_gb,
     load_data,
     parse_runner_args,
+    cgroup_peak_gb,
     peak_rss_gb,
     start_nvml_sampler,
     stop_nvml_sampler,
+    nvml_used_gb,
     write_result,
 )
 
@@ -72,9 +74,23 @@ def main() -> None:
 
     device = os.environ.get("TORCH_DEVICE", "cpu")
 
+    # NVML post-init floor (harness-only): force the CUDA context, read whole-GPU used BEFORE
+    # the model/data are on device. peak - floor = pool + lazily-loaded libs + live tensors.
+    _use_nvml = os.environ.get("AMICA_NVML_CROSSCHECK", "0") == "1" and device == "cuda"
+    nvml_post_init_gb = None
+    if _use_nvml and torch.cuda.is_available():
+        torch.zeros(1, device="cuda")
+        torch.cuda.synchronize()
+        nvml_post_init_gb = nvml_used_gb(True)
+
+    # Iteration-matched mode: pAMICA v0.3.1 has the FULL stop family (use_min_dll, use_grad_norm,
+    # min_dll, min_nd, minlrate) -- disable all so the fit runs the full max_iter. (minlrate alone
+    # left a min_dll stop firing at ~495 iters -- caught by the campaign, not the 200-iter smoke.)
+    _disable_es = os.environ.get("AMICA_DISABLE_EARLYSTOP", "0") == "1"
+    _es_kw = (dict(use_min_dll=False, use_grad_norm=False, minlrate=0.0, min_nd=0.0)
+              if _disable_es else {})   # forwarded via fit(**kwargs) -> AMICATorchNG
     model = AMICA(n_models=1, n_mix=cfg.get("n_mix", 3), device=device, verbose=False)
 
-    _use_nvml = os.environ.get("AMICA_NVML_CROSSCHECK", "0") == "1" and device == "cuda"
     _nvml = start_nvml_sampler(_use_nvml)
     if device == "cuda" and torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
@@ -102,15 +118,22 @@ def main() -> None:
         doscaling=cfg.get("doscaling", True),
         seed=cfg.get("seed", 0),
         dtype=torch.float64,
+        # Optional chunk-size override for the chunk-size study (unset -> pamica's
+        # own default). Forwarded to AMICATorchNG. See results/xperf_chunksize/.
+        **({"block_size": int(os.environ["AMICA_PAMICA_BLOCK_SIZE"])}
+           if os.environ.get("AMICA_PAMICA_BLOCK_SIZE") else {}),
+        **_es_kw,   # iteration-matched: minlrate=0.0 disables the lrate_floor stop
     )
     elapsed = time.perf_counter() - t0
 
     # Torch device peak: bytes in live tensors (max_memory_allocated = true demand, NOT the
     # cached/reserved pool). The caching allocator stays ON so this counter is tracked.
     peak_vram_gb = None
+    peak_vram_reserved_gb = None
     if device == "cuda" and torch.cuda.is_available():
         torch.cuda.synchronize()
         peak_vram_gb = torch.cuda.max_memory_allocated() / 1024 ** 3
+        peak_vram_reserved_gb = torch.cuda.max_memory_reserved() / 1024 ** 3
     nvml_peak_vram_gb = stop_nvml_sampler(_nvml)
 
     ll = [float(v) for v in np.asarray(model.ll_history_, dtype=float).ravel()]
@@ -159,8 +182,12 @@ def main() -> None:
         "peak_rss_gb": peak,
         "baseline_rss_gb": baseline,
         "delta_rss_gb": peak - baseline,
+        "cgroup_peak_gb": cgroup_peak_gb(),
         "peak_vram_gb": peak_vram_gb,
+        "peak_vram_reserved_gb": peak_vram_reserved_gb,
         "nvml_peak_vram_gb": nvml_peak_vram_gb,
+        "nvml_post_init_gb": nvml_post_init_gb,
+        "earlystop_disabled": _disable_es,
         "ll_final": ll_final,
         "ll_history": ll,
         "W": W.tolist(),
@@ -174,6 +201,22 @@ def main() -> None:
         "stop_reason": stop_reason,
         "converged_before_cap": converged_before_cap,
         "pamica_version": _pamica_version(),
+        # pamica DOES take the seed and re-seeds per sweep.
+        "seed_respected": True,
+        "requested_seed": cfg.get("seed", 0),
+        # Effective hyperparameters. NB: unlike pyamica/scott's frozen literals,
+        # pamica's constants are cfg.get(...)-overridable — a --config that sets
+        # e.g. invsigmin changes pamica only. Serialized so that asymmetry is
+        # visible in the row rather than implicit in the source.
+        "effective_config": {
+            "n_mix": cfg.get("n_mix", 3), "max_iter": cfg["max_iter"],
+            "lrate": cfg.get("lrate", 0.1), "do_newton": cfg.get("do_newton", True),
+            "newt_start": cfg.get("newt_start", 20), "newt_ramp": cfg.get("newt_ramp", 10),
+            "rho0": cfg.get("rho0", 1.5), "minrho": cfg.get("minrho", 1.0),
+            "maxrho": cfg.get("maxrho", 2.0), "rholrate": cfg.get("rholrate", 0.05),
+            "invsigmin": cfg.get("invsigmin", 1e-4), "invsigmax": cfg.get("invsigmax", 1000.0),
+            "doscaling": cfg.get("doscaling", True), "seed": cfg.get("seed", 0),
+        },
     }
     write_result(args.output, out)
 

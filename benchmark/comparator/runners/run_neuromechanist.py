@@ -13,7 +13,7 @@ import time
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _common import baseline_rss_gb, load_data, parse_runner_args, peak_rss_gb, write_result
+from _common import baseline_rss_gb, cgroup_peak_gb, load_data, parse_runner_args, peak_rss_gb, write_result
 
 
 def main() -> None:
@@ -61,6 +61,7 @@ def main() -> None:
         "peak_rss_gb": peak,
         "baseline_rss_gb": baseline,
         "delta_rss_gb": peak - baseline,
+        "cgroup_peak_gb": cgroup_peak_gb(),
         "peak_vram_gb": None,
         "ll_final": float(ll[-1]) if ll else float("nan"),
         "ll_history": ll,
@@ -68,6 +69,18 @@ def main() -> None:
         "device": "cpu",
         "dtype": "float64",
         "n_iter": int(len(ll)),
+        # neuromechanist's pyAMICA takes seed=, so the seed is honored per sweep.
+        "seed_respected": True,
+        "requested_seed": cfg.get("seed", 0),
+        "effective_config": {
+            "num_models": 1, "num_mix": cfg.get("n_mix", 3), "num_comps": n_comp,
+            "max_iter": cfg["max_iter"], "lrate": cfg.get("lrate", 0.1),
+            "do_newton": cfg.get("do_newton", True), "newt_start": 50,
+            "do_sphere": False, "do_mean": False,
+            # perf-relevant switches this runner also freezes (were omitted):
+            "do_opt_block": False, "do_history": False, "do_reject": False,
+            "share_comps": False, "seed": cfg.get("seed", 0),
+        },
     }
     write_result(args.output, out)
 

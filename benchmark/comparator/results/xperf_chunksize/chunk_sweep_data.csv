@@ -1,0 +1,276 @@
+dataset,impl,knob,chunk,value,unit,note
+gpu_fit_s_median,jamica,chunk_size,1024,775.3,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,jamica,chunk_size,1024,5.31,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,jamica,chunk_size,4096,227.8,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,jamica,chunk_size,4096,5.37,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,jamica,chunk_size,16384,97.0,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,jamica,chunk_size,16384,5.37,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,jamica,chunk_size,65536,70.8,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,jamica,chunk_size,65536,5.37,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,jamica,chunk_size,262144,61.0,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,jamica,chunk_size,262144,5.37,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,jamica,chunk_size,524288,59.9,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,jamica,chunk_size,524288,13.37,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,jamica,chunk_size,1048576,58.8,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,jamica,chunk_size,1048576,13.37,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_p25,jamica,chunk_size,1024,743,s,
+gpu_fit_s_p75,jamica,chunk_size,1024,788,s,
+gpu_fit_s_p25,jamica,chunk_size,4096,221,s,
+gpu_fit_s_p75,jamica,chunk_size,4096,232,s,
+gpu_fit_s_p25,jamica,chunk_size,16384,96,s,
+gpu_fit_s_p75,jamica,chunk_size,16384,99,s,
+gpu_fit_s_p25,jamica,chunk_size,65536,69,s,
+gpu_fit_s_p75,jamica,chunk_size,65536,73,s,
+gpu_fit_s_p25,jamica,chunk_size,262144,58,s,
+gpu_fit_s_p75,jamica,chunk_size,262144,63,s,
+gpu_fit_s_p25,jamica,chunk_size,524288,59.0,s,
+gpu_fit_s_p75,jamica,chunk_size,524288,61.3,s,
+gpu_fit_s_p25,jamica,chunk_size,1048576,58.0,s,
+gpu_fit_s_p75,jamica,chunk_size,1048576,59.9,s,
+gpu_fit_s_median,pamica,block_size,1024,4155.5,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pamica,block_size,1024,1.82,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pamica,block_size,4096,1058.0,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pamica,block_size,4096,1.89,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pamica,block_size,16384,392.7,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pamica,block_size,16384,2.13,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pamica,block_size,65536,320.3,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pamica,block_size,65536,3.08,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pamica,block_size,262144,262.4,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pamica,block_size,262144,6.54,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pamica,block_size,524288,250.2,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pamica,block_size,524288,10.59,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pamica,block_size,1048576,247.7,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pamica,block_size,1048576,19.33,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_p25,pamica,block_size,1024,3902,s,
+gpu_fit_s_p75,pamica,block_size,1024,4250,s,
+gpu_fit_s_p25,pamica,block_size,4096,1008,s,
+gpu_fit_s_p75,pamica,block_size,4096,1079,s,
+gpu_fit_s_p25,pamica,block_size,16384,369,s,
+gpu_fit_s_p75,pamica,block_size,16384,404,s,
+gpu_fit_s_p25,pamica,block_size,65536,313,s,
+gpu_fit_s_p75,pamica,block_size,65536,330,s,
+gpu_fit_s_p25,pamica,block_size,262144,258,s,
+gpu_fit_s_p75,pamica,block_size,262144,267,s,
+gpu_fit_s_p25,pamica,block_size,524288,237.5,s,
+gpu_fit_s_p75,pamica,block_size,524288,258.3,s,
+gpu_fit_s_p25,pamica,block_size,1048576,243.5,s,
+gpu_fit_s_p75,pamica,block_size,1048576,252.9,s,
+gpu_fit_s_median,pyamica,chunk_t,1024,2417.7,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pyamica,chunk_t,1024,3.05,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pyamica,chunk_t,4096,615.3,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pyamica,chunk_t,4096,3.05,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pyamica,chunk_t,16384,366.2,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pyamica,chunk_t,16384,3.05,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pyamica,chunk_t,65536,338.9,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pyamica,chunk_t,65536,4.46,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pyamica,chunk_t,262144,295.7,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pyamica,chunk_t,262144,10.92,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pyamica,chunk_t,524288,286.2,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pyamica,chunk_t,524288,19.05,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,pyamica,chunk_t,1048576,283.7,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,pyamica,chunk_t,1048576,28.06,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_p25,pyamica,chunk_t,1024,2308,s,
+gpu_fit_s_p75,pyamica,chunk_t,1024,2450,s,
+gpu_fit_s_p25,pyamica,chunk_t,4096,576,s,
+gpu_fit_s_p75,pyamica,chunk_t,4096,626,s,
+gpu_fit_s_p25,pyamica,chunk_t,16384,348,s,
+gpu_fit_s_p75,pyamica,chunk_t,16384,378,s,
+gpu_fit_s_p25,pyamica,chunk_t,65536,323,s,
+gpu_fit_s_p75,pyamica,chunk_t,65536,348,s,
+gpu_fit_s_p25,pyamica,chunk_t,262144,278,s,
+gpu_fit_s_p75,pyamica,chunk_t,262144,301,s,
+gpu_fit_s_p25,pyamica,chunk_t,524288,268.4,s,
+gpu_fit_s_p75,pyamica,chunk_t,524288,293.2,s,
+gpu_fit_s_p25,pyamica,chunk_t,1048576,280.1,s,
+gpu_fit_s_p75,pyamica,chunk_t,1048576,289.3,s,
+gpu_fit_s_median,amica_python,batch_size,1024,5646.0,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,amica_python,batch_size,1024,1.82,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,amica_python,batch_size,4096,1410.0,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,amica_python,batch_size,4096,1.88,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,amica_python,batch_size,16384,459.1,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,amica_python,batch_size,16384,2.09,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,amica_python,batch_size,65536,303.3,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,amica_python,batch_size,65536,2.83,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,amica_python,batch_size,262144,230.3,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,amica_python,batch_size,262144,4.89,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,amica_python,batch_size,524288,211.5,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,amica_python,batch_size,524288,7.57,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_median,amica_python,batch_size,1048576,209.0,s,"GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"
+gpu_vram_gib_nvml,amica_python,batch_size,1048576,13.32,GiB,"NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"
+gpu_fit_s_p25,amica_python,batch_size,1024,5443,s,
+gpu_fit_s_p75,amica_python,batch_size,1024,5832,s,
+gpu_fit_s_p25,amica_python,batch_size,4096,1365,s,
+gpu_fit_s_p75,amica_python,batch_size,4096,1479,s,
+gpu_fit_s_p25,amica_python,batch_size,16384,441,s,
+gpu_fit_s_p75,amica_python,batch_size,16384,475,s,
+gpu_fit_s_p25,amica_python,batch_size,65536,290,s,
+gpu_fit_s_p75,amica_python,batch_size,65536,315,s,
+gpu_fit_s_p25,amica_python,batch_size,262144,220,s,
+gpu_fit_s_p75,amica_python,batch_size,262144,242,s,
+gpu_fit_s_p25,amica_python,batch_size,524288,203.9,s,
+gpu_fit_s_p75,amica_python,batch_size,524288,217.2,s,
+gpu_fit_s_p25,amica_python,batch_size,1048576,204.6,s,
+gpu_fit_s_p75,amica_python,batch_size,1048576,211.6,s,
+gpu_ll_final_median,jamica,chunk_size,262144,-1.1005,nats,at chunk 262144
+gpu_s_per_iter_median,jamica,chunk_size,262144,0.0203,s/iter,at chunk 262144
+gpu_n_iter_min,jamica,chunk_size,262144,3000,iters,at chunk 262144
+gpu_n_iter_median,jamica,chunk_size,262144,3000,iters,at chunk 262144
+gpu_n_iter_max,jamica,chunk_size,262144,3000,iters,at chunk 262144
+gpu_ll_final_median,amica_python,batch_size,262144,-1.1002,nats,at chunk 262144
+gpu_s_per_iter_median,amica_python,batch_size,262144,0.0768,s/iter,at chunk 262144
+gpu_n_iter_min,amica_python,batch_size,262144,3000,iters,at chunk 262144
+gpu_n_iter_median,amica_python,batch_size,262144,3000,iters,at chunk 262144
+gpu_n_iter_max,amica_python,batch_size,262144,3000,iters,at chunk 262144
+gpu_ll_final_median,pamica,block_size,262144,-1.1107,nats,at chunk 262144
+gpu_s_per_iter_median,pamica,block_size,262144,0.0875,s/iter,at chunk 262144
+gpu_n_iter_min,pamica,block_size,262144,3000,iters,at chunk 262144
+gpu_n_iter_median,pamica,block_size,262144,3000,iters,at chunk 262144
+gpu_n_iter_max,pamica,block_size,262144,3000,iters,at chunk 262144
+gpu_ll_final_median,pyamica,chunk_t,262144,-1.0995,nats,at chunk 262144
+gpu_s_per_iter_median,pyamica,chunk_t,262144,0.0986,s/iter,at chunk 262144
+gpu_n_iter_min,pyamica,chunk_t,262144,3000,iters,at chunk 262144
+gpu_n_iter_median,pyamica,chunk_t,262144,3000,iters,at chunk 262144
+gpu_n_iter_max,pyamica,chunk_t,262144,3000,iters,at chunk 262144
+cpu_rss_gib_median,jamica,chunk_size,1024,2.35,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,jamica,chunk_size,4096,2.34,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,jamica,chunk_size,16384,2.85,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,jamica,chunk_size,65536,6.26,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,jamica,chunk_size,262144,10.34,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,jamica,chunk_size,524288,21.42,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,jamica,chunk_size,1048576,24.29,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_fit_s_bysubj_median,jamica,chunk_size,1024,1269,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,jamica,chunk_size,4096,976,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,jamica,chunk_size,16384,1277,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,jamica,chunk_size,65536,938,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,jamica,chunk_size,262144,753,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,jamica,chunk_size,524288,588,s,"by-subject median, n_subjects=24"
+cpu_fit_s_bysubj_median,jamica,chunk_size,1048576,785,s,"by-subject median, n_subjects=20"
+cpu_fit_s_bysubj_p25,jamica,chunk_size,1024,1168,s,
+cpu_fit_s_bysubj_p75,jamica,chunk_size,1024,1326,s,
+cpu_fit_s_bysubj_p25,jamica,chunk_size,4096,946,s,
+cpu_fit_s_bysubj_p75,jamica,chunk_size,4096,1009,s,
+cpu_fit_s_bysubj_p25,jamica,chunk_size,16384,1099,s,
+cpu_fit_s_bysubj_p75,jamica,chunk_size,16384,1438,s,
+cpu_fit_s_bysubj_p25,jamica,chunk_size,65536,877,s,
+cpu_fit_s_bysubj_p75,jamica,chunk_size,65536,1206,s,
+cpu_fit_s_bysubj_p25,jamica,chunk_size,262144,730,s,
+cpu_fit_s_bysubj_p75,jamica,chunk_size,262144,792,s,
+cpu_fit_s_bysubj_p25,jamica,chunk_size,524288,574,s,
+cpu_fit_s_bysubj_p75,jamica,chunk_size,524288,603,s,
+cpu_fit_s_bysubj_p25,jamica,chunk_size,1048576,778,s,
+cpu_fit_s_bysubj_p75,jamica,chunk_size,1048576,796,s,
+cpu_rss_gib_median,pamica,block_size,1024,1.63,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pamica,block_size,4096,1.74,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pamica,block_size,16384,2.25,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pamica,block_size,65536,2.76,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pamica,block_size,262144,6.08,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pamica,block_size,524288,10.43,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pamica,block_size,1048576,19.18,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_fit_s_bysubj_median,pamica,block_size,1024,7400,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pamica,block_size,4096,2806,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pamica,block_size,16384,1527,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pamica,block_size,65536,2064,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pamica,block_size,262144,1536,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pamica,block_size,524288,964,s,"by-subject median, n_subjects=23"
+cpu_fit_s_bysubj_median,pamica,block_size,1048576,649,s,"by-subject median, n_subjects=20"
+cpu_fit_s_bysubj_p25,pamica,block_size,1024,6892,s,
+cpu_fit_s_bysubj_p75,pamica,block_size,1024,8042,s,
+cpu_fit_s_bysubj_p25,pamica,block_size,4096,2718,s,
+cpu_fit_s_bysubj_p75,pamica,block_size,4096,3015,s,
+cpu_fit_s_bysubj_p25,pamica,block_size,16384,1309,s,
+cpu_fit_s_bysubj_p75,pamica,block_size,16384,1815,s,
+cpu_fit_s_bysubj_p25,pamica,block_size,65536,1917,s,
+cpu_fit_s_bysubj_p75,pamica,block_size,65536,2158,s,
+cpu_fit_s_bysubj_p25,pamica,block_size,262144,1402,s,
+cpu_fit_s_bysubj_p75,pamica,block_size,262144,1684,s,
+cpu_fit_s_bysubj_p25,pamica,block_size,524288,874,s,
+cpu_fit_s_bysubj_p75,pamica,block_size,524288,1064,s,
+cpu_fit_s_bysubj_p25,pamica,block_size,1048576,636,s,
+cpu_fit_s_bysubj_p75,pamica,block_size,1048576,679,s,
+cpu_rss_gib_median,pyamica,chunk_t,1024,2.05,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pyamica,chunk_t,4096,2.05,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pyamica,chunk_t,16384,2.8,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pyamica,chunk_t,65536,3.84,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pyamica,chunk_t,262144,9.59,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pyamica,chunk_t,524288,17.44,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,pyamica,chunk_t,1048576,27.15,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_fit_s_bysubj_median,pyamica,chunk_t,1024,3099,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pyamica,chunk_t,4096,1921,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pyamica,chunk_t,16384,1211,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pyamica,chunk_t,65536,2409,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pyamica,chunk_t,262144,1328,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,pyamica,chunk_t,524288,829,s,"by-subject median, n_subjects=24"
+cpu_fit_s_bysubj_median,pyamica,chunk_t,1048576,667,s,"by-subject median, n_subjects=19"
+cpu_fit_s_bysubj_p25,pyamica,chunk_t,1024,2408,s,
+cpu_fit_s_bysubj_p75,pyamica,chunk_t,1024,3622,s,
+cpu_fit_s_bysubj_p25,pyamica,chunk_t,4096,1850,s,
+cpu_fit_s_bysubj_p75,pyamica,chunk_t,4096,2072,s,
+cpu_fit_s_bysubj_p25,pyamica,chunk_t,16384,1153,s,
+cpu_fit_s_bysubj_p75,pyamica,chunk_t,16384,1278,s,
+cpu_fit_s_bysubj_p25,pyamica,chunk_t,65536,2223,s,
+cpu_fit_s_bysubj_p75,pyamica,chunk_t,65536,2510,s,
+cpu_fit_s_bysubj_p25,pyamica,chunk_t,262144,1272,s,
+cpu_fit_s_bysubj_p75,pyamica,chunk_t,262144,1464,s,
+cpu_fit_s_bysubj_p25,pyamica,chunk_t,524288,783,s,
+cpu_fit_s_bysubj_p75,pyamica,chunk_t,524288,880,s,
+cpu_fit_s_bysubj_p25,pyamica,chunk_t,1048576,649,s,
+cpu_fit_s_bysubj_p75,pyamica,chunk_t,1048576,701,s,
+cpu_rss_gib_median,amica_python,batch_size,1024,2.13,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,amica_python,batch_size,4096,2.14,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,amica_python,batch_size,16384,2.13,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,amica_python,batch_size,65536,2.36,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,amica_python,batch_size,262144,4.25,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,amica_python,batch_size,524288,6.83,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,amica_python,batch_size,1048576,11.92,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_fit_s_bysubj_median,amica_python,batch_size,1024,5027,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,amica_python,batch_size,4096,1710,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,amica_python,batch_size,16384,1295,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,amica_python,batch_size,65536,1084,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,amica_python,batch_size,262144,1053,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,amica_python,batch_size,524288,895,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,amica_python,batch_size,1048576,655,s,"by-subject median, n_subjects=20"
+cpu_fit_s_bysubj_p25,amica_python,batch_size,1024,4351,s,
+cpu_fit_s_bysubj_p75,amica_python,batch_size,1024,6011,s,
+cpu_fit_s_bysubj_p25,amica_python,batch_size,4096,1522,s,
+cpu_fit_s_bysubj_p75,amica_python,batch_size,4096,1779,s,
+cpu_fit_s_bysubj_p25,amica_python,batch_size,16384,1204,s,
+cpu_fit_s_bysubj_p75,amica_python,batch_size,16384,1394,s,
+cpu_fit_s_bysubj_p25,amica_python,batch_size,65536,1040,s,
+cpu_fit_s_bysubj_p75,amica_python,batch_size,65536,1150,s,
+cpu_fit_s_bysubj_p25,amica_python,batch_size,262144,982,s,
+cpu_fit_s_bysubj_p75,amica_python,batch_size,262144,1074,s,
+cpu_fit_s_bysubj_p25,amica_python,batch_size,524288,857,s,
+cpu_fit_s_bysubj_p75,amica_python,batch_size,524288,954,s,
+cpu_fit_s_bysubj_p25,amica_python,batch_size,1048576,614,s,
+cpu_fit_s_bysubj_p75,amica_python,batch_size,1048576,683,s,
+cpu_rss_gib_median,fortran,block_size,1024,0.84,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,fortran,block_size,4096,0.84,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,fortran,block_size,16384,0.85,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,fortran,block_size,65536,1.31,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,fortran,block_size,262144,3.09,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,fortran,block_size,524288,5.41,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_rss_gib_median,fortran,block_size,1048576,10.04,GiB,"Narval whole-node 250-iter, per-subject median"
+cpu_fit_s_bysubj_median,fortran,block_size,1024,3676,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,fortran,block_size,4096,3679,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,fortran,block_size,16384,4577,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,fortran,block_size,65536,4004,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,fortran,block_size,262144,4118,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,fortran,block_size,524288,4192,s,"by-subject median, n_subjects=25"
+cpu_fit_s_bysubj_median,fortran,block_size,1048576,4205,s,"by-subject median, n_subjects=20"
+cpu_fit_s_bysubj_p25,fortran,block_size,1024,3466,s,
+cpu_fit_s_bysubj_p75,fortran,block_size,1024,3752,s,
+cpu_fit_s_bysubj_p25,fortran,block_size,4096,3451,s,
+cpu_fit_s_bysubj_p75,fortran,block_size,4096,3794,s,
+cpu_fit_s_bysubj_p25,fortran,block_size,16384,4415,s,
+cpu_fit_s_bysubj_p75,fortran,block_size,16384,4735,s,
+cpu_fit_s_bysubj_p25,fortran,block_size,65536,3814,s,
+cpu_fit_s_bysubj_p75,fortran,block_size,65536,4239,s,
+cpu_fit_s_bysubj_p25,fortran,block_size,262144,3988,s,
+cpu_fit_s_bysubj_p75,fortran,block_size,262144,4264,s,
+cpu_fit_s_bysubj_p25,fortran,block_size,524288,4121,s,
+cpu_fit_s_bysubj_p75,fortran,block_size,524288,4362,s,
+cpu_fit_s_bysubj_p25,fortran,block_size,1048576,4144,s,
+cpu_fit_s_bysubj_p75,fortran,block_size,1048576,4346,s,
+gpu_pamica_sensitivity,pamica,block_size,1024 (near 512 default),4155.5,s,artifact
+gpu_pamica_sensitivity,pamica,block_size,16384 (tuned),392.7,s,tuned
+gpu_pamica_sensitivity,pamica,block_size,262144 (large chunk),262.4,s,best
