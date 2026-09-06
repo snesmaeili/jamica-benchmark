@@ -6,8 +6,9 @@
 # other implementations' rows are reused from the published campaign
 # (benchmark/comparator/results/xperf_chunksize/raw/).
 #
-# Trillium-GPU: nodes carry 4 x H100 (96 cores, 770 GB); one GPU is requested
-# with --gpus-per-node=1 and a quarter of the node's cores/memory. Submit from
+# Trillium-GPU: nodes carry 4 x H100 (96 cores, 745 GiB); one GPU is requested
+# with --gpus-per-node=1 and a quarter of the cores. Do NOT pass --mem: Trillium
+# rejects it and grants 186 GiB of host memory per GPU automatically. Submit from
 # THIS directory (benchmark/cc_benchmark/sweep/) after build_sweep_venv.sh (login,
 # once, SWEEP_GPU=1) and after staging ds004505 raw_bids (BIDS_ROOT_DS4505 in
 # ../env.local). Override the account on the command line if rrg is justified:
@@ -17,7 +18,6 @@
 #SBATCH --account=def-kjerbi
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=24
-#SBATCH --mem=180G
 #SBATCH --time=02:30:00
 #SBATCH --array=1-25%8
 #SBATCH --output=%x-%A_%a.out
