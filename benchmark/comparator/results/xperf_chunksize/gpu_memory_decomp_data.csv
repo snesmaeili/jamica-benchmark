@@ -1,9 +1,9 @@
 impl,knob,chunk,active_gib,reserved_gib,total_gib,ratio_total_over_active
-jamica,chunk_size,1024,1.61,,5.31,3.3
-jamica,chunk_size,4096,1.61,,5.37,3.34
-jamica,chunk_size,16384,1.61,,5.37,3.34
-jamica,chunk_size,65536,1.61,,5.37,3.34
-jamica,chunk_size,262144,1.93,4.0,5.37,2.78
+jamica,chunk_size,1024,2.19,,5.37,2.45
+jamica,chunk_size,4096,2.19,,5.37,2.45
+jamica,chunk_size,16384,2.19,,5.37,2.45
+jamica,chunk_size,65536,2.19,,5.37,2.45
+jamica,chunk_size,262144,2.2,4.0,5.37,2.44
 jamica,chunk_size,524288,5.75,12.0,13.37,2.33
 jamica,chunk_size,1048576,5.76,12.0,13.37,2.32
 pamica,block_size,1024,0.58,,1.82,3.14

@@ -7,6 +7,12 @@ Neutral and even-handed — measurements, not a product verdict.
 
 Provenance (every dict below is the aggregate of the per-cell result JSONs; the aggregates are shipped
 in raw/ and this generator is cross-checked against them):
+ - jamica ROWS (every jamica value below: GPU fit/NVML/allocator/ladder/decomposition/extension, CPU fit/RSS/
+   ladder/full-batch) were RE-MEASURED with jamica 0.3.0 (tag v0.3.0 = 1d1b227a41) on 2026-09-07 under the
+   same protocol: Trillium-GPU job 895806 (H100, 3000 it, 25 subj x 13 cells) -> raw/v030_gpu_*.csv; Narval
+   job 2580601 (whole node, 250 it, 25 subj x 11 cells) -> raw/v030_cpu_*.csv; per-cell rows in
+   raw/v030_{gpu,cpu}_percell.csv. patch_gen_report_jamica.py wrote them into the dicts (audit trail:
+   raw/v030_jamica_rows.json). The other implementations' rows are unchanged from the files listed below.
  - GPU FIT + convergence @3000, ITERATION-MATCHED (early-stops DISABLED, every impl runs the full 3000):
    -> raw/nostop_gpu3000_summary.csv (t_subj_median, s_per_iter_median, ll_median, n_iter_min/med/max=3000;
    25 subj/cell; Trillium H100). s_per_iter x 3000 = wall time exactly.
@@ -15,9 +21,9 @@ in raw/ and this generator is cross-checked against them):
  - GPU MEMORY: raw/nostop_gpumem_summary.csv (NVML + allocator) + raw/nostop_gpumem_decomp.csv (measured
    decomposition: context=nvml_post_init pre-fit baseline, live=allocator peak, nvml_total; medians over
    25 subj). Per-chunk NVML also appears as mem_median in nostop_gpu3000_summary.csv. Memory is
-   iteration-independent. jamica's FULL-BATCH key (amica_python_jax, chunk_size=None) memory (13.37 GiB
-   etc.) is from the earlier memory run (raw/chunk_gpumem_summary.csv) -- a separate program shown only in
-   the memory note.
+   iteration-independent. jamica's FULL-BATCH key (amica_python_jax, chunk_size=None) memory (17.37 GiB
+   etc.) is the full-batch cell of the same v0.3.0 sweep (raw/v030_gpu_ext_summary.csv) -- a separate
+   program shown only in the memory note.
  - CPU FIT + RSS @250, WHOLE-NODE exclusive (one fit per node -> no contention), iteration-matched
    (early-stops disabled), 25 subjects, all 5 impls incl Fortran (Narval 64-core Zen2).
    -> raw/narval_nostop_i250_summary.csv (per-subject median; t_subj_median, t_subj_p25/p75, mem_median).
@@ -45,7 +51,7 @@ SFREQ = 250.0
 IMPLS = ["jamica", "pamica", "pyamica", "amica_python"]
 LABEL = {"jamica":"jamica","pamica":"pAMICA","pyamica":"pyamica","amica_python":"amica-python"}
 KNOB  = {"jamica":"chunk_size","pamica":"block_size","pyamica":"chunk_t","amica_python":"batch_size","fortran":"block_size"}
-COMMIT= {"jamica":"df18b5e","pamica":"0c4da39","pyamica":"a8a4d7e","amica_python":"e15e158","fortran":"665b577"}
+COMMIT= {"jamica":"v0.3.0","pamica":"0c4da39","pyamica":"a8a4d7e","amica_python":"e15e158","fortran":"665b577"}
 COLOR = {"jamica":"#6366f1","pamica":"#d97706","pyamica":"#0d9488","amica_python":"#e11d48","fortran":"#111827"}
 REPO  = {"jamica":"https://github.com/snesmaeili/jamica","pamica":"https://github.com/sccn/pAMICA",
          "pyamica":"https://github.com/DerAndereJohannes/pyamica","amica_python":"https://github.com/scott-huberty/amica-python",
@@ -59,23 +65,25 @@ TLDR_URL     = f"{_GH}/xperf_chunk_tldr_standalone.html"
 
 # ===== GPU @3000, per-subject median : chunk -> (fit_s, nvml_vram_gib). jamica = chunked path.
 # fit_s from the i3000 run. nvml: jamica-chunked from i3000 (logged NVML for jamica only),
-# torch impls + fullbatch from i1000 (iteration-independent). All in raw/chunk_gpumem_summary.csv.
+# torch impls + fullbatch from i1000 (iteration-independent). All in raw/chunk_gpumem_summary.csv;
+# jamica (v0.3.0) from raw/v030_gpu_i3000_summary.csv + raw/v030_gpumem_summary.csv.
 GPU = {
- "jamica":  {1024:(775.3,5.31),4096:(227.8,5.37),16384:(97.0,5.37),65536:(70.8,5.37),FULL:(61.0,5.37)},
+ "jamica":  {1024:(758.9,5.37),4096:(227.5,5.37),16384:(97.1,5.37),65536:(71.1,5.37),FULL:(61.8,5.37)},
  "pamica":  {1024:(4155.5,1.82),4096:(1058.0,1.89),16384:(392.7,2.13),65536:(320.3,3.08),FULL:(262.4,6.54)},
  "pyamica": {1024:(2417.7,3.05),4096:(615.3,3.05),16384:(366.2,3.05),65536:(338.9,4.46),FULL:(295.7,10.92)},
  "amica_python":   {1024:(5646.0,1.82),4096:(1410.0,1.88),16384:(459.1,2.09),65536:(303.3,2.83),FULL:(230.3,4.89)},
 }
 GPU_BAND = {  # GPU fit-time p25,p75 across subjects (iteration-matched @3000)
- "jamica":  {1024:(743,788),4096:(221,232),16384:(96,99),65536:(69,73),FULL:(58,63)},
+ "jamica":  {1024:(729,784),4096:(216,232),16384:(94,99),65536:(69,73),FULL:(60,63)},
  "pamica":  {1024:(3902,4250),4096:(1008,1079),16384:(369,404),65536:(313,330),FULL:(258,267)},
  "pyamica": {1024:(2308,2450),4096:(576,626),16384:(348,378),65536:(323,348),FULL:(278,301)},
  "amica_python":   {1024:(5443,5832),4096:(1365,1479),16384:(441,475),65536:(290,315),FULL:(220,242)},
 }
 # GPU convergence at chunk=262144, ITERATION-MATCHED (early-stops disabled -> all run the full 3000):
-# impl -> (ll_median, n_iter_min, n_iter_median, n_iter_max, s_per_iter). raw/nostop_gpu3000_summary.csv.
+# impl -> (ll_median, n_iter_min, n_iter_median, n_iter_max, s_per_iter). raw/nostop_gpu3000_summary.csv
+# (jamica v0.3.0: raw/v030_gpu_i3000_summary.csv).
 GPU_CONV = {
- "jamica":  (-1.1005, 3000, 3000, 3000, 0.0203), "amica_python":  (-1.1002, 3000, 3000, 3000, 0.0768),
+ "jamica":  (-1.1005,3000,3000,3000,0.0206), "amica_python":  (-1.1002, 3000, 3000, 3000, 0.0768),
  "pamica":  (-1.1107, 3000, 3000, 3000, 0.0875),  "pyamica": (-1.0995, 3000, 3000, 3000, 0.0986),
 }
 # ===== ITERATION LADDER (measured), chunk fixed at 65536, early-stops disabled so every point is the
@@ -83,7 +91,7 @@ GPU_CONV = {
 # (i3000 point = the 65536 cell of nostop_gpu3000_summary.csv). All 25 subjects at every point.
 LAD_ITERS = [100, 250, 500, 1000, 2000, 3000]
 LADDER = {
- "jamica":       {100:(4.6,-1.11197),250:(7.9,-1.10503),500:(13.7,-1.10126),1000:(25.2,-1.10056),2000:(48.0,-1.10050),3000:(70.8,-1.10047)},
+ "jamica":       {100:(5.3,-1.1118),250:(8.7,-1.10504),500:(14.4,-1.10127),1000:(25.7,-1.10073),2000:(48.4,-1.1005),3000:(71.1,-1.10047)},
  "amica_python": {100:(11.2,-1.11537),250:(26.1,-1.10503),500:(51.2,-1.10283),1000:(102.0,-1.10075),2000:(204.1,-1.10058),3000:(303.3,-1.10056)},
  "pyamica":      {100:(11.8,-1.11518),250:(28.8,-1.10445),500:(57.1,-1.100545),1000:(113.6,-1.09987),2000:(226.2,-1.09958),3000:(338.9,-1.099548)},
  "pamica":       {100:(12.2,-1.12929),250:(28.2,-1.12025),500:(54.3,-1.11791),1000:(107.5,-1.11506),2000:(215.7,-1.11223),3000:(320.3,-1.11067)},
@@ -104,37 +112,38 @@ MEM_CTX = {
  "amica_python":{1024:1.08,4096:1.08,16384:1.08,65536:1.08,FULL:1.08},
 }
 MEM_LIVE = {
- "jamica":{1024:1.61,4096:1.61,16384:1.61,65536:1.61,FULL:1.93},
+ "jamica":{1024:2.19,4096:2.19,16384:2.19,65536:2.19,FULL:2.2},
  "pamica":{1024:0.58,4096:0.64,16384:0.86,65536:1.75,FULL:4.95},
  "pyamica":{1024:1.66,4096:1.66,16384:1.66,65536:3.07,FULL:8.98},
  "amica_python":{1024:0.58,4096:0.62,16384:0.77,65536:1.38,FULL:3.28},
 }
 # ===== CPU @250, WHOLE-NODE exclusive (one fit per node -> no memory-bandwidth contention),
 # iteration-matched (early-stops disabled), per-subject median. Narval 64-core Zen2. All 5 impls incl
-# Fortran, 25 subjects (all cells, after the repair). raw/narval_nostop_i250_summary.csv
+# Fortran, 25 subjects (all cells, after the repair). raw/narval_nostop_i250_summary.csv;
+# jamica (v0.3.0, Narval job 2580601) from raw/v030_cpu_i250_summary.csv.
 CPU_FIT = {
- "jamica":  {1024:1269,4096:976,16384:1277,65536:938,FULL:753,C512:588,C1M:785},
+ "jamica":  {1024:1257,4096:959,16384:1120,65536:890,FULL:748,C512:574,C1M:770},
  "pamica":  {1024:7400,4096:2806,16384:1527,65536:2064,FULL:1536,C512:964,C1M:649},
  "pyamica": {1024:3099,4096:1921,16384:1211,65536:2409,FULL:1328,C512:829,C1M:667},
  "amica_python":   {1024:5027,4096:1710,16384:1295,65536:1084,FULL:1053,C512:895,C1M:655},
  "fortran": {1024:3676,4096:3679,16384:4577,65536:4004,FULL:4118,C512:4192,C1M:4205},
 }
 CPU_BAND = {  # CPU per-subject p25,p75 (whole-node exclusive -> tight, no contention)
- "jamica":  {1024:(1168,1326),4096:(946,1009),16384:(1099,1438),65536:(877,1206),FULL:(730,792),C512:(574,603),C1M:(778,796)},
+ "jamica":  {1024:(1207,1301),4096:(919,972),16384:(1044,1135),65536:(857,926),FULL:(725,761),C512:(558,582),C1M:(763,779)},
  "pamica":  {1024:(6892,8042),4096:(2718,3015),16384:(1309,1815),65536:(1917,2158),FULL:(1402,1684),C512:(874,1064),C1M:(636,679)},
  "pyamica": {1024:(2408,3622),4096:(1850,2072),16384:(1153,1278),65536:(2223,2510),FULL:(1272,1464),C512:(783,880),C1M:(649,701)},
  "amica_python":   {1024:(4351,6011),4096:(1522,1779),16384:(1204,1394),65536:(1040,1150),FULL:(982,1074),C512:(857,954),C1M:(614,683)},
  "fortran": {1024:(3466,3752),4096:(3451,3794),16384:(4415,4735),65536:(3814,4239),FULL:(3988,4264),C512:(4121,4362),C1M:(4144,4346)},
 }
 CPU_NSUB = {  # subjects per cell -- all 25 after the repair
- "jamica":  {1024:25,4096:25,16384:25,65536:25,FULL:25,C512:24,C1M:20},
+ "jamica":  {1024:25,4096:25,16384:25,65536:25,FULL:25,C512:25,C1M:20},
  "pamica":  {1024:25,4096:25,16384:25,65536:25,FULL:25,C512:23,C1M:20},
  "pyamica": {1024:25,4096:25,16384:25,65536:25,FULL:25,C512:24,C1M:19},
  "amica_python":   {1024:25,4096:25,16384:25,65536:25,FULL:25,C512:25,C1M:20},
  "fortran": {1024:25,4096:25,16384:25,65536:25,FULL:25,C512:25,C1M:20},
 }
 CPU_RSS = {  # peak RSS (GiB) per-subject median (whole-node; iteration-independent)
- "jamica":  {1024:2.35,4096:2.34,16384:2.85,65536:6.26,FULL:10.34,C512:21.42,C1M:24.29},
+ "jamica":  {1024:3.34,4096:3.34,16384:3.34,65536:6.26,FULL:10.37,C512:21.35,C1M:24.27},
  "pamica":  {1024:1.63,4096:1.74,16384:2.25,65536:2.76,FULL:6.08,C512:10.43,C1M:19.18},
  "pyamica": {1024:2.05,4096:2.05,16384:2.80,65536:3.84,FULL:9.59,C512:17.44,C1M:27.15},
  "amica_python":   {1024:2.13,4096:2.14,16384:2.13,65536:2.36,FULL:4.25,C512:6.83,C1M:11.92},
@@ -142,19 +151,19 @@ CPU_RSS = {  # peak RSS (GiB) per-subject median (whole-node; iteration-independ
 }
 CPU_FIT_MISS = {}  # no timeouts on the whole-node run (pyamica@1024 completed: ~3099 s)
 CPU_FB = {  # CPU full-batch (one pass): fit median (s), peak RSS (GiB), n subjects. amica_python via per-subject batch.
- "jamica":       (836, 24.41, 25),
+ "jamica":       (826,24.44,25),
  "amica_python": (718, 12.47, 25),
  "pyamica":      (613, 28.80, 24),
  "pamica":       (554, 20.30, 24),
  "fortran":      (4187, 10.57, 25),
 }
-# jamica two orchestrator keys (all traceable to raw/chunk_gpumem_summary.csv):
-J_CHUNKED_GPU_NVML, J_FULLBATCH_GPU_NVML = 5.37, 13.37   # GiB NVML median (full-batch key from the prior memory run)
-J_CHUNKED_GPU_NVML_MAX, J_FULLBATCH_GPU_NVML_MAX = 7.37, 21.37  # per-subject max (longest recording)
-J_CHUNKED_ALLOC, J_FULLBATCH_ALLOC = 1.93, 8.22          # GiB JAX allocator (peak_bytes_in_use), at 262144
-J_CHUNKED_GPU_SPI, J_FULLBATCH_GPU_SPI = 0.0203, 0.0204  # s/iter @3000 matched (same run) -> no GPU chunk benefit
-J_CHUNKED_CPU_T, J_FULLBATCH_CPU_T = 1985, 4300          # s @1000 (CPU: chunking helps time too)
-J_CHUNKED_CPU_RSS, J_FULLBATCH_CPU_RSS = 2.2, 19.8       # GiB
+# jamica two orchestrator keys (v0.3.0; traceable to raw/v030_gpu_*.csv and raw/v030_cpu_*.csv):
+J_CHUNKED_GPU_NVML, J_FULLBATCH_GPU_NVML = 5.37, 17.37   # GiB NVML median (full-batch key = full-batch cell of the same sweep)
+J_CHUNKED_GPU_NVML_MAX, J_FULLBATCH_GPU_NVML_MAX = 7.37, 25.37   # per-subject max (longest recording)
+J_CHUNKED_ALLOC, J_FULLBATCH_ALLOC = 2.2, 8.14   # GiB JAX allocator (peak_bytes_in_use), at 262144
+J_CHUNKED_GPU_SPI, J_FULLBATCH_GPU_SPI = 0.0206, 0.0203   # s/iter @3000 matched (same run) -> no GPU chunk benefit
+J_CHUNKED_CPU_T, J_FULLBATCH_CPU_T = 959, 826   # s @250 (whole-node Narval run) (CPU: chunking helps time too)
+J_CHUNKED_CPU_RSS, J_FULLBATCH_CPU_RSS = 3.3, 24.44   # GiB
 # pAMICA block_size sensitivity, GPU @3000 matched (the ~16x within one impl):
 REAL_PAM = [("1024 (near 512 default)",4155.5,1.82,"artifact"),("16384 (tuned)",392.7,2.13,"tuned"),
             ("262144 (large chunk)",262.4,6.54,"best")]
@@ -163,7 +172,7 @@ REAL_PAM = [("1024 (near 512 default)",4155.5,1.82,"artifact"),("16384 (tuned)",
 #   live    = peak_vram_gb (framework allocator live-tensor peak: JAX peak_bytes_in_use / torch max_allocated)
 #   total   = nvml_peak_vram_gb (whole-GPU NVML peak)   -- impl -> chunk -> (context, live, total), GiB.
 MEMDECOMP = {
- "jamica":       {65536:(1.02,1.61,5.37), 262144:(1.02,1.93,5.37)},
+ "jamica":       {65536:(1.02,2.19,5.37),FULL:(1.02,2.2,5.37)},
  "amica_python": {65536:(1.08,1.38,2.83), 262144:(1.08,3.28,4.89)},
  "pamica":       {65536:(1.08,1.75,3.08), 262144:(1.08,4.95,6.54)},
  "pyamica":      {65536:(1.08,3.07,4.46), 262144:(1.08,8.98,10.92)},
@@ -183,13 +192,13 @@ MEMDECOMP = {
 FB = 4194304                                     # x-axis sentinel for the full-batch point (label "full")
 C512, C1M = 524288, 1048576
 GEXT = {
- "jamica":       {C512:(59.9,13.37,5.75,12.00,25), C1M:(58.8,13.37,5.76,12.00,20), FB:(61.7,13.37,8.18,12.00,24)},
+ "jamica":       {C512:(60.5,13.37,5.75,12.0,25),C1M:(59.4,13.37,5.76,12.0,20),FB:(60.9,17.37,8.14,16.0,25)},
  "amica_python": {C512:(211.5,7.57,5.77,6.33,25), C1M:(209.0,13.32,10.78,12.09,20), FB:(197.9,14.10,11.46,12.87,25)},
  "pyamica":      {C512:(286.2,19.05,16.86,17.81,25), C1M:(283.7,28.06,26.63,26.82,20), FB:(278.5,29.56,28.16,28.33,21)},
  "pamica":       {C512:(250.2,10.59,9.33,10.09,25), C1M:(247.7,19.33,18.08,18.09,20), FB:(242.5,20.50,19.25,19.26,22)},
 }
 GEXT_BAND = {  # fit p25,p75 at the extension chunks (iteration-matched @3000)
- "jamica":       {C512:(59.0,61.3), C1M:(58.0,59.9), FB:(58.7,69.7)},
+ "jamica":       {C512:(60.0,61.7),C1M:(58.3,60.1),FB:(58.6,65.2)},
  "amica_python": {C512:(203.9,217.2), C1M:(204.6,211.6), FB:(193.2,202.7)},
  "pyamica":      {C512:(268.4,293.2), C1M:(280.1,289.3), FB:(262.7,285.2)},
  "pamica":       {C512:(237.5,258.3), C1M:(243.5,252.9), FB:(237.3,247.6)},
@@ -198,7 +207,7 @@ GEXT_BAND = {  # fit p25,p75 at the extension chunks (iteration-matched @3000)
 # peak_pool_bytes (the XLA BFC pool — the JAX analog). 262K from the i3000 run; 512K/1M from the extension
 # (full-batch is in the table, not charted). jamica pool steps 4->12 GiB at 512K, mirroring its NVML step.
 MEM_RESV = {
- "jamica":       {262144:4.00, C512:12.00, C1M:12.00},
+ "jamica":       {FULL:4.0,C512:12.0,C1M:12.0},
  "amica_python": {262144:3.66, C512:6.33,  C1M:12.09},
  "pyamica":      {262144:9.68, C512:17.81, C1M:26.82},
  "pamica":       {262144:5.34, C512:10.09, C1M:18.09},
@@ -380,10 +389,11 @@ c_gt=chart(gpu_t,GPU_BAND,"fit time (s, log)",True,"GPU · fit time vs chunk","r
 c_gv=chart(gpu_v,None,"GPU memory used (GiB, log)",True,"GPU · memory vs chunk (with reference lines)","actual GPU memory used · dashed reference lines at 24, 40, 80 GiB",IMPLS,"lowest",xt=GXT,hlines=GPU_CEILINGS)
 c_cr=chart(CPU_RSS,None,"memory used (GiB)",False,"CPU · memory vs chunk","real ds004505 · 64-core machine · per-subject median",CPU_CHART,"lowest",xt=GXT)
 c_ct=chart(CPU_FIT,CPU_BAND,"fit time (s, log)",True,"CPU · fit time vs chunk","real ds004505 · 64-core machine, one fit per machine · 250 iterations · per-subject median",CPU_CHART,"fastest",xt=GXT)
-# CPU iteration ladder (chunk 65536; iters 50/100/250/500) from raw/narval_nostop_i*_summary.csv.
+# CPU iteration ladder (chunk 65536; iters 50/100/250/500) from raw/narval_nostop_i*_summary.csv
+# (jamica v0.3.0: raw/v030_cpu_i*_summary.csv).
 CPU_LAD_ITERS=[50,100,250,500]
 CPU_LAD={
- "jamica":       {50:(222.7,-1.2320),100:(419.2,-1.1145),250:(937.8,-1.1050),500:(2235.9,-1.1020)},
+ "jamica":       {50:(187.7,-1.2321),100:(364.9,-1.1119),250:(889.7,-1.105),500:(1759.7,-1.1014)},
  "amica_python": {50:(183.0,-1.2280),100:(409.9,-1.1152),250:(1084.2,-1.1040),500:(2278.4,-1.1027)},
  "pyamica":      {50:(475.5,-1.2272),100:(980.0,-1.1152),250:(2408.5,-1.1045),500:(4769.9,-1.1012)},
  "pamica":       {50:(412.4,-1.1754),100:(814.2,-1.1293),250:(2063.7,-1.1202),500:(4148.3,-1.1179)},
@@ -467,7 +477,7 @@ def pamrows():
 # best fit time and its memory range (smallest chunk -> full-batch/largest). Alphabetical order.
 MAIN = {   # GPU memory / CPU memory = range from smallest chunk to a full-batch pass (GPU mem floors are the 1K NVML values)
  "amica_python": ("~200 s", "2–14 GiB", "~11 min", "2–12 GiB"),
- "jamica":       ("~60 s",  "5–13 GiB", "~10 min", "2–24 GiB"),
+ "jamica":       ("~60 s", "5–17 GiB", "~10 min", "3–24 GiB"),
  "pamica":       ("~245 s", "2–20 GiB", "~9 min",  "2–20 GiB"),
  "pyamica":      ("~280 s", "3–30 GiB", "~10 min", "2–29 GiB"),
  "fortran":      ("—",      "—",        "~60 min", "1–11 GiB"),
@@ -597,7 +607,7 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
   <b>GPU memory climbs steeply with the chunk</b> (pyamica reaches ~30&nbsp;GiB at full-batch); and
   <b>for the four parallel implementations, small chunks are not the fastest setting on either device</b>. Fit times are wall time to a fixed iteration budget,
   not time to an equivalent solution, so read them alongside the convergence section.</p>
-  <div class="stamp"><span><b>Builds:</b></span><span>{rlink("jamica","jamica")} <code>df18b5e</code></span><span>{rlink("amica_python","amica-python")} <code>e15e158</code></span><span>{rlink("pyamica","pyamica")} <code>a8a4d7e</code></span><span>{rlink("pamica","pAMICA")} <code>0c4da39</code></span><span>{rlink("fortran","Fortran ref")} <code>665b577</code></span><span>· 64 components · GPU: 3000 iterations · CPU: 250 iterations · NVIDIA H100 GPU + 64-core CPU</span></div>
+  <div class="stamp"><span><b>Builds:</b></span><span>{rlink("jamica","jamica")} <code>{COMMIT['jamica']}</code></span><span>{rlink("amica_python","amica-python")} <code>e15e158</code></span><span>{rlink("pyamica","pyamica")} <code>a8a4d7e</code></span><span>{rlink("pamica","pAMICA")} <code>0c4da39</code></span><span>{rlink("fortran","Fortran ref")} <code>665b577</code></span><span>· 64 components · GPU: 3000 iterations · CPU: 250 iterations · NVIDIA H100 GPU + 64-core CPU</span></div>
   {f'<p class="note" style="margin:14px 0 0">Short on time? Read the <a class="rl" href="{TLDR_URL}">one-page summary →</a></p>' if TLDR_URL else ''}
 </header>
 
@@ -828,7 +838,7 @@ footer{{padding:34px 0 0;color:var(--mut);font-size:.86rem}}
     <dt>CPU</dt><dd>64-core machine, one fit per machine · fixed 250 iterations · fit time and memory, measured per subject</dd>
     <dt>Memory</dt><dd>reported as the actual GPU memory used (measured at the card) and, on the CPU, peak system memory · does not depend on the number of iterations</dd>
     <dt>Note</dt><dd>fit times are wall time at a fixed number of iterations, not time to a solution · the GPU and CPU use different iteration counts, so their seconds are not comparable</dd>
-    <dt>Builds</dt><dd>{rlink("jamica","jamica")} df18b5e · {rlink("amica_python","amica-python")} e15e158 · {rlink("pyamica","pyamica")} a8a4d7e · {rlink("pamica","pAMICA")} 0c4da39 · {rlink("fortran","Fortran")} 665b577</dd>
+    <dt>Builds</dt><dd>{rlink("jamica","jamica")} {COMMIT['jamica']} · {rlink("amica_python","amica-python")} e15e158 · {rlink("pyamica","pyamica")} a8a4d7e · {rlink("pamica","pAMICA")} 0c4da39 · {rlink("fortran","Fortran")} 665b577</dd>
   </dl>
   <p class="note" style="margin-top:16px"><b>What to trust:</b> the curve shapes, the actual GPU-memory
   figures, the per-iteration speeds, and the convergence columns read together. The fastest measured CPU setting is
@@ -917,7 +927,7 @@ _rows = [("dataset", "impl", "knob", "chunk", "value", "unit", "note")]
 for im in IMPLS:
     for c, (t, v) in sorted(GPU[im].items()):
         _rows.append(("gpu_fit_s_median", im, KNOB[im], _cn(c), t, "s", "GPU H100 3000-iter MATCHED (early-stops disabled), per-subj median"))
-        _rows.append(("gpu_vram_gib_nvml", im, KNOB[im], _cn(c), v, "GiB", "NVML whole-GPU median, iteration-matched i3000 run (raw/nostop_gpu3000_summary.csv)"))
+        _rows.append(("gpu_vram_gib_nvml", im, KNOB[im], _cn(c), v, "GiB", "NVML whole-GPU median, iteration-matched i3000 run (" + ("raw/v030_gpu_i3000_summary.csv" if im == "jamica" else "raw/nostop_gpu3000_summary.csv") + ")"))
     for c, (lo, hi) in sorted(GPU_BAND[im].items()):
         _rows.append(("gpu_fit_s_p25", im, KNOB[im], _cn(c), lo, "s", ""))
         _rows.append(("gpu_fit_s_p75", im, KNOB[im], _cn(c), hi, "s", ""))
