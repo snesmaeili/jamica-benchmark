@@ -147,6 +147,10 @@ if [ "$REINSTALL" = true ]; then
     # node the plugin is inert (the runner pins JAX_PLATFORM_NAME=cpu).
     echo "Installing the harness with the [jax-gpu] extra (CUDA plugin; inert on CPU nodes)..."
     pip install -e "$REPO_ROOT[jax-gpu]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+    # NVML bindings for the comparator's whole-GPU memory cross-check
+    # (benchmark/comparator/runners/_common.py imports pynvml and silently records
+    # None without it). Pure Python; the Alliance wheelhouse carries it.
+    pip install --no-index nvidia-ml-py 2>/dev/null || pip install nvidia-ml-py
 
     # Install additional benchmarking dependencies. Compute nodes on fir do
     # reach PyPI (verified HTTP/2 200 to pypi.org from fc30669), so this does
