@@ -40,6 +40,10 @@ sys.exit(0 if any(getattr(d, "platform", "") in ("gpu", "cuda", "rocm") for d in
 PYCHK
 nvidia-smi --query-gpu=name,memory.used,memory.total,compute_mode --format=csv,noheader || true
 
+# The orchestrator process only preprocesses (numpy/mne/sklearn); keep it off the
+# GPU so no parent CUDA context sits on the card while the runner subprocess
+# (JAX_PLATFORMS=cuda, set per cell) measures NVML memory.
+export JAX_PLATFORMS=cpu
 export SWEEP_RESULTS_DIR="${SWEEP_RESULTS_DIR:-/scratch/$USER/jamica_v030/sweep}"
 mkdir -p "$SWEEP_RESULTS_DIR"
 echo "=== GPU block-size sweep: ds004505 sub-$SLURM_ARRAY_TASK_ID, 64 components, 3000 iterations ==="

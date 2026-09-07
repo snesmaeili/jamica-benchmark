@@ -45,13 +45,24 @@ if use_jax_env:
         # alongside other JAX packages expecting float32, this may cause conflicts.
         jax.config.update("jax_enable_x64", True)
 
-        # Configure persistent compilation cache
+        # Configure persistent compilation cache. Honour XDG_CACHE_HOME (the
+        # cluster env scripts point it at scratch) and tolerate a read-only home
+        # directory (Trillium compute nodes): losing the persistent cache only
+        # costs recompilation, it must never abort an import.
         _cache_dir = os.environ.get("JAX_COMPILATION_CACHE_DIR") or os.path.join(
-            os.path.expanduser("~"), ".cache", "amica-python", "jax_cache"
+            os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache"),
+            "amica-python", "jax_cache",
         )
-        os.makedirs(_cache_dir, exist_ok=True)
-        jax.config.update("jax_compilation_cache_dir", _cache_dir)
-        jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
+        try:
+            os.makedirs(_cache_dir, exist_ok=True)
+            jax.config.update("jax_compilation_cache_dir", _cache_dir)
+            jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
+        except OSError as _cache_exc:
+            import warnings
+            warnings.warn(
+                f"amica_python.backend: persistent JAX compilation cache disabled ({_cache_exc})",
+                stacklevel=1,
+            )
 
         import jax.numpy as jnp
 
