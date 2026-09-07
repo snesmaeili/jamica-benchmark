@@ -39,7 +39,7 @@ complete() {
     [ -x "$VENV/bin/python" ] || return 1
     "$VENV/bin/python" -m pip show -q jamica jax jaxlib mne mne-bids scikit-learn >/dev/null 2>&1 || return 1
     # a GPU cluster's venv must also hold the CUDA plugin, or the fits run on CPU
-    [ "${SWEEP_GPU:-0}" != "1" ] || "$VENV/bin/python" -m pip show -q jax-cuda12-plugin >/dev/null 2>&1
+    [ "${SWEEP_GPU:-0}" != "1" ] || "$VENV/bin/python" -m pip show -q jax-cuda12-plugin nvidia-ml-py >/dev/null 2>&1
 }
 
 if complete; then
@@ -63,6 +63,8 @@ else
         JAXV=$(python "$CC/check_env.py" stack-specs --venv fir | sed -n 's/^jax==//p')
         pip install --no-index "jax_cuda12_plugin==$JAXV" "jax_cuda12_pjrt==$JAXV" 2>/dev/null \
             || pip install "jax-cuda12-plugin==$JAXV" "jax-cuda12-pjrt==$JAXV"
+        # NVML bindings: the runner's whole-GPU memory metric records None without pynvml.
+        pip install --no-index nvidia-ml-py 2>/dev/null || pip install nvidia-ml-py
     fi
     # The package under test at the pinned PyPI release.
     while read -r spec; do
