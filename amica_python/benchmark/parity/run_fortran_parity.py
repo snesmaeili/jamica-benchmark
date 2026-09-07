@@ -128,7 +128,7 @@ def _match_rows(Wa, Wb):
     per = C[r, c]
     signs = np.sign(np.sum(a[r] * b[c], axis=1))
     aligned = (Wb[c] * signs[:, None])
-    return float(per.mean()), per, aligned, (r, c)
+    return float(per.mean()), per, aligned, (r, c, signs)
 
 
 def _matched_source_r(Sa, Sb):
@@ -159,6 +159,7 @@ def cmd_compare(args):
     # identical -> both implementations start from the identical state, isolating pure
     # algorithmic agreement.
     # Installed jamica package, not the vendored algorithm copy - see runner.py.
+    import jamica
     from jamica.config import AmicaConfig
     from jamica.solver import Amica
     hp = hyperparams(m, meta["max_iter"], meta["do_newton"])
@@ -186,7 +187,7 @@ def cmd_compare(args):
     # --- metrics ---
     ll_f_final = float(fr["LL_clean"][-1]) if fr["LL_clean"].size else float("nan")
     ll_p_final = float(ll_py[-1]) if ll_py.size else float("nan")
-    mean_r, per_r, W_aligned, _ = _match_rows(fr["W"], W_py)
+    mean_r, per_r, W_aligned, (perm_f, perm_p, row_signs) = _match_rows(fr["W"], W_py)
     fro_rel = float(np.linalg.norm(W_aligned - fr["W"]) / (np.linalg.norm(fr["W"]) + 1e-300))
     # sources in whitened space: sphere @ (X - mean)
     Xc = X - fr["mean"][:, None]
@@ -194,6 +195,41 @@ def cmd_compare(args):
     S_f = fr["W"] @ Xw
     S_p = W_py @ Xw
     src_r, _ = _matched_source_r(S_f, S_p)
+
+    # --- fitted source-density parameters, aligned component by component ---
+    # Fortran arrays are (n_components, n_mix) after fortran_io's transpose; jamica's
+    # single-model arrays are (n_mix, n_components). Components follow the Hungarian row
+    # matching above; within a component the mixture terms are matched on mu. A
+    # sign-flipped source negates mu (alpha, sbeta and rho are sign-invariant).
+    from scipy.optimize import linear_sum_assignment
+
+    def _single_model(a):
+        a = np.asarray(a, dtype=float)
+        return a[0] if a.ndim == 3 else a
+
+    def _finite_or_none(x):
+        x = float(x)
+        return x if np.isfinite(x) else None
+
+    par_names = ("alpha", "mu", "sbeta", "rho")
+    py_par = {k: _single_model(getattr(res, k + "_")).T for k in par_names}
+    dens = {k + "_fortran": [] for k in par_names}
+    dens.update({k + "_python": [] for k in par_names})
+    for i_f, i_p, sgn in zip(perm_f, perm_p, row_signs):
+        mu_f = np.asarray(fr["mu"][i_f], dtype=float)
+        mu_p = float(sgn) * np.asarray(py_par["mu"][i_p], dtype=float)
+        jr, jc = linear_sum_assignment(np.abs(mu_f[:, None] - mu_p[None, :]))
+        for j_f, j_p in zip(jr, jc):
+            for k in par_names:
+                flip = float(sgn) if k == "mu" else 1.0
+                dens[k + "_fortran"].append(float(fr[k][i_f][j_f]))
+                dens[k + "_python"].append(flip * float(py_par[k][i_p][j_p]))
+    dens_r = {}
+    for k in par_names:
+        a, b = np.asarray(dens[k + "_fortran"]), np.asarray(dens[k + "_python"])
+        dens_r[k + "_matched_abs_r"] = (_finite_or_none(abs(np.corrcoef(a, b)[0, 1]))
+                                        if a.size > 1 and a.std() > 0 and b.std() > 0 else None)
+        dens_r[k + "_max_abs_diff"] = _finite_or_none(np.max(np.abs(a - b))) if a.size else None
 
     out = dict(
         config=meta,
@@ -214,6 +250,14 @@ def cmd_compare(args):
         ll_full_fortran=[float(x) for x in ll_f_traj],
         ll_full_python=[float(x) for x in ll_py],
         fortran_ll_decreasing_events=None,
+        **dens_r,
+        density_alignment=dens,           # component- and mixture-matched terms (n_components x m)
+        W_fortran=np.asarray(fr["W"], dtype=float).tolist(),
+        W_python_aligned=np.asarray(W_aligned, dtype=float).tolist(),
+        W_row_abs_r=[float(x) for x in per_r],
+        jamica_version=str(getattr(jamica, "__version__", None)),
+        jamica_file=str(getattr(jamica, "__file__", None)),
+        chunk_size=str(cfg.chunk_size),
     )
     (wd / "parity.json").write_text(json.dumps(out, indent=2), newline="\n")
     print(json.dumps(out, indent=2))

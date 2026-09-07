@@ -26,7 +26,11 @@ set -euo pipefail
 SUBMIT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 REPO="$(cd "$SUBMIT_DIR/../../.." && pwd)"
 BUILD="$REPO/fortran"                                   # vendored source + build.sh
-WORK="${AMICA_PARITY_WORK:-/scratch/$USER/fortran_parity/mklfix50k}"
+# Fixture knobs (defaults = the reference fixture): PARITY_M mixture components,
+# PARITY_NEWTON 1/0 (Newton vs natural gradient only). The manuscript's Figure 2A uses
+# (3,1), (1,1) and (3,0); each variant gets its own work dir unless AMICA_PARITY_WORK is set.
+PARITY_M="${PARITY_M:-3}"; PARITY_NEWTON="${PARITY_NEWTON:-1}"
+WORK="${AMICA_PARITY_WORK:-/scratch/$USER/jamica_v030/fortran_parity/mklfix50k_m${PARITY_M}_newton${PARITY_NEWTON}}"
 ENVSH="$REPO/benchmark/cc_benchmark/fir_env.sh"
 mkdir -p "$(dirname "$WORK")"
 
@@ -41,7 +45,7 @@ python -c "import sys, numpy; print('py', sys.executable, 'numpy', numpy.__versi
 mkdir -p "$WORK"
 python -m amica_python.benchmark.parity.run_fortran_parity prep \
     --workdir "$WORK" --dataset synth6 --n-channels 6 --n-samples 50000 \
-    --m 3 --do-newton 1 --max-iter 1000 --seed 0 \
+    --m "$PARITY_M" --do-newton "$PARITY_NEWTON" --max-iter 1000 --seed 0 \
     --container-data "$WORK/data" --container-out "$WORK/out"
 
 echo "############ PHASE 1: build amica17 (-DMKL, patched, fix#3) + run (gcc/openmpi env) ############"
