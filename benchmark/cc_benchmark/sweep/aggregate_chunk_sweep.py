@@ -210,10 +210,17 @@ def main() -> int:
             write_csv(args.out_dir / f"{args.tag}_gpumem_decomp.csv",
                       ["impl", "chunk", "n", "context_nvml_post_init_gb", "live_alloc_gb", "reserved_gb", "nvml_total_gb"], dec)
 
-    # console digest
-    print("\ndevice impl              chunk        n  t_subj_med   s/iter    ll_med    mem_med")
-    for row in summarize(rows):
-        print(f"{row[0]:<6} {row[1]:<17} {str(row[2]):<10} {row[4]:>3}  {row[7]:>10}  {row[11]:>8}  {row[12]:>8}  {row[10]:>8}")
+    # console digest: the main budget of each device only (the ladder cells share
+    # chunk 65536 with the sweep and would otherwise be pooled with it).
+    print("\ndevice impl              chunk       iter   n  t_subj_med   s/iter    ll_med    mem_med")
+    for device in ("gpu", "cpu"):
+        drows = [r for r in rows if r["device"] == device]
+        if not drows:
+            continue
+        budgets = sorted({r["budget"] for r in drows})
+        main_it = max(budgets, key=lambda b: sum(1 for r in drows if r["budget"] == b))
+        for row in summarize([r for r in drows if r["budget"] == main_it]):
+            print(f"{row[0]:<6} {row[1]:<17} {str(row[2]):<10} {main_it:>5} {row[4]:>3}  {row[7]:>10}  {row[11]:>8}  {row[12]:>8}  {row[10]:>8}")
     return 0
 
 
