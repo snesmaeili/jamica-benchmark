@@ -10,6 +10,7 @@
 # The ds004505 sub-01 row of the same table comes from the 100-iteration task of
 # submit_iter_curve_cpu.sh / submit_iter_curve_gpu.sh, so it is not repeated here.
 # Result layout: $AMICA_COMPARATOR_RESULTS/<dataset>/cpu/<impl>_sub-NN_seed0_result.json
+# Includes the Fortran AMICA 1.7 reference arm (needs fortran/amica17; CROSSREC_FORTRAN=0 disables).
 #
 #SBATCH --job-name=jamica_crossrec_cpu
 #SBATCH --account=def-kjerbi_cpu
@@ -45,6 +46,30 @@ esac
 export AMICA_COMPARATOR_RESULTS="${CROSSREC_RESULTS_DIR:-/scratch/$USER/jamica_v030/cross_recording}/$DS"
 mkdir -p "$AMICA_COMPARATOR_RESULTS"
 
+# Fortran AMICA 1.7 reference arm (same gating as submit_iter_curve_cpu.sh): the archived
+# reference build at fortran/amica17, checksum pinned in pins.toml. Set CROSSREC_FORTRAN=0
+# to run the Python implementations only.
+FORTRAN_OPT=""
+if [ "${CROSSREC_FORTRAN:-1}" = "1" ]; then
+    export AMICA17_BIN="${AMICA17_BIN:-$SLURM_SUBMIT_DIR/../../fortran/amica17}"
+    AMICA17_SHA_EXPECTED="${AMICA17_SHA_EXPECTED:-$("$AMICA_PYTHON_VENV" "$SLURM_SUBMIT_DIR/check_env.py" fortran-sha)}"
+    export AMICA17_SHA_EXPECTED          # run_fortran.py also asserts it per fit
+    if [ -x "${AMICA17_BIN}" ]; then
+        _sha=$(sha256sum "$AMICA17_BIN" | awk '{print $1}')
+        if [ "$_sha" != "$AMICA17_SHA_EXPECTED" ]; then
+            echo "FATAL: $AMICA17_BIN has sha $_sha, expected $AMICA17_SHA_EXPECTED (pins.toml)" >&2
+            exit 1
+        fi
+        echo "Fortran reference binary verified: $AMICA17_BIN (sha ${_sha:0:12})"
+        module load openmpi/4.1.5 flexiblas 2>/dev/null || true
+        export GNU_TIME_BIN="${GNU_TIME_BIN:-/usr/bin/time}"
+        FORTRAN_OPT="--include-fortran"
+    else
+        echo "FATAL: no Fortran binary at $AMICA17_BIN (build it with submit_mklfix_parity.sbatch first)" >&2
+        exit 1
+    fi
+fi
+
 echo "=== cross-recording agreement (CPU): $DS sub-$SUBJ, $NCOMP components, 100 iterations ==="
 python ../comparator/implementation_perf.py \
     --dataset "$DS" --subject "$SUBJ" --input-level bids \
@@ -52,6 +77,6 @@ python ../comparator/implementation_perf.py \
     --amica-device cpu --competitor-device cpu \
     --amica-chunk-size auto \
     --out-tag cpu \
-    --skip amica_python_numpy amica_python_jax
+    --skip amica_python_numpy amica_python_jax $FORTRAN_OPT
 
 echo "=== DONE $DS. Results under $AMICA_COMPARATOR_RESULTS/cpu/ ==="
