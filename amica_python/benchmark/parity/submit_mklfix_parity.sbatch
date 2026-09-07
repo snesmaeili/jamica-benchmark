@@ -53,7 +53,7 @@ bash build.sh
 file "$BUILD/amica17"; sha256sum "$BUILD/amica17"
 cd "$WORK"
 rm -rf "$WORK/out"
-mpirun -np 1 "$BUILD/amica17" "$WORK/amica.param"
+mpirun -np 1 "$BUILD/amica17" "$WORK/jamica.param"
 echo "----- Fortran out.txt (last 3 lines) -----"
 tail -3 "$WORK/out/out.txt" || true
 

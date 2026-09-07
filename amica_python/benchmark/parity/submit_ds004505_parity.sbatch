@@ -36,7 +36,7 @@ export OMP_NUM_THREADS=1
 file "$BIN"
 cd "$WORK"
 rm -rf "$WORK/out"
-mpirun -np 1 "$BIN" "$WORK/amica.param"
+mpirun -np 1 "$BIN" "$WORK/jamica.param"
 echo "----- Fortran out.txt (last 3 lines) -----"
 tail -3 "$WORK/out/out.txt" || true
 
