@@ -206,6 +206,23 @@ if [ "$AMICA_GPU_JOB" = true ] && ! python -c "import jax_cuda12_plugin" >/dev/n
     return 1 2>/dev/null || exit 1
 fi
 
+# A GPU job must also be able to initialise the CUDA backend on THIS node. Some
+# fir GPU nodes fail cuInit(0) with CUDA_ERROR_NO_DEVICE (fc10404, fc10507,
+# fc10509, fc10512, fc10518 so far) while nvidia-smi still lists the H100; JAX then
+# prints "Falling back to cpu" and the fit runs to completion on CPU under a
+# "gpu" label. Fail fast instead, so the task can be resubmitted with --exclude.
+if [ "$AMICA_GPU_JOB" = true ]; then
+    _gpu_log="${SLURM_TMPDIR:-/tmp}/fir_env_gpu_check.$$"
+    if ! JAX_PLATFORMS=cuda python -c "import sys, jax; d = jax.devices(); print('jax devices:', d); sys.exit(0 if any(getattr(x, 'platform', '') in ('gpu', 'cuda', 'rocm') for x in d) else 1)" >"$_gpu_log" 2>&1; then
+        echo "fir_env: FATAL — GPU job on $(hostname) but JAX cannot initialise the CUDA backend (bad node?). Resubmit with --exclude=$(hostname)." >&2
+        tail -4 "$_gpu_log" >&2
+        rm -f "$_gpu_log"
+        [ "$_amica_had_u" = 1 ] && set -u
+        return 1 2>/dev/null || exit 1
+    fi
+    cat "$_gpu_log"; rm -f "$_gpu_log"
+fi
+
 # MNE's sample dataset (the smoke and chunking fixtures) is cached on scratch,
 # not in the quota-limited home directory.
 export MNE_DATA="${MNE_DATA:-/scratch/$USER/mne_data}"
