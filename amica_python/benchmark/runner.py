@@ -1330,7 +1330,7 @@ def main():
     parser = argparse.ArgumentParser(description="AMICA single-subject benchmark")
     parser.add_argument("--subject", type=int, default=1)
     parser.add_argument("--dataset", type=str, default="mne",
-                        choices=["mne", "ds004505"])
+                        choices=["mne", "ds004505", "ds004504", "ds004621"])
     parser.add_argument("--device", type=str, choices=["cpu", "gpu"], default="cpu")
     parser.add_argument("--backend", type=str, choices=["jax", "numpy"], default="jax")
     parser.add_argument("--task", type=str, default=None,
