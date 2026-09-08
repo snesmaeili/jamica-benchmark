@@ -1200,8 +1200,23 @@ def _measure_peak_memory(backend, device, fn, /, *args, **kwargs):
     }
 
 
+class _Unset:
+    """Sentinel: the caller did not specify a block size.
+
+    Distinct from ``None``, which is an explicit request for full batch. Without
+    the distinction a full-batch request sends no key at all and the package
+    applies its own default, which is "auto" in the release measured here.
+    """
+
+    def __repr__(self) -> str:  # pragma: no cover - debugging aid
+        return "UNSET"
+
+
+UNSET = _Unset()
+
+
 def run_benchmark(raw, backend="jax", device="cpu", n_iter=500, *,
-                  n_components: int | None = None, chunk_size=None,
+                  n_components: int | None = None, chunk_size=UNSET,
                   dtype: str = "float64", random_state: int = 42,
                   include_artifacts=False, return_ica=False):
     """Run AMICA and record metrics.
@@ -1248,8 +1263,11 @@ def run_benchmark(raw, backend="jax", device="cpu", n_iter=500, *,
     from jamica import fit_ica
 
     fit_params = {}
-    if chunk_size is not None:
+    if not isinstance(chunk_size, _Unset):
+        # None included: it is the explicit request for full batch.
         fit_params["chunk_size"] = chunk_size
+    # what the manifest reports: the request as sent, or the package default
+    _chunk_record = "package-default" if isinstance(chunk_size, _Unset) else chunk_size
     if dtype and dtype != "float64":
         fit_params["dtype"] = dtype
 
@@ -1278,11 +1296,11 @@ def run_benchmark(raw, backend="jax", device="cpu", n_iter=500, *,
         # chunk_size distinguishes full-batch (None) from chunked/auto runs of
         # otherwise-identical config; the aggregator's content run_id reads it, so
         # it MUST be in the payload or full-batch and chunked collide on one run_id.
-        "chunk_size": chunk_size,
+        "chunk_size": _chunk_record,
         "fit_params": {
             "backend": backend,
             "device": device,
-            "chunk_size": chunk_size,
+            "chunk_size": _chunk_record,
             "dtype": dtype,
         },
         # AMICA stops when the iteration budget runs out, not on a tolerance.
@@ -1357,9 +1375,10 @@ def main():
                         help="Number of ICA components (default: min(64, n_channels)). "
                              "Reduce to lower GPU VRAM use on consumer GPUs.")
     parser.add_argument("--chunk-size", default=None,
-                        help="E-step chunk size in samples: int, 'auto', or omit for "
-                             "full-batch. 'auto' sizes against GPU VRAM on gpu / system "
-                             "RAM on cpu. Use e.g. 10000 to cap GPU memory explicitly.")
+                        help="E-step block size in samples: an integer, 'auto', or "
+                             "'none' for full batch. Omit to use the package default. "
+                             "'auto' sizes the block against VRAM on gpu / system RAM "
+                             "on cpu; 'none' processes every sample in one pass.")
     parser.add_argument("--dtype", choices=["float64", "float32"], default="float64",
                         help="Compute precision. float64 (default) is the reference/"
                              "parity mode; float32 is a faster, lower-memory mode for "

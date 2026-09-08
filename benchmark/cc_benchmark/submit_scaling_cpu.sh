@@ -33,8 +33,8 @@ run() {
 }
 
 echo "=== RSS vs T (C=64, full-batch / chunk=None) ==="
-for D in 60 150 300 600; do run "Tsec-${D}_fullbatch" --n-components 64 --duration-sec "$D"; done
-run "Tfull_fullbatch" --n-components 64
+for D in 60 150 300 600; do run "Tsec-${D}_fullbatch" --n-components 64 --duration-sec "$D" --chunk-size none; done
+run "Tfull_fullbatch" --n-components 64 --chunk-size none
 
 echo "=== RSS vs chunk_size (full T, C=64) ==="
 for CH in 1024 4096 16384 65536; do run "chunk-${CH}_Tfull" --n-components 64 --chunk-size "$CH"; done
