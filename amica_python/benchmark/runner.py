@@ -362,7 +362,11 @@ def _run_ident(seed, n_iter, n_components, chunk_size, dtype) -> str:
         parts.append(f"it{n_iter}")
     parts.append(f"c{'def' if n_components is None else n_components}")
     if chunk_size not in (None, ""):
-        parts.append(f"chunk{'auto' if str(chunk_size) == 'auto' else chunk_size}")
+        _cs = str(chunk_size).strip().lower()
+        if _cs in ("none", "null", "full", "fullbatch"):
+            parts.append("chunknone")
+        else:
+            parts.append(f"chunk{'auto' if _cs == 'auto' else chunk_size}")
     if dtype:
         parts.append("f32" if dtype == "float32" else "f64")
     return "_".join(parts)
@@ -1401,13 +1405,16 @@ def main():
                              "refuses to clobber a prior artifact for the same run identity.")
     args = parser.parse_args()
 
-    # Parse --chunk-size: accept int string or "auto"
-    chunk_size = None
-    if args.chunk_size is not None:
-        if args.chunk_size == "auto":
-            chunk_size = "auto"
-        else:
-            chunk_size = int(args.chunk_size)
+    # Parse --chunk-size three ways: omitted means the package default, "none" is an
+    # explicit full-batch request, and "auto" or an integer pass through as given.
+    if args.chunk_size is None:
+        chunk_size = UNSET
+    elif str(args.chunk_size).strip().lower() in ("none", "null", "full", "fullbatch"):
+        chunk_size = None
+    elif str(args.chunk_size).strip().lower() == "auto":
+        chunk_size = "auto"
+    else:
+        chunk_size = int(args.chunk_size)
 
     # Resolve output directory
     output_dir = args.output_dir or os.environ.get("AMICA_RESULTS_DIR", "results")
