@@ -79,8 +79,10 @@ AMICA_CONFIG_SOURCE = JAMICA_SRC / "config.py"
 AMICA_SOLVER_SOURCE = JAMICA_SRC / "solver.py"
 AMICA_LIKELIHOOD_SOURCE = JAMICA_SRC / "likelihood.py"
 AMICA_GPU_SUBMISSION = REPO_ROOT / "benchmark/cc_benchmark/submit_jax_gpu_v3.sh"
-MEMORY_CSV = WORKSPACE / "results/mem_compare/mem_comparison_table.csv"
-MEMORY_JSON_ROOT = WORKSPACE / "results/mem_compare"
+# Cross-implementation memory at the fixed 100-iteration workload, rebuilt from the
+# campaign's iteration-curve cells by scripts/v030_build_mem_compare.py (workspace).
+MEMORY_CSV = V030 / "agg/mem_compare/mem_comparison_table.csv"
+MEMORY_JSON_ROOT = V030 / "agg/mem_compare"
 MEMORY_MULTISUBJECT_ROOT = WORKSPACE / "results/mem_multisubj"
 # Paired full-batch versus chunked host memory (six recordings, 60 iterations) from the
 # campaign; the archived comparator memory tables above are reused as they were.
