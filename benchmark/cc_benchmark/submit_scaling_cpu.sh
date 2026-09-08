@@ -19,12 +19,17 @@ source "$REPO/benchmark/cc_benchmark/fir_env.sh" || exit 1
 export AMICA_RESULTS_DIR="${AMICA_SCALING_DIR:-/scratch/$USER/jamica_v030/scaling}/cpu"
 mkdir -p "$AMICA_RESULTS_DIR"
 
+# Re-measure instead of resuming: the runner skips a fit whose output JSON already
+# exists, so a re-run for a changed measurement needs SCALING_FORCE=1.
+FORCE_OPT=""
+[ "${SCALING_FORCE:-0}" = "1" ] && FORCE_OPT="--force"
+
 run() {
   local tag="$1"; shift
   echo "--- $tag : $* ---"
   python run_one_subject.py --dataset ds004505 --subject 1 --input-level bids \
     --backend jax --device cpu --schema-version v3 --n-iter 60 \
-    --output-dir "$AMICA_RESULTS_DIR/$tag" "$@"
+    --output-dir "$AMICA_RESULTS_DIR/$tag" "$@" $FORCE_OPT
 }
 
 echo "=== RSS vs T (C=64, full-batch / chunk=None) ==="
