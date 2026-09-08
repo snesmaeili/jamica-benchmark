@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
-"""Generate tab_correctness.tex from figures/src/main_figure_stats.json.
+"""Generate tab_correctness.tex (Supplementary Table S8) from the campaign evidence files.
 
-Source choice matters here more than in the other table generators, and the
-wrong choice looks identical to the right one.
+Sources, all produced from raw arrays of the jamica 0.3.0 campaign (September 2026):
 
-The cross-backend row could be recomputed from
-results/backend_parity_v3/backend_agreement_per_subject.csv. Doing so yields
-0.999860 for jax_gpu_vs_numpy_cpu where the manuscript prints 0.999864 -- the
-CSV's matched_r_min and the frozen worst_row_correlation are not quite the same
-quantity. A generator built on the CSV would therefore have silently altered a
-published number by 4e-6 while appearing to faithfully regenerate the table.
+* ``fig2_reference_evidence.json`` and ``fig2_reference_density.csv`` beside this script,
+  written by ``scripts/v030_build_fig2_evidence.py`` in the validation workspace from the
+  Fortran-parity ``parity.json`` files, the cross-backend agreement tables, the test-job
+  outputs (full-batch/chunked pair, MNE interoperability) and the seed-robustness table;
+* ``results/v030/agg/nearstock_parity_v030.json`` (``scripts/v030_nearstock_parity.py``): the
+  free-initialisation Fortran agreement row.
 
-main_figure_stats.json is the frozen-numbers artifact the manuscript was
-written from, so it is the source of truth here. Its own `limitations` field
-records that some rows (K=1, natural-gradient-only, real-EEG Fortran) trace to
-an archived audit table rather than to raw result files; that provenance is
-carried through to the notes rather than hidden.
+The density statistics (Pearson r, nRMSE/IQR per parameter) are recomputed here from the
+density CSV with the same formulas as make_main_figures.py, so the table never depends on
+the order in which the figure and the table are regenerated. A partial evidence file
+(``complete: false``) is refused.
 
 Usage:
     python make_tab_correctness.py            # print
-    python make_tab_correctness.py --write    # write ../../tab_correctness.tex
+    python make_tab_correctness.py --write    # write <OUT_ROOT>/tab_correctness.tex
 """
 
 from __future__ import annotations
@@ -29,23 +27,15 @@ import json
 import math
 from pathlib import Path
 
-from _paths import out
+import numpy as np
+
+from _paths import data, out
 
 HERE = Path(__file__).resolve().parent
-STATS = HERE / "main_figure_stats.json"
+EVIDENCE = HERE / "fig2_reference_evidence.json"
+DENSITY = HERE / "fig2_reference_density.csv"
+NEARSTOCK_JSON = data("results", "v030", "agg", "nearstock_parity_v030.json")
 OUT = out("tab_correctness.tex")
-
-# The three-build ablation is summarised in the manuscript from
-# results/fortran_parity_nearstock/. It is not carried in main_figure_stats.json,
-# so it is declared here with its provenance rather than silently recomputed.
-NEARSTOCK = {
-    "fixture": "6-channel Laplacian, \\(K=3\\), Newton and natural gradient, "
-               "three build variants, free initialization",
-    "metric": "Relative \\(\\Delta LL\\); \\(r_W^{\\min}\\)",
-    "result": "\\(1.6\\)--\\(7.9\\times10^{-5}\\%\\); \\(\\geq 0.9999999\\)",
-    "scope": "Build differences within repeated-run variability",
-    "source": "results/fortran_parity_nearstock/",
-}
 
 
 def sci(x: float, sig: int = 2) -> str:
@@ -77,17 +67,43 @@ def r(x: float, dp: int) -> str:
     return f"\\({x:.{dp}f}\\)"
 
 
+def rmin(x: float) -> str:
+    """A correlation close to one, with enough decimals to show its distance from one."""
+    if x >= 1.0:
+        return r(1.0, 4)
+    dp = int(min(11, max(4, math.ceil(-math.log10(1.0 - x)) + 1)))
+    return r(x, dp)
+
+
+def density_stats(csv_path: Path) -> dict[str, dict[str, float]]:
+    """Pearson r and nRMSE/IQR per density parameter (same formulas as make_main_figures)."""
+    import pandas as pd
+    density = pd.read_csv(csv_path)
+    stats = {}
+    for key in ("alpha", "mu", "beta", "rho"):
+        x = density[f"{key}_fortran"].to_numpy(float)
+        y = density[f"{key}_python"].to_numpy(float)
+        iqr = float(np.subtract(*np.percentile(x, [75, 25])))
+        stats[key] = {
+            "pearson_r": float(np.corrcoef(x, y)[0, 1]),
+            "nrmse_over_iqr": float(np.sqrt(np.mean((y - x) ** 2)) / iqr),
+        }
+    return stats, len(density)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
 
-    f2 = json.loads(STATS.read_text(encoding="utf-8"))["figure2"]
-    panel = {e["label"].replace("\n", " "): e for e in f2["panel_a"]}
-    dens = f2["density_parameter_agreement"]
-    back = f2["backend_worst_row_agreement"]
-    chunk = f2["chunking"]
-    mne = f2["mne"]
+    ev = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    if not ev.get("complete", False):
+        raise SystemExit(f"{EVIDENCE.name} is a partial build (complete=false); rebuild it with "
+                         "scripts/v030_build_fig2_evidence.py once every campaign input exists")
+    near = json.loads(NEARSTOCK_JSON.read_text(encoding="utf-8"))
+    panel = {e["label"].replace("\n", " "): e for e in ev["panel_a"]}
+    dens, n_terms = density_stats(DENSITY)
+    back, chunk, mne = ev["backend"], ev["chunking"], ev["mne"]
 
     def p(label):
         for k, v in panel.items():
@@ -97,36 +113,40 @@ def main() -> int:
 
     k1, k3n, k3g = p("K=1, Newton"), p("K=3, Newton"), p("natural gradient")
     real = p("ds004505 sub-01")
+    fixture_iters = int(k3n["fixture"]["max_iter"])
+    fixture_samples = int(k3n["fixture"]["n_samples"])
 
     dr = min(v["pearson_r"] for v in dens.values())
     nl = min(v["nrmse_over_iqr"] for v in dens.values())
     nh = max(v["nrmse_over_iqr"] for v in dens.values())
-    bmed = [v["median_worst_row_correlation"] for v in back.values()]
-    mir = f2["maximum_absolute_backend_mir_difference_kbits_s"]
+    bmed = list(back["median_worst_row_correlation"].values())
+    mir = float(back["maximum_absolute_mir_difference_kbits_s"])
 
     rows = [
-        ("\\multirow{6}{=}{Fortran AMICA~1.7 parity}\n& 6-channel Laplacian, \\(K=1\\), Newton",
+        ("\\multirow{6}{=}{Fortran AMICA~1.7 parity}\n& 6-channel Laplacian, \\(K=1\\), Newton, fixed initialization",
          "Relative \\(\\Delta LL\\); \\(r_W^{\\min}\\)",
-         f"{pct(k1['relative_ll_difference_pct'])}; {r(k1['worst_row_correlation'], 4)}",
-         "Matched sources; single fixture"),
+         f"{pct(k1['relative_ll_difference_pct'])}; {rmin(k1['worst_row_correlation'])}",
+         f"Matched sources; {fixture_samples:,}-sample fixture, {fixture_iters:,} iterations"),
         ("& 6-channel Laplacian, \\(K=3\\), Newton, fixed initialization",
          "Relative \\(\\Delta LL\\); \\(r_W^{\\min}\\)",
-         f"{pct(k3n['relative_ll_difference_pct'], 3)}; {r(k3n['worst_row_correlation'], 11)}",
-         "Archived 2,000-iteration rerun"),
-        ("& 6-channel Laplacian, \\(K=3\\), natural gradient",
+         f"{pct(k3n['relative_ll_difference_pct'], 3)}; {rmin(k3n['worst_row_correlation'])}",
+         f"Shared sphering and mean; {fixture_iters:,} iterations"),
+        ("& 6-channel Laplacian, \\(K=3\\), natural gradient, fixed initialization",
          "Relative \\(\\Delta LL\\); \\(r_W^{\\min}\\)",
-         f"{pct(k3g['relative_ll_difference_pct'])}; {r(k3g['worst_row_correlation'], 4)}",
+         f"{pct(k3g['relative_ll_difference_pct'])}; {rmin(k3g['worst_row_correlation'])}",
          "Matched sources; single fixture"),
         ("& 6-channel, \\(K=3\\), density parameters",
          "Matched \\(r\\); nRMSE/IQR for \\(\\alpha,\\mu,\\beta,\\rho\\)",
          f"\\(r\\geq{dr:.8f}\\);\n{sci(nl)}--{sci(nh)}",
-         "18 aligned density terms"),
-        (f"& {NEARSTOCK['fixture']}", NEARSTOCK["metric"], NEARSTOCK["result"],
-         NEARSTOCK["scope"]),
+         f"{n_terms} aligned density terms"),
+        ("& 6-channel Laplacian, \\(K=3\\), Newton, free initialization on both sides",
+         "Relative \\(\\Delta LL\\); \\(r_W^{\\min}\\)",
+         f"{pct(near['rel_ll_delta_pct'])}; {rmin(near['W_matched_abs_r_min'])}",
+         f"Converged solutions compared in sensor space; {int(near['config']['max_iter']):,} iterations"),
         ("& Table tennis sub-01, 64 PCs, 100 iterations",
          "Absolute \\(\\Delta LL\\) (relative);\n\\(\\bar r_W\\) (\\(r_W^{\\min}\\))",
          f"{sci(real['absolute_ll_difference'])}\n({pct(real['relative_ll_difference_pct'])});\n"
-         f"{r(real['mean_row_correlation'], 5)} ({r(real['worst_row_correlation'], 4)})",
+         f"{r(real['mean_row_correlation'], 5)} ({rmin(real['worst_row_correlation'])})",
          "One subject; single model"),
     ]
 
@@ -137,17 +157,17 @@ def main() -> int:
 \\midrule
 
 Cross-backend agreement
-& Table tennis, 25 participants; JAX-GPU, JAX-CPU, NumPy-CPU
+& Table tennis, {back['n_subjects']} participants; JAX-GPU, JAX-CPU, NumPy-CPU
 & Median \\(r_W^{{\\min}}\\);
 \\(\\lvert\\Delta\\mathrm{{MIR}}\\rvert_{{\\max}}\\)
 & \\({min(bmed):.6f}\\)--\\({max(bmed):.6f}\\);
-\\({mir}\\)~kbits/s
+\\({mir:.4f}\\)~kbits/s
 & Benchmark-level consistency \\\\
 
 \\midrule
 
 Full-batch/chunked agreement
-& MNE sample; 30 PCs; 166,800 samples; 100 iterations; \\texttt{{float64}}; \\(B=1{{,}}024\\)
+& MNE sample; {chunk['n_components']} PCs; {chunk['n_samples']:,} samples; {chunk['max_iter']} iterations; \\texttt{{float64}}; \\(B={chunk['chunk_size']:,}\\)
 & Absolute final \\(\\Delta LL\\);
 \\(\\lVert\\Delta W\\rVert_F/\\lVert W\\rVert_F\\)
 & {sci(chunk['absolute_final_ll_difference'], 3)};
@@ -159,17 +179,16 @@ Full-batch/chunked agreement
 MNE-Python interoperability
 & \\texttt{{Raw}}/\\texttt{{Epochs}}, sources, exclusion, reconstruction,
 reordering, rank reduction, model access, and ICLabel
-& Direct tests; CI on Python~{mne['python_ci_versions'].replace('-', '--')} and \
+& Direct tests ({mne['tests_selected']} passed); CI on Python~{mne['python_ci_versions'].replace('-', '--')} and \
 {'three' if mne['ci_operating_systems'] == 3 else mne['ci_operating_systems']} operating systems
 & All tested workflows passed; reconstruction residual
 {sci(mne['transform_inverse_frobenius_relative_residual'])}
 & Not a universal conformance claim \\\\"""
 
-    tex = f"""% GENERATED by figures/src/make_tab_correctness.py -- do not edit by hand.
-% Source: figures/src/main_figure_stats.json (figure2), the frozen-numbers
-% artifact the manuscript was written from. Do NOT regenerate the cross-backend
-% row from backend_agreement_per_subject.csv: that yields 0.999860 where this
-% prints 0.999864.
+    tex = f"""% GENERATED by scripts/paper/figures/make_tab_correctness.py -- do not edit by hand.
+% Sources: fig2_reference_evidence.json and fig2_reference_density.csv (built from the
+% jamica 0.3.0 campaign outputs by scripts/v030_build_fig2_evidence.py) and
+% results/v030/agg/nearstock_parity_v030.json (scripts/v030_nearstock_parity.py).
 % Supplementary numerical audit supporting main Figure~\\ref{{fig:reference-agreement}}.
 \\begin{{table}}[htbp]
 \\centering
@@ -218,10 +237,13 @@ AMICA (\\(M=1\\)) and to the listed fixtures only.
     else:
         print(tex)
 
-    print(f"\nrow sources (from main_figure_stats.json):")
+    print("\nrow sources:")
     for lbl, e in panel.items():
-        print(f"  {lbl:44s} <- {e.get('source', '?')[:52]}")
-    print(f"  {'three-build ablation':44s} <- {NEARSTOCK['source']} (declared)")
+        print(f"  {lbl:44s} <- {e.get('source', '?')[:70]}")
+    print(f"  {'free-initialisation row':44s} <- {NEARSTOCK_JSON}")
+    print(f"  {'cross-backend':44s} <- {back.get('source', '?')[:70]}")
+    print(f"  {'full-batch/chunked':44s} <- {chunk.get('source', '?')[:70]}")
+    print(f"  {'MNE interoperability':44s} <- {mne.get('source', '?')[:70]}")
     return 0
 
 

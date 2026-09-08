@@ -54,121 +54,91 @@ FIG1_EMPIRICAL_AUDIT = HERE / "fig1_empirical_densities_audit.json"
 FIG3_SYNTHETIC_AUDIT = HERE / "fig3_synthetic_recovery_audit.csv"
 FIG5_TWO_REGIME = HERE / "fig5_two_regime_alignment.csv"
 
-BENCH_505 = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/cc_benchmark/results"
-    / "v3_paper_stage1_cluster/benchmark_results.csv"
-)
-BENCH_504 = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/cc_benchmark/results"
-    / "ds004504_v3/benchmark_results.csv"
-)
-BENCH_621 = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/cc_benchmark/results"
-    / "ds004621_v3/benchmark_results.csv"
-)
+# jamica 0.3.0 campaign (September 2026). Cohort aggregates come from
+# scripts/v030_build_cohorts.py (workspace): the new jamica result JSONs plus the archived
+# comparator JSONs, aggregated together; compare_vs_archive.json beside each CSV records
+# that the comparator rows reproduce the archived tables.
+V030 = WORKSPACE / "results/v030"
+BENCH_505 = V030 / "agg/ds004505/benchmark_results.csv"
+BENCH_504 = V030 / "agg/ds004504/benchmark_results.csv"
+BENCH_621 = V030 / "agg/ds004621/benchmark_results.csv"
 ITER_TRACE = BENCH_505.with_name("iteration_trace.csv.gz")
 CONVERGENCE_AUDIT_CSV = WORKSPACE / "results/audit/fig5_convergence_subject_audit.csv"
 CONVERGENCE_AUDIT_JSON = WORKSPACE / "results/audit/fig5_convergence_integrity.json"
-AMICA_CONFIG_SOURCE = WORKSPACE / "figdata/synth/amica-capsule/amica_python/config.py"
-AMICA_SOLVER_SOURCE = WORKSPACE / "figdata/synth/amica-capsule/amica_python/solver.py"
-AMICA_LIKELIHOOD_SOURCE = WORKSPACE / "figdata/synth/amica-capsule/amica_python/likelihood.py"
-AMICA_GPU_SUBMISSION = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/cc_benchmark/submit_jax_gpu_v3.sh"
-)
+# Released package source at tag v0.3.0 (git archive of the tag commit; see
+# figdata/v030/jamica-src/EXPORTED_FROM_TAG.txt). Hashed into main_figure_stats.json.
+JAMICA_SRC = WORKSPACE / "figdata/v030/jamica-src/jamica"
+JAMICA_RELEASE = {
+    "package": "jamica",
+    "version": "0.3.0",
+    "tag": "v0.3.0",
+    "commit": "1d1b227a41eb536ca0fed126f44d903b43d1c83c",
+    "zenodo": "10.5281/zenodo.22150363",
+}
+AMICA_CONFIG_SOURCE = JAMICA_SRC / "config.py"
+AMICA_SOLVER_SOURCE = JAMICA_SRC / "solver.py"
+AMICA_LIKELIHOOD_SOURCE = JAMICA_SRC / "likelihood.py"
+AMICA_GPU_SUBMISSION = REPO_ROOT / "benchmark/cc_benchmark/submit_jax_gpu_v3.sh"
 MEMORY_CSV = WORKSPACE / "results/mem_compare/mem_comparison_table.csv"
 MEMORY_JSON_ROOT = WORKSPACE / "results/mem_compare"
 MEMORY_MULTISUBJECT_ROOT = WORKSPACE / "results/mem_multisubj"
-# Re-measured paired memory after the expectation step was chunked inside the
-# compiled graph. The archived trees above predate that change and report a
-# median 54% saving where the current release gives 79% at every recording, so
-# they are kept for provenance but are no longer what the figure plots.
-MEMORY_RECHECK_ROOT = WORKSPACE / "results/comparator/mem_recheck"
+# Paired full-batch versus chunked host memory (six recordings, 60 iterations) from the
+# campaign; the archived comparator memory tables above are reused as they were.
+MEMORY_RECHECK_ROOT = V030 / "fir/comparator/mem_recheck/mem_recheck"
+# Fixed-workload runs (sub-01, 64 PCs, 100 iterations) of every implementation are the
+# iter100 cells of the iteration-curve campaign (CPU: all implementations; GPU: jamica
+# chunked and the PyTorch ports).
+FIXED_WORKLOAD_CPU_ROOT = V030 / "fir/comparator/itercurve/itercurve_cpu/itercurve_cpu/iter100"
 RUNTIME_GPU_ROOTS = {
-    100: WORKSPACE / "results/rt_gpu_100",
-    600: WORKSPACE / "results/rt_gpu_600",
+    100: V030 / "fir/comparator/itercurve/itercurve_gpu/itercurve_gpu/iter100",
 }
 FIG4_RUNTIME_AUDIT = HERE / "fig4_fixed_workload_runtime_audit.csv"
-SCALING_ROOT = WORKSPACE / "results/scaling/cpu"
-RUNTIME_RUNNER = (
-    WORKSPACE / "figdata/synth/amica-capsule/amica_python/benchmark/runner.py"
-)
-MNE_INTEGRATION = (
-    WORKSPACE / "figdata/synth/amica-capsule/amica_python/mne_integration.py"
-)
-MEMORY_MEASUREMENT = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/comparator/runners/_common.py"
-)
-MEMORY_AMICA_RUNNER = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/comparator/runners/run_amica_python.py"
-)
-MEMORY_SCOTT_RUNNER = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/comparator/runners/run_scott_huberty.py"
-)
-MEMORY_PYAMICA_RUNNER = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/comparator/runners/run_pyamica.py"
-)
-SCALING_SUBMISSION = (
-    WORKSPACE
-    / "figdata/synth/amica-capsule/benchmark/cc_benchmark/submit_scaling_cpu.sh"
-)
-SCALING_RUNNER = (
-    WORKSPACE / "figdata/synth/amica-python/amica_python/benchmark/runner.py"
-)
-SYNTHETIC_JSON = WORKSPACE / "figdata/multimodel_synthetic_2000/synthetic_summary.json"
+SCALING_ROOT = V030 / "fir/scaling/cpu"
+RUNTIME_RUNNER = REPO_ROOT / "amica_python/benchmark/runner.py"
+MNE_INTEGRATION = JAMICA_SRC / "mne_integration.py"
+MEMORY_MEASUREMENT = REPO_ROOT / "benchmark/comparator/runners/_common.py"
+MEMORY_AMICA_RUNNER = REPO_ROOT / "benchmark/comparator/runners/run_amica_python.py"
+MEMORY_SCOTT_RUNNER = REPO_ROOT / "benchmark/comparator/runners/run_scott_huberty.py"
+MEMORY_PYAMICA_RUNNER = REPO_ROOT / "benchmark/comparator/runners/run_pyamica.py"
+SCALING_SUBMISSION = REPO_ROOT / "benchmark/cc_benchmark/submit_scaling_cpu.sh"
+SCALING_RUNNER = RUNTIME_RUNNER
+# Synthetic three-regime control: seed 0 of the ten-seed campaign (submit_multimodel_synthetic.sh).
+SYNTHETIC_JSON = V030 / "fir/multimodel/synthetic/seed0/synthetic_summary.json"
 MULTIMODEL_AUDIT_CSV = WORKSPACE / "results/audit/fig6_multimodel_integrity.csv"
 MULTIMODEL_AUDIT_JSON = WORKSPACE / "results/audit/fig6_multimodel_integrity.json"
-MULTIMODEL_RUNNER = (
-    WORKSPACE
-    / "figdata/synth/amica-mm/scripts/cc_benchmark/run_multimodel_benchmark.py"
-)
-MULTIMODEL_SUBMISSION = (
-    WORKSPACE
-    / "figdata/synth/amica-mm/scripts/cc_benchmark/submit_multimodel_extra.sh"
-)
-MULTIMODEL_SYNTHETIC_RUNNER = (
-    WORKSPACE
-    / "figdata/synth/amica-mm/scripts/cc_benchmark/run_synthetic_multimodel.py"
-)
-MULTIMODEL_DEMO_SUBMISSION = (
-    WORKSPACE
-    / "figdata/synth/amica-mm/scripts/cc_benchmark/submit_multimodel_demo.sh"
-)
+MULTIMODEL_PROTOCOL = REPO_ROOT / "scripts/multimodel/paper_protocol"
+MULTIMODEL_RUNNER = MULTIMODEL_PROTOCOL / "run_multimodel_benchmark.py"
+MULTIMODEL_SUBMISSION = MULTIMODEL_PROTOCOL / "submit_multimodel_cohort.sh"
+MULTIMODEL_SYNTHETIC_RUNNER = MULTIMODEL_PROTOCOL / "run_synthetic_multimodel.py"
+MULTIMODEL_DEMO_SUBMISSION = MULTIMODEL_PROTOCOL / "submit_multimodel_demo.sh"
+MM_ROOT = V030 / "fir/multimodel"
 MM_ROOTS = {
-    "ds004505 task (120 ch)": WORKSPACE / "figdata/mmbench_ds004505",
-    "ds004505 task (19 ch)": WORKSPACE / "figdata/mmbench_ds004505_ch19",
-    "ds004504 rest (19 ch)": WORKSPACE / "figdata/mmbench_ds004504",
-    "ds004621 rest (127 ch)": WORKSPACE / "figdata/mmbench_ds004621",
+    "ds004505 task (120 ch)": MM_ROOT / "mmbench_ds004505",
+    "ds004505 task (19 ch)": MM_ROOT / "mmbench_ds004505_ch19",
+    "ds004504 rest (19 ch)": MM_ROOT / "mmbench_ds004504",
+    "ds004621 rest (127 ch)": MM_ROOT / "mmbench_ds004621",
 }
 SURR_ROOTS = {
-    "ds004505 phase surrogate": WORKSPACE / "figdata/mmbench_ds004505_surr",
-    "ds004504 phase surrogate": WORKSPACE / "figdata/mmbench_ds004504_surr",
+    "ds004505 phase surrogate": MM_ROOT / "mmbench_ds004505_surr",
+    "ds004504 phase surrogate": MM_ROOT / "mmbench_ds004504_surr",
 }
-DEMO_NPZ = (
-    WORKSPACE
-    / "repos/amica-python/results/multimodel_demo/mm_demo_sub-04_M3.npz"
-)
+DEMO_NPZ = MM_ROOT / "multimodel_demo/mm_demo_sub-04_M3.npz"
+# Synthetic single-model cohorts: new jamica arms merged with the archived comparator arms
+# by scripts/v030_build_synth.py (workspace).
 SINGLE_MODEL_SYNTHETIC_ROOTS = {
-    ("Homogeneous Laplacian", "3,000"): WORKSPACE / "figdata/synth/amica_python_synthetic_v1",
-    ("Homogeneous Laplacian", "10,000"): WORKSPACE / "figdata/synth/amica_python_synthetic_v1_lap_amica10k",
-    ("Heterogeneous mixture", "3,000"): WORKSPACE / "figdata/synth/amica_python_synthetic_v1_mixed",
-    ("Heterogeneous mixture", "10,000"): WORKSPACE / "figdata/synth/amica_python_synthetic_v1_mixed_amica10k",
+    ("Homogeneous Laplacian", "3,000"): V030 / "agg/synth/amica_python_synthetic_v1",
+    ("Homogeneous Laplacian", "10,000"): V030 / "agg/synth/amica_python_synthetic_v1_lap_amica10k",
+    ("Heterogeneous mixture", "3,000"): V030 / "agg/synth/amica_python_synthetic_v1_mixed",
+    ("Heterogeneous mixture", "10,000"): V030 / "agg/synth/amica_python_synthetic_v1_mixed_amica10k",
 }
-SEED_ROBUSTNESS_CSV = WORKSPACE / "phaseB_figures/seed_robustness.csv"
-PERPHASE_RUNTIME_CSV = WORKSPACE / "phaseB_figures/perphase_runtime.csv"
+SEED_ROBUSTNESS_CSV = V030 / "agg/seed_robustness.csv"
+PERPHASE_RUNTIME_CSV = V030 / "agg/perphase_runtime.csv"
 COMPONENT_METRICS = {
     "ds004505": BENCH_505.with_name("component_metrics.csv"),
-    "ds004504": WORKSPACE / "results/ds004504_v3_50hz/component_metrics.csv",
-    "ds004621": WORKSPACE / "results/ds004621_v3_50hz/component_metrics.csv",
+    "ds004504": BENCH_504.with_name("component_metrics.csv"),
+    "ds004621": BENCH_621.with_name("component_metrics.csv"),
 }
-GPU_SCALING_ROOT = WORKSPACE / "results/scaling/gpu"
+GPU_SCALING_ROOT = V030 / "fir/scaling/gpu"
 
 
 # Okabe-Ito-based method palette, held constant across the figure set.
@@ -1714,7 +1684,7 @@ def load_fixed_workload_runtime_audit(*, write_output: bool = True) -> pd.DataFr
     fixed-workload audit with an explicitly different Fortran timing boundary,
     not repeated process-level benchmark estimates.
     """
-    cpu_root = MEMORY_JSON_ROOT / "cpu/ds004505_sub-01_mem"
+    cpu_root = FIXED_WORKLOAD_CPU_ROOT
     paths = {
         "amica JAX-GPU (chunked)": RUNTIME_GPU_ROOTS[100]
         / "amica_python_jax_chunked_sub-01_seed0_result.json",
@@ -3570,8 +3540,8 @@ def _load_multimodel_audit() -> tuple[pd.DataFrame, dict, pd.DataFrame, pd.DataF
             "Supplementary_Table_S3": "Retained as explicitly single-configuration evidence; not promoted because its result object is not archived.",
         },
         "provenance": {
-            "multimodel_generator_commit": _git_head(WORKSPACE / "figdata/synth/amica-mm"),
-            "demo_repository_commit": _git_head(WORKSPACE / "repos/amica-python"),
+            "multimodel_generator_commit": _git_head(REPO_ROOT),
+            "demo_package_release": JAMICA_RELEASE,
             # Was _git_head(FIG_DIR.parent), which resolved to the Overleaf
             # project root only because FIG_DIR happened to be figures/ there.
             # The producers live here now, so record this repository instead --

@@ -45,21 +45,21 @@ COHORTS = [
         "role": "Active high-density stress test",
         "chans": "120 selected $\\rightarrow 64$ PCs\n(270--340 stored)",
         "sampling": "250~Hz native",
-        "results_dir": "results/backend_parity_v3",
+        "results_dir": "results/v030/agg/ds004505",
     },
     {
         "label": "Eyes-closed rest", "accession": "ds004504",
         "role": "Low-density resting replication",
         "chans": "19 $\\rightarrow 15$ PCs",
         "sampling": "500 $\\rightarrow$ 250~Hz",
-        "results_dir": "results/ds004504_v3_50hz",
+        "results_dir": "results/v030/agg/ds004504",
     },
     {
         "label": "Eyes-open rest", "accession": "ds004621",
         "role": "High-density resting replication",
         "chans": "127 stored $\\rightarrow 64$ PCs\n(128-channel system)",
         "sampling": "1000 $\\rightarrow$ 250~Hz",
-        "results_dir": "results/ds004621_v3_50hz",
+        "results_dir": "results/v030/agg/ds004621",
     },
 ]
 

@@ -31,11 +31,11 @@ pip install -e ".[jax-cpu]"  # this repository's helpers
 On an Alliance/Compute Canada cluster, `source conf/narval.env` first, then
 `make check-env`.
 
-> **Version note.** The preprint's results were produced with `jamica` 0.0.1.
-> Version 0.1.0 changed chunked multi-model fitting and added rank estimation;
-> see the manuscript's availability statement for what that does and does not
-> affect. Reproduction should use the dependency versions recorded in the
-> archived release.
+> **Version note.** Every result in the manuscript was produced with `jamica`
+> 0.3.0 (tag `v0.3.0`, commit `1d1b227a41`, Zenodo 10.5281/zenodo.22150363);
+> `pins.toml` pins that release for the cluster environments and every run
+> manifest records the installed version. Reproduction should use the
+> dependency versions recorded in the run manifests.
 
 ## Datasets
 

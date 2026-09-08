@@ -26,10 +26,10 @@ _HERE = Path(__file__).resolve().parent
 DEST = out("tab_synthetic_recovery.tex")
 
 ROOTS = {
-    ("Laplacian", "3k"): "figdata/synth/amica_python_synthetic_v1",
-    ("Laplacian", "10k"): "figdata/synth/amica_python_synthetic_v1_lap_amica10k",
-    ("Mixture", "3k"): "figdata/synth/amica_python_synthetic_v1_mixed",
-    ("Mixture", "10k"): "figdata/synth/amica_python_synthetic_v1_mixed_amica10k",
+    ("Laplacian", "3k"): "results/v030/agg/synth/amica_python_synthetic_v1",
+    ("Laplacian", "10k"): "results/v030/agg/synth/amica_python_synthetic_v1_lap_amica10k",
+    ("Mixture", "3k"): "results/v030/agg/synth/amica_python_synthetic_v1_mixed",
+    ("Mixture", "10k"): "results/v030/agg/synth/amica_python_synthetic_v1_mixed_amica10k",
 }
 CONDITIONS = [("clean", "clean"), ("noise", "noise"), ("noise_eog", "noise+EOG"),
               ("noise_ecg", "noise+ECG"), ("full", "full")]

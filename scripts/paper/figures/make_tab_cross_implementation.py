@@ -37,8 +37,9 @@ _HERE = Path(__file__).resolve().parent
 DEST = out("tab_cross_implementation.tex")
 
 # One directory per device, each holding iter<N>/ subdirectories.
-CPU_ROOT = _WS / "results/comparator/cluster/cpu/itercurve_cpu"
-GPU_ROOT = _WS / "results/comparator/cluster/gpu/itercurve_gpu"
+# jamica 0.3.0 campaign iteration-curve runs (fir; sub-01, 64 PCs, seed 0).
+CPU_ROOT = _WS / "results/v030/fir/comparator/itercurve/itercurve_cpu/itercurve_cpu"
+GPU_ROOT = _WS / "results/v030/fir/comparator/itercurve/itercurve_gpu/itercurve_gpu"
 
 HEADLINE_ITER = 1000
 

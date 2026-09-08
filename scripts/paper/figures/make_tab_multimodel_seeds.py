@@ -17,8 +17,9 @@ from _paths import DATA_ROOT as _WS, out
 _HERE = Path(__file__).resolve().parent
 DEST = out("tab_multimodel_seeds.tex")
 
-PUBLISHED = _WS / "figdata/multimodel_synthetic_2000/synthetic_summary.json"
-SEEDS_DIR = _WS / "results/multimodel_seeds"
+# jamica 0.3.0 campaign: ten seeds under one root (seed0 = the main-text control).
+PUBLISHED = _WS / "results/v030/fir/multimodel/synthetic/seed0/synthetic_summary.json"
+SEEDS_DIR = _WS / "results/v030/fir/multimodel/synthetic"
 
 
 # The table states "N of M seeds" in its own footnote, so a silently short run

@@ -40,17 +40,17 @@ M_COLUMNS = (2, 5, 10)
 M_EXPECTED = tuple(range(1, 11))
 
 COHORTS = [
-    {"label": "Table tennis, 120 channels", "dir": "figdata/mmbench_ds004505",
+    {"label": "Table tennis, 120 channels", "dir": "results/v030/fir/multimodel/mmbench_ds004505",
      "group": "real"},
-    {"label": "Table tennis, 19 channels", "dir": "figdata/mmbench_ds004505_ch19",
+    {"label": "Table tennis, 19 channels", "dir": "results/v030/fir/multimodel/mmbench_ds004505_ch19",
      "group": "real"},
-    {"label": "Eyes-closed rest, 19 channels", "dir": "figdata/mmbench_ds004504",
+    {"label": "Eyes-closed rest, 19 channels", "dir": "results/v030/fir/multimodel/mmbench_ds004504",
      "group": "real"},
-    {"label": "Eyes-open rest, 127 channels", "dir": "figdata/mmbench_ds004621",
+    {"label": "Eyes-open rest, 127 channels", "dir": "results/v030/fir/multimodel/mmbench_ds004621",
      "group": "real"},
-    {"label": "Table tennis phase surrogate", "dir": "figdata/mmbench_ds004505_surr",
+    {"label": "Table tennis phase surrogate", "dir": "results/v030/fir/multimodel/mmbench_ds004505_surr",
      "group": "surrogate"},
-    {"label": "Eyes-closed rest phase surrogate", "dir": "figdata/mmbench_ds004504_surr",
+    {"label": "Eyes-closed rest phase surrogate", "dir": "results/v030/fir/multimodel/mmbench_ds004504_surr",
      "group": "surrogate"},
 ]
 

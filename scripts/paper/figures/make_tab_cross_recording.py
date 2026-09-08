@@ -28,14 +28,14 @@ DEST = out("tab_cross_recording.tex")
 # replication run. Ordered by k, descending.
 RECORDINGS = [
     ("ds004504", "Eyes-closed rest", "sub-37",
-     _WS / "results/cross_recording/ds004504/cpu",
-     _WS / "results/cross_recording/ds004504/gpu"),
+     _WS / "results/v030/fir/cross_recording/ds004504/cpu",
+     _WS / "results/v030/fir/cross_recording/ds004504/gpu"),
     ("ds004505", "Table tennis", "sub-01",
-     _WS / "results/mem_compare/cpu/ds004505_sub-01_mem",
-     _WS / "results/rt_gpu_100"),
+     _WS / "results/v030/fir/comparator/itercurve/itercurve_cpu/itercurve_cpu/iter100",
+     _WS / "results/v030/fir/comparator/itercurve/itercurve_gpu/itercurve_gpu/iter100"),
     ("ds004621", "Eyes-open rest", "sub-01",
-     _WS / "results/cross_recording/ds004621/cpu",
-     _WS / "results/cross_recording/ds004621/gpu"),
+     _WS / "results/v030/fir/cross_recording/ds004621/cpu",
+     _WS / "results/v030/fir/cross_recording/ds004621/gpu"),
 ]
 
 DISPLAY = {
