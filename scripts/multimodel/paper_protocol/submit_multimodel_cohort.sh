@@ -12,6 +12,8 @@
 #   OUTSUB      output subdir under $MM_RESULTS_DIR (default /scratch/$USER/jamica_v030/multimodel)
 #   JOBNAME     slurm job name
 #   HMAX        max H (default 10);  EXTRA  extra runner args;  INPUT_LEVEL (bids);
+#   ARRAY       override the generated array spec, e.g. "41,138,236", to re-run
+#               individual cells (task t -> subject SUB_BASE+(t-1)/HMAX, H (t-1)%HMAX+1)
 #   GATE        1 = smoke-gate the array (default 1);  SEED (0)
 # Array = NSUB*HMAX; task t -> subject = SUB_BASE + (t-1)/HMAX, H = (t-1)%HMAX + 1.
 #
@@ -65,7 +67,7 @@ EOF
 fi
 
 # shellcheck disable=SC2086
-sbatch $GPU_OPTS $DEP --job-name="$JOBNAME" --time=01:30:00 --array="1-${NTASK}%30" \
+sbatch $GPU_OPTS $DEP --job-name="$JOBNAME" --time=01:30:00 --array="${ARRAY:-1-${NTASK}%30}" \
        --output=logs/%x-%A_%a.out --error=logs/%x-%A_%a.err <<EOF
 #!/bin/bash
 set -euo pipefail
