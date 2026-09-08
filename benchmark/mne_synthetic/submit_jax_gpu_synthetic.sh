@@ -7,12 +7,13 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:h100:1
-#SBATCH --output=/home/sesma/scratch/synth_jax_gpu_%a_%j.out
-#SBATCH --error=/home/sesma/scratch/synth_jax_gpu_%a_%j.err
+#SBATCH --output=logs/%x-%A_%a.out
+#SBATCH --error=logs/%x-%A_%a.err
 
 set -euo pipefail
 
 cd "$SLURM_SUBMIT_DIR"
+mkdir -p logs
 source fir_env_synthetic.sh
 
 python run_one_synthetic.py \
