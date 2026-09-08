@@ -28,4 +28,5 @@ python run_one_subject.py \
     --device gpu \
     --n-iter "$AMICA_N_ITER" \
     --input-level "${AMICA_INPUT_LEVEL:-bids}" \
-    --schema-version v3
+    --schema-version v3 \
+    --chunk-size "${AMICA_CHUNK_SIZE:-auto}"

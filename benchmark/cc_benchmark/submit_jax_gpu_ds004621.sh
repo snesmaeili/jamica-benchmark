@@ -32,4 +32,5 @@ python run_one_subject.py \
     --device gpu \
     --n-iter "$AMICA_N_ITER" \
     --n-components 64 \
-    --schema-version v3
+    --schema-version v3 \
+    --chunk-size "${AMICA_CHUNK_SIZE:-auto}"
